@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira — Your AI Study Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0A07; --gold: #C9A46E; --gold-light: #E8C97A;
+  --cream: #F2E8D8; --muted: #9B8E7E;
+  --border: rgba(202,156,77,0.2); --border-bright: rgba(202,156,77,0.42);
+  --card: rgba(255,244,224,0.04);
+  --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--fb); background: var(--bg); color: var(--cream); overflow-x: hidden; }
+
+/* ── Scroll animation base ── */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 56px;
+  background: rgba(12,10,7,0.0); backdrop-filter: blur(0px);
+  border-bottom: 1px solid transparent;
+  transition: all 0.4s ease;
+}
+nav.scrolled {
+  background: rgba(12,10,7,0.92); backdrop-filter: blur(14px);
+  border-bottom-color: var(--border);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
+  box-shadow: 0 0 16px rgba(201,164,110,0.4);
+}
+.brand-name { font-family: var(--fd); font-size: 1rem; font-weight: 600; color: var(--cream); }
+.nav-links { display: flex; align-items: center; gap: 12px; }
+.btn-ghost-sm { padding: 7px 18px; border-radius: 8px; border: 1px solid rgba(202,156,77,0.35); background: transparent; color: var(--cream); font-size: 0.85rem; font-family: var(--fb); cursor: pointer; transition: all 0.2s; }
+.btn-ghost-sm:hover { border-color: var(--gold); background: rgba(201,164,110,0.06); }
+.btn-gold-sm { padding: 7px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E); color: #0C0A07; font-size: 0.85rem; font-weight: 700; font-family: var(--fb); cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(201,164,110,0.3); }
+.btn-gold-sm:hover { box-shadow: 0 6px 20px rgba(201,164,110,0.5); transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 56px 80px; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background-image: url('/assets/campus.jpg'), url('/assets/study.jpg');
+  background-size: cover; background-position: center 30%;
+  background-color: #0E0B06;
+  transform: scale(1.05);
+  transition: transform 12s ease-out;
+  will-change: transform;
+}
+.hero-bg.loaded { transform: scale(1); }
+.hero-overlay {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to top, rgba(8,6,3,0.97) 0%, rgba(8,6,3,0.55) 40%, rgba(8,6,3,0.2) 70%, rgba(8,6,3,0.5) 100%),
+    linear-gradient(to right, rgba(8,6,3,0.7) 0%, rgba(8,6,3,0.1) 60%);
+}
+.hero-content {
+  position: relative; z-index: 2; max-width: 700px;
+  opacity: 0; transform: translateY(32px);
+  animation: heroIn 1s ease 0.3s forwards;
+}
+@keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+
+.hero-eyebrow { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--gold); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+.eyebrow-line { width: 28px; height: 1px; background: var(--gold); opacity: 0.6; }
+.hero-title { font-family: var(--fd); font-size: clamp(2.8rem, 5.5vw, 4.4rem); line-height: 1.1; color: var(--cream); margin-bottom: 20px; }
+.hero-title em { font-style: italic; color: var(--gold-light); }
+.hero-sub { font-size: 1.05rem; color: rgba(242,232,216,0.6); line-height: 1.7; max-width: 500px; margin-bottom: 36px; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
+.btn-hero-primary { padding: 14px 34px; border-radius: 10px; border: none; background: linear-gradient(135deg, #C9A46E 0%, #E8C97A 50%, #C9A46E 100%); color: #0C0A07; font-size: 1rem; font-weight: 700; font-family: var(--fb); cursor: pointer; transition: all 0.25s; box-shadow: 0 8px 28px rgba(201,164,110,0.4); }
+.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(201,164,110,0.55); }
+.btn-hero-ghost { padding: 14px 28px; border-radius: 10px; border: 1px solid rgba(202,156,77,0.4); background: rgba(255,244,224,0.04); color: var(--cream); font-size: 1rem; font-family: var(--fb); cursor: pointer; transition: all 0.2s; }
+.btn-hero-ghost:hover { background: rgba(255,244,224,0.09); border-color: var(--gold); }
+
+/* Hero stats bar */
+.hero-stats {
+  display: flex; gap: 32px; padding-top: 28px;
+  border-top: 1px solid rgba(202,156,77,0.15);
+}
+.h-stat { display: flex; flex-direction: column; gap: 2px; }
+.h-stat-val { font-family: var(--fd); font-size: 1.4rem; color: var(--gold-light); }
+.h-stat-label { font-size: 0.72rem; color: rgba(242,232,216,0.4); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* Hero scroll indicator */
+.scroll-hint { position: absolute; bottom: 28px; right: 56px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.scroll-hint-line { width: 1px; height: 40px; background: linear-gradient(to bottom, transparent, rgba(201,164,110,0.5)); animation: scrollPulse 2s ease-in-out infinite; }
+@keyframes scrollPulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+.scroll-hint-text { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.16em; color: rgba(242,232,216,0.3); writing-mode: vertical-lr; }
+
+/* ── IMAGE BREAK SECTION ── */
+.image-break {
+  position: relative; height: 480px; overflow: hidden;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.image-break-bg {
+  position: absolute; inset: -40px;
+  background-image: url('/assets/campus.jpg'), url('/assets/study.jpg');
+  background-size: cover; background-position: center 40%;
+  background-attachment: fixed;
+  background-color: #110D08;
+}
+.image-break-overlay {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, rgba(8,6,3,0.92) 0%, rgba(8,6,3,0.4) 50%, rgba(8,6,3,0.75) 100%),
+    linear-gradient(to bottom, rgba(8,6,3,0.5) 0%, transparent 40%, rgba(8,6,3,0.6) 100%);
+}
+.image-break-content {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; align-items: center; padding: 0 56px;
+  max-width: 680px;
+}
+.break-quote { font-family: var(--fd); font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.5; color: var(--cream); }
+.break-quote em { color: var(--gold-light); font-style: italic; }
+.break-attr { font-size: 0.76rem; color: rgba(242,232,216,0.4); margin-top: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── SHARED SECTION ── */
+section { padding: 96px 56px; }
+.section-eyebrow { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--gold); margin-bottom: 14px; }
+.section-title { font-family: var(--fd); font-size: clamp(1.8rem, 3.5vw, 2.6rem); color: var(--cream); line-height: 1.2; margin-bottom: 14px; }
+.section-title em { font-style: italic; color: var(--gold-light); }
+.section-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.7; max-width: 480px; }
+
+/* ── MODULES ── */
+.modules-section { background: rgba(255,244,224,0.012); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.modules-header { max-width: 1100px; margin: 0 auto 52px; }
+.modules-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.module-card {
+  border-radius: 16px; border: 1px solid var(--border);
+  background: var(--card); padding: 28px 24px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative; overflow: hidden;
+}
+.module-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0; transition: opacity 0.35s; }
+.module-card:hover { border-color: var(--border-bright); transform: translateY(-5px); box-shadow: 0 24px 52px rgba(0,0,0,0.55), 0 0 28px rgba(201,164,110,0.07); }
+.module-card:hover::before { opacity: 1; }
+.module-num { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: rgba(201,164,110,0.45); }
+.module-icon-wrap { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border); background: rgba(201,164,110,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.3s; }
+.module-card:hover .module-icon-wrap { border-color: var(--border-bright); background: rgba(201,164,110,0.1); }
+.module-title { font-family: var(--fd); font-size: 1.2rem; color: var(--cream); }
+.module-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.65; flex: 1; }
+.module-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--gold); border: 1px solid rgba(201,164,110,0.22); padding: 4px 10px; border-radius: 999px; width: fit-content; }
+
+/* Wide card for Report */
+.module-card.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 24px; }
+.module-card.wide .module-desc { max-width: 480px; }
+.module-card.wide .module-tag { margin-left: auto; }
+
+/* ── HOW IT WORKS ── */
+.how-wrap { max-width: 1100px; margin: 0 auto; }
+.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 52px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.how-step { padding: 32px 28px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; background: var(--card); transition: background 0.3s; }
+.how-step:last-child { border-right: none; }
+.how-step:hover { background: rgba(255,244,224,0.06); }
+.how-num { font-family: var(--fd); font-size: 3rem; color: rgba(201,164,110,0.15); line-height: 1; }
+.how-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); }
+.how-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+
+/* ── BOTTOM CTA ── */
+.cta-section {
+  text-align: center; padding: 96px 56px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(201,164,110,0.08) 0%, transparent 65%);
+  border-top: 1px solid var(--border);
+}
+.cta-title { font-family: var(--fd); font-size: clamp(1.8rem, 3vw, 2.6rem); color: var(--cream); margin-bottom: 12px; line-height: 1.2; }
+.cta-title em { font-style: italic; color: var(--gold-light); }
+.cta-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; }
+
+/* ── FOOTER ── */
+footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; color: rgba(155,142,126,0.5); }
+
+@media (max-width: 900px) {
+  .modules-grid { grid-template-columns: repeat(2, 1fr); }
+  .module-card.wide { grid-column: auto; flex-direction: column; }
+  .module-card.wide .module-tag { margin-left: 0; }
+  .how-grid { grid-template-columns: 1fr; }
+  .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .how-step:last-child { border-bottom: none; }
+}
+@media (max-width: 640px) {
+  nav { padding: 14px 20px; }
+  .hero { padding: 0 20px 60px; }
+  section { padding: 60px 20px; }
+  .hero-stats { gap: 20px; flex-wrap: wrap; }
+  .image-break-content { padding: 0 20px; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .cta-section { padding: 60px 20px; }
+  footer { padding: 20px; flex-direction: column; gap: 8px; text-align: center; }
+  .scroll-hint { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a class="nav-brand" href="index.html">
+    <div class="brand-badge">A</div>
+    <div class="brand-name">Aira</div>
+  </a>
+  <div class="nav-links">
+    <button class="btn-ghost-sm" onclick="window.location.href='login.html'">Log in</button>
+    <button class="btn-gold-sm" onclick="window.location.href='signup.html'">Get started</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><div class="eyebrow-line"></div>For fresh graduates &amp; job seekers</div>
+    <h1 class="hero-title">
+      Turn study hours<br>into <em>real momentum.</em>
+    </h1>
+    <p class="hero-sub">Aira is a structured AI companion built around who you are — not generic templates. Three steps. One clear path from uncertain to unstoppable.</p>
+    <div class="hero-ctas">
+      <button class="btn-hero-primary" onclick="window.location.href='signup.html'">Start for free →</button>
+      <button class="btn-hero-ghost" onclick="window.location.href='login.html'">I have an account</button>
+    </div>
+    <div class="hero-stats">
+      <div class="h-stat"><div class="h-stat-val">3</div><div class="h-stat-label">Focused modules</div></div>
+      <div class="h-stat"><div class="h-stat-val">AI</div><div class="h-stat-label">Personalised to you</div></div>
+      <div class="h-stat"><div class="h-stat-val">1</div><div class="h-stat-label">Clear path forward</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-hint-line"></div>
+    <div class="scroll-hint-text">Scroll</div>
+  </div>
+</div>
+
+<!-- IMAGE BREAK with quote -->
+<div class="image-break">
+  <div class="image-break-bg"></div>
+  <div class="image-break-overlay"></div>
+  <div class="image-break-content reveal">
+    <div>
+      <div class="break-quote">"The gap between where you are and where you want to be is closed by <em>deliberate, structured practice</em> — not wishful thinking."</div>
+      <div class="break-attr">The Aira approach</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULES -->
+<section class="modules-section" id="modules">
+  <div class="modules-header reveal">
+    <div class="section-eyebrow">What Aira gives you</div>
+    <h2 class="section-title">Three steps. Every tool<br>you need to <em>get there.</em></h2>
+    <p class="section-sub">Persona first, then practice. Both paths lead to a downloadable report that proves your growth.</p>
+  </div>
+  <div class="modules-grid">
+
+    <div class="module-card reveal reveal-delay-1">
+      <div class="module-num">Step 01</div>
+      <div class="module-icon-wrap">◈</div>
+      <div class="module-title">Persona</div>
+      <p class="module-desc">Answer 10 deep questions. Aira maps your strengths, learning style, and mindset into a coach profile that personalises every other module.</p>
+      <div class="module-tag">&#10003; Required first</div>
+    </div>
+
+    <div class="module-card reveal reveal-delay-2">
+      <div class="module-num">Step 02 · Option A</div>
+      <div class="module-icon-wrap">⬡</div>
+      <div class="module-title">MCQs</div>
+      <p class="module-desc">Pick any topic. Aira generates interview-style questions tailored to your weak areas and evaluates your answers with a specific study plan.</p>
+      <div class="module-tag">&#9654; Knowledge practice</div>
+    </div>
+
+    <div class="module-card reveal reveal-delay-3">
+      <div class="module-num">Step 02 · Option B</div>
+      <div class="module-icon-wrap">◎</div>
+      <div class="module-title">Soft Skills</div>
+      <p class="module-desc">Practice speaking, delivery, and communication under pressure. Scored on fluency, clarity and confidence — every single session.</p>
+      <div class="module-tag">&#9670; Speaking practice</div>
+    </div>
+
+    <div class="module-card wide reveal reveal-delay-4">
+      <div class="module-icon-wrap">&#9646;</div>
+      <div>
+        <div class="module-num">Step 03</div>
+        <div class="module-title">Report</div>
+        <p class="module-desc">A downloadable summary of your Persona, quiz performance, and soft skills scores. Your evidence of growth — ready to share with recruiters or keep for yourself.</p>
+      </div>
+      <div class="module-tag">&#8595; Downloadable</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="how-wrap">
+    <div class="section-eyebrow reveal">The process</div>
+    <h2 class="section-title reveal">Simple to start,<br><em>structured to stick.</em></h2>
+    <div class="how-grid">
+      <div class="how-step reveal reveal-delay-1">
+        <div class="how-num">01</div>
+        <div class="how-title">Create your account</div>
+        <p class="how-desc">One signup. No subscriptions. Your data stays yours and every module is available from day one.</p>
+      </div>
+      <div class="how-step reveal reveal-delay-2">
+        <div class="how-num">02</div>
+        <div class="how-title">Build your Persona</div>
+        <p class="how-desc">Ten honest questions. Aira generates your AI coach profile — the lens through which every quiz, prompt and plan is personalised for you specifically.</p>
+      </div>
+      <div class="how-step reveal reveal-delay-3">
+        <div class="how-num">03</div>
+        <div class="how-title">Practice, report, repeat</div>
+        <p class="how-desc">MCQs or Soft Skills — your choice. Both build towards a downloadable report. Every session compounds into a clearer, more confident version of you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<div class="cta-section reveal">
+  <h2 class="cta-title">The best day to start was yesterday.<br><em>Today works just fine.</em></h2>
+  <p class="cta-sub">Free. Structured. Built for people who are serious about what comes next.</p>
+  <button class="btn-hero-primary" onclick="window.location.href='signup.html'">Create my account →</button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>&#169; 2026 Aira &middot; Personal study companion</div>
+  <div>Built for fresh graduates &amp; job seekers</div>
+</footer>
+
+<script>
+// Redirect logged-in users
+try { if (localStorage.getItem('aira_user')) { JSON.parse(localStorage.getItem('aira_user')); window.location.replace('Welcome.html'); } } catch(e) {}
+
+// Nav scroll effect
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', function() {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+}, { passive: true });
+
+// Hero bg subtle zoom-in on load
+window.addEventListener('load', function() {
+  document.getElementById('heroBg').classList.add('loaded');
+});
+
+// Scroll reveal with IntersectionObserver
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+
+// Parallax on hero bg
+window.addEventListener('scroll', function() {
+  const y = window.scrollY;
+  const bg = document.getElementById('heroBg');
+  if (bg && y < window.innerHeight) {
+    bg.style.transform = 'scale(1) translateY(' + (y * 0.25) + 'px)';
+  }
+}, { passive: true });
+</script>
+</body>
+</html>

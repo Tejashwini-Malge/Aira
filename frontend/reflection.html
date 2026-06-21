@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speaking Reflection | ReflectIQ</title>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #22c55e;
+      --bg: #0f172a;
+      --glass-bg: rgba(15, 23, 42, 0.85);
+      --glass-soft: rgba(15, 23, 42, 0.9);
+      --glass-border: rgba(148, 163, 184, 0.6);
+      --text-main: #e5e7eb;
+      --text-sub: #9ca3af;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #4f46e5 0%, rgba(15,23,42,1) 36%, #020617 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .layout {
+      width: 100%;
+      max-width: 860px;
+      padding: 20px 16px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #e5e7eb 0, #6366f1 45%, #1d4ed8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f9fafb;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.5);
+      font-size: 0.9rem;
+    }
+
+    .brand-texts {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-texts span:first-child {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .brand-texts span:last-child {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+
+    .header-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      background: rgba(15,23,42,0.7);
+    }
+
+    .nav-btn {
+      font-size: 0.78rem;
+      color: #e5e7eb;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.8);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      margin-bottom: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      border-radius: 18px;
+      padding: 14px 14px 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 16px 38px rgba(15,23,42,0.7);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin: 0 0 6px;
+    }
+
+    .card small {
+      font-size: 0.76rem;
+      color: var(--text-sub);
+    }
+
+    .card.full {
+      grid-column: 1 / -1;
+    }
+
+    .metrics-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .metric-label {
+      min-width: 90px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .metric-bar-bg {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(31,41,55,0.8);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg,#22c55e,#6366f1);
+      transition: width 0.4s ease-out;
+    }
+
+    .metric-score {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .pill {
+      font-size: 0.76rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      color: var(--text-sub);
+      background: rgba(15,23,42,0.9);
+    }
+
+    .pill.good {
+      border-color: rgba(34,197,94,0.9);
+      color: #bbf7d0;
+      background: rgba(22,163,74,0.12);
+    }
+
+    .pill.warn {
+      border-color: rgba(249,115,22,0.9);
+      color: #fed7aa;
+      background: rgba(248,113,22,0.1);
+    }
+
+    .pill.bad {
+      border-color: rgba(248,113,113,0.9);
+      color: #fecaca;
+      background: rgba(248,113,113,0.1);
+    }
+
+    .section-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .summary-text {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e5e7eb;
+    }
+
+    .answers-list {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+      max-height: 190px;
+      overflow-y: auto;
+    }
+
+    .answers-list li {
+      font-size: 0.82rem;
+      color: #e5e7eb;
+      padding: 7px 8px;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(55,65,81,0.8);
+      margin-bottom: 6px;
+    }
+
+    .answers-list span.q-tag {
+      font-size: 0.74rem;
+      color: var(--text-sub);
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .btn-primary {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 18px;
+      background: linear-gradient(120deg,#6366f1,#22c55e);
+      color: #f9fafb;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 26px rgba(15,23,42,0.7);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary {
+      border-radius: 999px;
+      padding: 8px 14px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+      color: var(--text-sub);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .mode-tag {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+
+    .mode-tag span {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 24px;
+      background: #16a34a;
+      color: #f9fafb;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      box-shadow: 0 10px 20px rgba(15,23,42,0.8);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, bottom 0.25s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      bottom: 40px;
+      pointer-events: all;
+    }
+
+    @media (max-width: 720px) {
+      .grid {
+        grid-template-columns: minmax(0,1fr);
+      }
+      .card.full {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="header-row">
+    <div class="brand">
+      <div class="brand-badge">R</div>
+      <div class="brand-texts">
+        <span>ReflectIQ</span>
+        <span>Speaking reflection report</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="chip" id="modeChip">Mode: —</div>
+      <button class="nav-btn" onclick="window.location.href='practice.html'">
+        ‹ Back to practice
+      </button>
+    </div>
+  </div>
+
+  <h1>How did that round feel?</h1>
+  <p class="subtitle">
+    Quick snapshot of your fluency, clarity and confidence based on what you just said.
+  </p>
+
+  <div class="grid">
+    <!-- Metrics + tags -->
+    <div class="card">
+      <div class="section-label">Speaking metrics</div>
+      <h2>Fluency, clarity & confidence</h2>
+      <small>These are rough, self-reported scores. Aim to nudge them up over multiple rounds.</small>
+
+      <div class="metrics-row">
+        <div class="metric">
+          <div class="metric-label">Fluency</div>
+          <div class="metric-bar-bg">
+            <div class="metric-bar-fill" id="fluencyBar"></div>
+          </div>
+          <div class="metric-score" id="fluencyScore">–/10</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Clarity</div>
+          <div class="metric-bar-bg">
+            <div class="metric-bar-fill" id="clarityBar"></div>
+          </div>
+          <div class="metric-score" id="clarityScore">–/10</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Confidence</div>
+          <div class="metric-bar-bg">
+            <div class="metric-bar-fill" id="confidenceBar"></div>
+          </div>
+          <div class="metric-score" id="confidenceScore">–/10</div>
+        </div>
+      </div>
+
+      <div class="pill-row" id="highlightPills">
+        <!-- Generated tags -->
+      </div>
+    </div>
+
+    <!-- Summary + next steps -->
+    <div class="card">
+      <div class="section-label">Quick reflection</div>
+      <h2>Your speaking snapshot</h2>
+      <p class="summary-text" id="summaryText">
+        Loading your answers…
+      </p>
+
+      <div class="actions-row">
+        <button class="btn-primary" id="saveBtn">
+          Save this round
+        </button>
+        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">
+          View overall dashboard
+        </button>
+      </div>
+
+      <p class="mode-tag" id="modeText" style="margin-top:6px;">
+        Mode: —
+      </p>
+    </div>
+
+    <!-- Raw answers -->
+    <div class="card full">
+      <div class="section-label">What you actually said</div>
+      <h2>Transcript snippets</h2>
+      <small>Skim these once. Look for filler words, long pauses, or places you could add one more detail.</small>
+
+      <ul class="answers-list" id="answersList"></ul>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+  // Pull data from localStorage
+  const answers = JSON.parse(localStorage.getItem("answers") || "[]");
+  const mode = localStorage.getItem("mode") || "prompt";
+
+  const fluencyBar = document.getElementById("fluencyBar");
+  const clarityBar = document.getElementById("clarityBar");
+  const confidenceBar = document.getElementById("confidenceBar");
+  const fluencyScoreEl = document.getElementById("fluencyScore");
+  const clarityScoreEl = document.getElementById("clarityScore");
+  const confidenceScoreEl = document.getElementById("confidenceScore");
+  const summaryText = document.getElementById("summaryText");
+  const answersList = document.getElementById("answersList");
+  const modeChip = document.getElementById("modeChip");
+  const modeText = document.getElementById("modeText");
+  const highlightPills = document.getElementById("highlightPills");
+  const toast = document.getElementById("toast");
+  const saveBtn = document.getElementById("saveBtn");
+
+  // Simple heuristic scoring (you can replace with backend later)
+  function scoreSpeaking(ansArray) {
+    if (!ansArray.length) {
+      return { fluency: 0, clarity: 0, confidence: 0 };
+    }
+    const joined = ansArray.join(" ");
+    const wordCount = joined.split(/\s+/).filter(Boolean).length;
+    const avgLength = wordCount / ansArray.length;
+
+    // crude estimates
+    let fluency = Math.min(10, Math.max(2, avgLength / 5));
+    let clarity = Math.min(10, 4 + (wordCount > 60 ? 2 : 0));
+    let confidence = Math.min(10, 4 + (ansArray.length >= 3 ? 3 : 1));
+
+    return {
+      fluency: Math.round(fluency),
+      clarity: Math.round(clarity),
+      confidence: Math.round(confidence)
+    };
+  }
+
+  function setBars(scores) {
+    const fPct = (scores.fluency / 10) * 100;
+    const cPct = (scores.clarity / 10) * 100;
+    const confPct = (scores.confidence / 10) * 100;
+    requestAnimationFrame(() => {
+      fluencyBar.style.width = fPct + "%";
+      clarityBar.style.width = cPct + "%";
+      confidenceBar.style.width = confPct + "%";
+    });
+    fluencyScoreEl.textContent = scores.fluency + "/10";
+    clarityScoreEl.textContent = scores.clarity + "/10";
+    confidenceScoreEl.textContent = scores.confidence + "/10";
+  }
+
+  function buildSummary(scores) {
+    const parts = [];
+    if (scores.fluency >= 8) {
+      parts.push("Your fluency was strong, with answers flowing without long pauses.");
+    } else if (scores.fluency >= 5) {
+      parts.push("Your fluency is decent, but you could reduce small pauses and fillers.");
+    } else {
+      parts.push("You may be pausing often. Try speaking a bit faster and avoiding fillers like “um”.");
+    }
+
+    if (scores.clarity >= 8) {
+      parts.push("Your ideas were clear and easy to follow.");
+    } else if (scores.clarity >= 5) {
+      parts.push("Your ideas are understandable, but you can add more structure (first, then, finally).");
+    } else {
+      parts.push("Work on organizing answers: state a main point, give one example, then end with a short conclusion.");
+    }
+
+    if (scores.confidence >= 8) {
+      parts.push("You sound confident. Keep this tone for real interviews.");
+    } else if (scores.confidence >= 5) {
+      parts.push("You sound somewhat confident; try maintaining steady volume and avoiding phrases like “I’m not sure”.");
+    } else {
+      parts.push("Focus on sounding more sure of yourself, even if the content is simple.");
+    }
+
+    return parts.join(" ");
+  }
+
+  function buildPills(scores) {
+    const items = [];
+
+    if (scores.fluency >= 8) items.push({ text: "Good pace & flow", type: "good" });
+    else if (scores.fluency <= 5) items.push({ text: "Work on reducing pauses", type: "warn" });
+
+    if (scores.clarity >= 8) items.push({ text: "Ideas easy to follow", type: "good" });
+    else if (scores.clarity <= 5) items.push({ text: "Add clearer structure", type: "warn" });
+
+    if (scores.confidence >= 8) items.push({ text: "Strong confident tone", type: "good" });
+    else if (scores.confidence <= 5) items.push({ text: "Practice sounding more sure", type: "bad" });
+
+    if (!items.length) items.push({ text: "Nice warm-up round", type: "good" });
+
+    highlightPills.innerHTML = items
+      .map(i => `<span class="pill ${i.type}">${i.text}</span>`)
+      .join("");
+  }
+
+  function renderAnswers(ansArray) {
+    if (!ansArray.length) {
+      answersList.innerHTML = `<li><span class="q-tag">No responses</span>You didn't record anything this round.</li>`;
+      return;
+    }
+    answersList.innerHTML = ansArray
+      .map((a, idx) => {
+        const label = mode === "prompt" ? "Prompt " + (idx + 1) : "Chunk " + (idx + 1);
+        return `<li><span class="q-tag">${label}</span>${a}</li>`;
+      })
+      .join("");
+  }
+
+  function updateModeUI() {
+    const modeLabel = mode === "free" ? "Free speaking" : "Prompt-based";
+    modeChip.textContent = "Mode: " + modeLabel;
+    modeText.innerHTML =
+      `Mode: <span>${modeLabel}</span> · ` +
+      (mode === "free"
+        ? "Next time, pick one topic and speak for a full minute."
+        : "Next time, try giving one example per question.");
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  // Initialize
+  const scores = scoreSpeaking(answers);
+  setBars(scores);
+  summaryText.textContent = buildSummary(scores);
+  buildPills(scores);
+  renderAnswers(answers);
+  updateModeUI();
+
+  saveBtn.addEventListener("click", async () => {
+    const history = JSON.parse(localStorage.getItem("speakingHistory") || "[]");
+    history.push({
+      timestamp: new Date().toISOString(),
+      mode,
+      scores,
+      answers
+    });
+    localStorage.setItem("speakingHistory", JSON.stringify(history));
+    localStorage.setItem("aira_skills_done", "true");
+
+    // Persist this round to the DB for the logged-in user.
+    try {
+      await fetch("/me/speaking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          fluency: scores.fluency,
+          clarity: scores.clarity,
+          confidence: scores.confidence,
+          summary: buildSummary(scores)
+        })
+      });
+    } catch (e) {}
+    showToast("Saved this speaking round.");
+  });
+</script>
+
+</body>
+</html>

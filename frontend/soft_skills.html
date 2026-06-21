@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira · Soft Skills</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
+  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.42);
+  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
+  --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-height: 100vh; }
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px; border-bottom: 1px solid var(--border);
+  background: rgba(12,10,7,0.96); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.back-btn { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); cursor: pointer; border: 1px solid var(--border); background: none; font-family: var(--fb); padding: 5px 12px; border-radius: 8px; transition: all 0.2s; }
+.back-btn:hover { color: var(--cream); border-color: var(--border-bright); }
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-badge { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%); display: flex; align-items: center; justify-content: center; color: #0C0A07; font-weight: 700; font-size: 0.78rem; }
+.brand-name { font-family: var(--fd); font-size: 0.9rem; font-weight: 600; color: var(--cream); }
+.module-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); border: 1px solid rgba(201,164,110,0.3); padding: 3px 10px; border-radius: 999px; }
+
+.main { max-width: 900px; margin: 0 auto; padding: 44px 40px 80px; }
+
+/* Hero */
+.hero { margin-bottom: 44px; padding-bottom: 36px; border-bottom: 1px solid var(--border); }
+.hero-tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 12px; }
+.hero-title { font-family: var(--fd); font-size: 2rem; color: var(--cream); line-height: 1.2; margin-bottom: 10px; }
+.hero-title em { font-style: italic; color: var(--gold-light); }
+.hero-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.7; max-width: 560px; }
+
+/* Persona pill */
+.persona-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--border-bright); background: rgba(201,164,110,0.06);
+  font-size: 0.76rem; color: var(--cream); margin-top: 16px;
+}
+.persona-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+
+/* Skills grid */
+.section-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 40px; }
+.skill-card {
+  padding: 20px 20px; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--card); transition: all 0.25s;
+}
+.skill-card:hover { border-color: var(--border-bright); background: var(--card-hover); transform: translateY(-2px); }
+.skill-icon { font-size: 1.3rem; margin-bottom: 10px; }
+.skill-name { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 5px; }
+.skill-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+.skill-tag { display: inline-block; margin-top: 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+
+/* What to expect */
+.expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
+.expect-card { padding: 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); text-align: center; }
+.expect-num { font-family: var(--fd); font-size: 1.6rem; color: rgba(201,164,110,0.25); line-height: 1; margin-bottom: 8px; }
+.expect-text { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+.expect-text strong { color: var(--cream); display: block; margin-bottom: 3px; font-size: 0.85rem; }
+
+/* CTA block */
+.cta-block {
+  padding: 28px 28px; border-radius: 16px;
+  border: 1px solid var(--border-bright);
+  background: rgba(201,164,110,0.04);
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  flex-wrap: wrap;
+}
+.cta-text .cta-title { font-family: var(--fd); font-size: 1.1rem; color: var(--cream); margin-bottom: 4px; }
+.cta-text .cta-sub { font-size: 0.82rem; color: var(--muted); }
+.btn-start {
+  padding: 13px 28px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #C9A46E 0%, #E8C97A 50%, #C9A46E 100%);
+  color: #0C0A07; font-size: 0.95rem; font-weight: 700; font-family: var(--fb);
+  cursor: pointer; transition: all 0.25s; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(201,164,110,0.3);
+}
+.btn-start:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(201,164,110,0.45); }
+
+@media (max-width: 640px) {
+  .main { padding: 28px 16px 60px; }
+  .header { padding: 14px 16px; }
+  .skills-grid { grid-template-columns: 1fr; }
+  .expect-grid { grid-template-columns: 1fr; }
+  .cta-block { flex-direction: column; }
+  .btn-start { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <button class="back-btn" onclick="window.location.href='Welcome.html'">&#8592; Dashboard</button>
+    <div class="brand">
+      <div class="brand-badge">A</div>
+      <div class="brand-name">Aira</div>
+    </div>
+  </div>
+  <div class="module-badge">Step 02 · Soft Skills</div>
+</header>
+
+<div class="main">
+
+  <div class="hero">
+    <div class="hero-tag">Step 02 of 03 · Soft Skills practice</div>
+    <h1 class="hero-title">The skills that get you<br><em>hired and help you thrive.</em></h1>
+    <p class="hero-sub">Technical knowledge opens the door. How you communicate, carry yourself, and think under pressure is what keeps you in the room. This module trains that.</p>
+    <div class="persona-pill" id="personaPill" style="display:none">
+      <div class="persona-dot"></div>
+      <span>Personalised for <strong id="personaNamePill">you</strong></span>
+    </div>
+  </div>
+
+  <div class="section-label">What you'll practice</div>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-icon">&#127908;</div>
+      <div class="skill-name">Spoken delivery</div>
+      <p class="skill-desc">Answer prompts out loud. Practice structuring thoughts quickly, speaking clearly, and sounding confident without a script.</p>
+      <div class="skill-tag">Fluency · Pacing</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">&#128172;</div>
+      <div class="skill-name">Communication clarity</div>
+      <p class="skill-desc">Learn to say exactly what you mean without filler words, rambling, or losing the thread mid-answer.</p>
+      <div class="skill-tag">Clarity · Precision</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">&#9650;</div>
+      <div class="skill-name">Confidence under pressure</div>
+      <p class="skill-desc">Simulate interview conditions. Build the muscle of responding calmly and authoritatively even when caught off guard.</p>
+      <div class="skill-tag">Composure · Confidence</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">&#128270;</div>
+      <div class="skill-name">Self-reflection</div>
+      <p class="skill-desc">After every session, review what you said. Spotting your own patterns is how you close the gap between good and great.</p>
+      <div class="skill-tag">Awareness · Growth</div>
+    </div>
+  </div>
+
+  <div class="section-label">What a session looks like</div>
+  <div class="expect-grid">
+    <div class="expect-card">
+      <div class="expect-num">01</div>
+      <div class="expect-text"><strong>Get a prompt</strong>Receive a speaking prompt (guided or free talk mode)</div>
+    </div>
+    <div class="expect-card">
+      <div class="expect-num">02</div>
+      <div class="expect-text"><strong>Speak your answer</strong>Use your mic or type your response in real time</div>
+    </div>
+    <div class="expect-card">
+      <div class="expect-num">03</div>
+      <div class="expect-text"><strong>Get scored</strong>Fluency, clarity and confidence rated after every session</div>
+    </div>
+  </div>
+
+  <div class="cta-block">
+    <div class="cta-text">
+      <div class="cta-title">Ready to practice?</div>
+      <div class="cta-sub">Sessions take 5–15 minutes. The more you do, the sharper your scores.</div>
+    </div>
+    <button class="btn-start" onclick="window.location.href='practice.html'">Start speaking practice &#8594;</button>
+  </div>
+
+</div>
+
+<script>
+// Auth guard
+(function() {
+  const raw = localStorage.getItem('aira_user');
+  if (!raw) { window.location.replace('login.html'); return; }
+  try {
+    const persona = JSON.parse(localStorage.getItem('aira_persona') || '{}');
+    if (persona.name) {
+      document.getElementById('personaNamePill').textContent = persona.name;
+      document.getElementById('personaPill').style.display = 'inline-flex';
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Secrets — never commit real keys
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Local data / generated artifacts
+backend/reports/
+backend/*.db
+backend/answers.json
+backend/persona.json
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db

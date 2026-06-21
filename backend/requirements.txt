@@ -1,0 +1,10 @@
+Flask==3.0.3
+Flask-Cors==4.0.1
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.45
+Werkzeug==3.1.4
+python-dotenv==1.0.1
+requests==2.31.0
+google-generativeai
+pypdf
+python-docx

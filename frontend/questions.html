@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira · Questions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0A07;
+  --card: rgba(255,244,224,0.04);
+  --card-hover: rgba(255,244,224,0.06);
+  --border: rgba(202,156,77,0.18);
+  --border-bright: rgba(202,156,77,0.38);
+  --gold: #C9A46E;
+  --gold-light: #E8C97A;
+  --cream: #F2E8D8;
+  --muted: #9B8E7E;
+  --r: 16px;
+  --fd: 'Playfair Display', Georgia, serif;
+  --fb: 'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--fb); background: var(--bg); color: var(--cream);
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 24px 16px 40px;
+  opacity: 0; transition: opacity 0.5s ease;
+}
+body.loaded { opacity: 1; }
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; right: 0; height: 300px;
+  background: radial-gradient(ellipse at top, rgba(196,149,58,0.07) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.header {
+  max-width: 680px; width: 100%; display: flex;
+  align-items: center; justify-content: space-between; margin-bottom: 36px; position: relative; z-index: 1;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
+  box-shadow: 0 0 16px rgba(201,164,110,0.3);
+}
+.brand-name { font-family: var(--fd); font-size: 0.95rem; font-weight: 600; color: var(--cream); }
+.brand-sub { font-size: 0.7rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.step-pill { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.73rem; color: var(--gold); }
+.nav-back {
+  font-size: 0.76rem; color: var(--muted); cursor: pointer;
+  padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.nav-back:hover { color: var(--cream); border-color: var(--border-bright); }
+
+.container { max-width: 680px; width: 100%; position: relative; z-index: 1; }
+
+.progress-area { margin-bottom: 28px; }
+.progress-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.progress-dots { display: flex; gap: 6px; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,244,224,0.1); border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+.dot.done { background: rgba(201,164,110,0.4); border-color: rgba(201,164,110,0.4); }
+.dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(201,164,110,0.5); transform: scale(1.1); }
+.progress-pct { font-size: 0.74rem; color: var(--muted); }
+.progress-track { height: 3px; border-radius: 999px; background: rgba(255,244,224,0.06); overflow: hidden; }
+.progress-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #C9A46E, #E8C97A); transition: width 0.4s ease-out; }
+
+.page-title { font-family: var(--fd); font-size: 1.5rem; color: var(--cream); margin-bottom: 5px; }
+.page-sub { font-size: 0.84rem; color: var(--muted); margin-bottom: 22px; line-height: 1.55; }
+
+.q-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 24px 22px;
+  animation: fadeUp 0.4s ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.q-meta { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; }
+.q-text { font-family: var(--fd); font-size: 1.1rem; line-height: 1.6; color: var(--cream); margin-bottom: 18px; }
+
+/* Choice options */
+.options-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.option-card {
+  padding: 12px 14px; border-radius: 10px;
+  border: 1px solid var(--border); background: rgba(255,244,224,0.02);
+  cursor: pointer; transition: all 0.18s ease;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.option-card:hover { border-color: var(--border-bright); background: rgba(255,244,224,0.04); }
+.option-card.selected {
+  border-color: var(--gold); background: rgba(201,164,110,0.07);
+  box-shadow: 0 0 0 1px rgba(201,164,110,0.25);
+}
+.option-letter {
+  min-width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--border); display: flex; align-items: center;
+  justify-content: center; font-size: 0.72rem; font-weight: 600;
+  color: var(--muted); flex-shrink: 0; margin-top: 1px;
+  transition: all 0.18s ease;
+}
+.option-card.selected .option-letter {
+  background: var(--gold); border-color: var(--gold); color: #0C0A07;
+}
+.option-text { font-size: 0.86rem; color: var(--muted); line-height: 1.55; transition: color 0.18s; }
+.option-card.selected .option-text { color: var(--cream); }
+
+/* Text input */
+textarea {
+  width: 100%; min-height: 100px; padding: 12px 14px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: rgba(255,244,224,0.03); color: var(--cream);
+  font-size: 0.88rem; font-family: var(--fb); resize: vertical;
+  transition: all 0.2s ease; line-height: 1.6;
+}
+textarea::placeholder { color: rgba(155,142,126,0.5); }
+textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
+
+.q-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+.helper { font-size: 0.76rem; color: var(--muted); font-style: italic; }
+.answer-hint { font-size: 0.76rem; color: var(--gold); margin-top: 12px; display: none; }
+.btn-row { display: flex; gap: 8px; }
+.btn {
+  padding: 9px 20px; border-radius: 10px; border: none;
+  font-size: 0.85rem; font-weight: 600; font-family: var(--fb);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.btn.primary {
+  background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E);
+  color: #0C0A07; box-shadow: 0 6px 18px rgba(201,164,110,0.22);
+}
+.btn.primary:hover { box-shadow: 0 8px 22px rgba(201,164,110,0.35); transform: translateY(-1px); }
+.btn.secondary {
+  background: rgba(255,244,224,0.05); color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { color: var(--cream); border-color: var(--border-bright); }
+.btn:disabled { opacity: 0.35; cursor: default; transform: none !important; }
+
+@media (max-width: 600px) {
+  .header { flex-wrap: wrap; gap: 10px; }
+  .q-footer { flex-direction: column-reverse; align-items: stretch; }
+  .btn-row { justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <div class="brand-badge">A</div>
+    <div>
+      <div class="brand-name">Aira</div>
+      <div class="brand-sub">One question at a time</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="step-pill" id="stepPill">Question 1</div>
+    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Hub</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="progress-area">
+    <div class="progress-meta">
+      <div class="progress-dots" id="progressDots"></div>
+      <div class="progress-pct" id="progressPct">0% done</div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <h2 class="page-title">Shape your AI coach.</h2>
+  <p class="page-sub">These answers help Aira understand who you are — not just what you know. There are no right or wrong answers here.</p>
+
+  <div id="questionArea"></div>
+</div>
+
+<script>
+const API_BASE = "";
+
+// questions: full objects from the bank (with options, type, dimension, etc.)
+// responses: Map of question id → saved answer object
+let questions = [];
+let responses = new Map();
+let currentIndex = 0;
+
+// Free-text answers need real substance, not a single word, before Aira will read them.
+const MIN_TEXT_CHARS = 15;
+
+function currentAnswered() {
+  const q = questions[currentIndex];
+  if (isChoiceBased(q)) {
+    return !!document.querySelector('.option-card.selected');
+  }
+  const ta = document.getElementById('answerInput');
+  return !!ta && ta.value.trim().length >= MIN_TEXT_CHARS;
+}
+
+function updateNextState() {
+  const btn = document.getElementById('nextBtn');
+  const hint = document.getElementById('answerHint');
+  if (!btn) return;
+  const ok = currentAnswered();
+  btn.disabled = !ok;
+  if (hint) hint.style.display = ok ? 'none' : 'block';
+}
+
+window.addEventListener('load', async () => {
+  if (!localStorage.getItem('aira_user')) {
+    window.location.replace('login.html'); return;
+  }
+  // Persona questions are built from the resume — onboarding must come first.
+  try {
+    const r = await fetch(`${API_BASE}/onboarding/status`, { credentials: 'include' });
+    if (r.status === 401) { window.location.replace('login.html'); return; }
+    if (r.ok) {
+      const d = await r.json();
+      if (!d.complete) { window.location.replace('onboarding.html'); return; }
+    }
+  } catch (e) {}
+  document.body.classList.add('loaded');
+  loadQuestions();
+});
+
+function renderDots() {
+  const el = document.getElementById('progressDots');
+  el.innerHTML = questions.map((_, i) => {
+    const cls = i < currentIndex ? 'dot done' : i === currentIndex ? 'dot active' : 'dot';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function updateProgress() {
+  const total = questions.length || 1;
+  const pct = Math.round(((currentIndex + 1) / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '% done';
+  document.getElementById('stepPill').textContent = `Question ${currentIndex + 1} of ${total}`;
+}
+
+function isChoiceBased(q) {
+  return q.options && q.options.length > 0;
+}
+
+function renderQuestion() {
+  const area = document.getElementById('questionArea');
+  if (!questions.length) { area.textContent = 'No questions available.'; return; }
+
+  const q = questions[currentIndex];
+  const saved = responses.get(q.id) || {};
+  const isLast = currentIndex === questions.length - 1;
+
+  let inputHtml;
+  if (isChoiceBased(q)) {
+    const optionsHtml = q.options.map(opt => {
+      const sel = saved.selected_label === opt.label ? ' selected' : '';
+      return `<div class="option-card${sel}" data-label="${opt.label}" data-text="${escHtml(opt.text)}" data-signal="${escHtml(opt.signal || '')}">
+        <div class="option-letter">${opt.label}</div>
+        <div class="option-text">${escHtml(opt.text)}</div>
+      </div>`;
+    }).join('');
+    inputHtml = `<div class="options-list" id="optionsList">${optionsHtml}</div>`;
+  } else {
+    const savedText = saved.answer || '';
+    const ph = q.type === 'reflection'
+      ? 'Write freely — this one is just for you.'
+      : 'Write freely. Aira is listening, not judging.';
+    inputHtml = `<textarea id="answerInput" placeholder="${ph}">${escHtml(savedText)}</textarea>`;
+  }
+
+  const helperText = isChoiceBased(q)
+    ? 'Pick the option that feels most true, not the one that sounds best.'
+    : 'Tip: write like you\'re talking to a trusted friend.';
+
+  area.innerHTML = `
+    <div class="q-card">
+      <div class="q-meta">Persona setup · Question ${currentIndex + 1}</div>
+      <div class="q-text">${escHtml(q.text)}</div>
+      ${inputHtml}
+      <div class="q-footer">
+        <div class="helper">${helperText}</div>
+        <div class="btn-row">
+          <button class="btn secondary" id="prevBtn" ${currentIndex === 0 ? 'disabled' : ''}>‹ Previous</button>
+          <button class="btn primary" id="nextBtn">${isLast ? 'Save & view persona' : 'Next ›'}</button>
+        </div>
+      </div>
+      <div class="answer-hint" id="answerHint">${isChoiceBased(q) ? 'Pick the option that fits you best to continue.' : 'Write a little more so Aira can actually understand you.'}</div>
+    </div>
+  `;
+
+  // Wire up choice cards
+  if (isChoiceBased(q)) {
+    area.querySelectorAll('.option-card').forEach(card => {
+      card.addEventListener('click', () => {
+        area.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        updateNextState();
+      });
+    });
+  } else {
+    const ta = document.getElementById('answerInput');
+    ta.addEventListener('input', updateNextState);
+    ta.focus();
+  }
+
+  updateNextState();
+
+  document.getElementById('prevBtn').onclick = () => {
+    captureAnswer();
+    if (currentIndex > 0) { currentIndex--; refresh(); }
+  };
+  document.getElementById('nextBtn').onclick = async () => {
+    captureAnswer();
+    if (currentIndex < questions.length - 1) {
+      currentIndex++;
+      refresh();
+    } else {
+      const btn = document.getElementById('nextBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        await submitAnswers();
+        window.location.href = 'persona.html';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Save & view persona';
+        const area = document.getElementById('questionArea');
+        const notice = document.createElement('p');
+        notice.style.cssText = 'color:#C9A46E;font-size:0.82rem;margin-top:12px;';
+        notice.textContent = 'Could not save your answers: ' + err.message + '. Make sure you are logged in and try again.';
+        area.appendChild(notice);
+      }
+    }
+  };
+}
+
+function captureAnswer() {
+  const q = questions[currentIndex];
+  if (isChoiceBased(q)) {
+    const selected = document.querySelector('.option-card.selected');
+    if (selected) {
+      responses.set(q.id, {
+        id: q.id,
+        dimension: q.dimension,
+        type: q.type,
+        text: q.text,
+        selected_label: selected.dataset.label,
+        selected_text: selected.dataset.text,
+        signal: selected.dataset.signal,
+      });
+    }
+  } else {
+    const el = document.getElementById('answerInput');
+    if (el) {
+      responses.set(q.id, {
+        id: q.id,
+        dimension: q.dimension,
+        type: q.type,
+        text: q.text,
+        answer: el.value,
+      });
+    }
+  }
+}
+
+function refresh() { renderDots(); updateProgress(); renderQuestion(); }
+
+async function loadQuestions() {
+  try {
+    const res = await fetch(`${API_BASE}/session/get-questions`);
+    if (!res.ok) throw new Error('Failed to load');
+    const data = await res.json();
+    questions = data.questions || [];
+    refresh();
+  } catch (err) {
+    document.getElementById('questionArea').innerHTML =
+      `<div class="q-card"><p style="color:var(--muted);">Could not load questions. Is the backend running?<br><small>${err.message}</small></p></div>`;
+  }
+}
+
+async function submitAnswers() {
+  const payload = questions.map(q => responses.get(q.id) || {
+    id: q.id, dimension: q.dimension, type: q.type, text: q.text,
+  });
+  const res = await fetch(`${API_BASE}/session/save-answers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ responses: payload }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Server error ${res.status}`);
+  }
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

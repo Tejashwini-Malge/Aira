@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira · AI Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
+  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.38);
+  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
+  --r: 16px; --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--fb); background: var(--bg); color: var(--cream);
+  min-height: 100vh; padding: 24px 16px 40px; opacity: 0; transition: opacity 0.5s;
+}
+body.loaded { opacity: 1; }
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; right: 0; height: 300px;
+  background: radial-gradient(ellipse at top, rgba(196,149,58,0.06) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.page { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
+  box-shadow: 0 0 16px rgba(201,164,110,0.3);
+}
+.brand-name { font-family: var(--fd); font-size: 0.95rem; font-weight: 600; color: var(--cream); }
+.brand-sub { font-size: 0.7rem; color: var(--muted); }
+.nav-back { font-size: 0.76rem; color: var(--muted); cursor: pointer; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); transition: all 0.2s; }
+.nav-back:hover { color: var(--cream); border-color: var(--border-bright); }
+
+.page-title { font-family: var(--fd); font-size: 1.6rem; color: var(--cream); margin-bottom: 6px; }
+.page-sub { font-size: 0.84rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 22px 20px; margin-bottom: 16px;
+}
+.card-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 14px; }
+.card-note { font-size: 0.76rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
+
+.topic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+input[type="text"] {
+  flex: 1; min-width: 200px; padding: 10px 13px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: rgba(255,244,224,0.03); color: var(--cream);
+  font-size: 0.9rem; font-family: var(--fb); transition: all 0.2s;
+}
+input::placeholder { color: rgba(155,142,126,0.5); }
+input:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
+
+label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 500; margin-top: 14px; margin-bottom: 5px; }
+label:first-child { margin-top: 0; }
+textarea {
+  width: 100%; min-height: 80px; padding: 11px 13px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: rgba(255,244,224,0.03); color: var(--cream);
+  font-size: 0.86rem; font-family: var(--fb); resize: vertical; line-height: 1.6;
+}
+textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
+
+.btn {
+  padding: 10px 22px; border-radius: 10px; border: none;
+  font-size: 0.88rem; font-weight: 600; font-family: var(--fb);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.btn.primary {
+  background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E);
+  color: #0C0A07; box-shadow: 0 6px 18px rgba(201,164,110,0.22);
+}
+.btn.primary:hover { box-shadow: 0 8px 22px rgba(201,164,110,0.35); transform: translateY(-1px); }
+
+/* Result cards */
+.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.result-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 16px;
+}
+.result-card.full { grid-column: 1 / -1; }
+.result-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 8px; }
+.result-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 10px; }
+.result-body { font-size: 0.83rem; color: var(--muted); line-height: 1.65; }
+.result-list { margin: 0; padding-left: 16px; }
+.result-list li { font-size: 0.82rem; color: var(--muted); margin-bottom: 5px; line-height: 1.5; }
+
+.score-badge {
+  display: inline-block; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--border-bright); color: var(--gold);
+  font-family: var(--fd); font-size: 1.1rem; margin-bottom: 8px;
+}
+
+.loading-state { padding: 32px; text-align: center; color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+@media (max-width: 600px) { .topic-row { flex-direction: column; align-items: stretch; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="brand">
+      <div class="brand-badge">A</div>
+      <div>
+        <div class="brand-name">Aira</div>
+        <div class="brand-sub">Persona-aware quiz</div>
+      </div>
+    </div>
+    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Hub</div>
+  </div>
+
+  <h2 class="page-title">Mock Interview</h2>
+  <p class="page-sub">Aira interviews you using your private profile. Your answers are judged against how you actually work — no two people get the same interview.</p>
+
+  <div class="card" id="modeCard">
+    <div class="card-title">Step 1 · Choose your mode</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
+      <div class="mode-tab active" id="modeRole" onclick="selectMode('role')"
+           style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .18s;">
+        <div style="font-weight:600;color:var(--cream);margin-bottom:4px;">🎤 Role interview</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;">Aira interviews you for your target role, using your resume. No topic needed.</div>
+      </div>
+      <div class="mode-tab" id="modeTopic" onclick="selectMode('topic')"
+           style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .18s;">
+        <div style="font-weight:600;color:var(--cream);margin-bottom:4px;">📚 Topic quiz</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;">Pick any subject — questions are still tuned to you.</div>
+      </div>
+    </div>
+    <div id="roleOptions" style="margin-top:18px;">
+      <div class="opt-label">Round type</div>
+      <div class="opt-row" data-group="type">
+        <span class="opt-pill active" data-val="technical">Technical</span>
+        <span class="opt-pill" data-val="aptitude">Aptitude</span>
+        <span class="opt-pill" data-val="project">Project-based</span>
+      </div>
+      <div class="opt-label">Difficulty</div>
+      <div class="opt-row" data-group="difficulty">
+        <span class="opt-pill" data-val="easy">Easy</span>
+        <span class="opt-pill active" data-val="medium">Medium</span>
+        <span class="opt-pill" data-val="hard">Hard</span>
+      </div>
+      <div class="opt-label">Duration</div>
+      <div class="opt-row" data-group="duration">
+        <span class="opt-pill" data-val="10">10 min</span>
+        <span class="opt-pill active" data-val="20">20 min</span>
+        <span class="opt-pill" data-val="30">30 min</span>
+      </div>
+    </div>
+    <div id="topicRow" class="topic-row" style="display:none;margin-top:14px;">
+      <input type="text" id="topicInput" placeholder="e.g. DBMS, Operating Systems, Python, System Design…">
+    </div>
+    <div style="margin-top:18px;">
+      <button class="btn primary" id="startBtn" onclick="startQuiz()">Start interview →</button>
+    </div>
+  </div>
+
+  <div id="quizContainer"></div>
+  <div id="resultContainer"></div>
+</div>
+
+<style>
+.mode-tab.active { border-color: var(--gold) !important; background: rgba(201,164,110,0.07); box-shadow: 0 0 0 1px rgba(201,164,110,0.25); }
+.mode-tab:hover { border-color: var(--border-bright); }
+
+/* Option pills (type / difficulty / duration) */
+.opt-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); margin:14px 0 8px; }
+.opt-row { display:flex; gap:8px; flex-wrap:wrap; }
+.opt-pill {
+  padding:7px 15px; border-radius:999px; border:1px solid var(--border);
+  font-size:0.82rem; color:var(--muted); cursor:pointer; transition:all .16s ease; user-select:none;
+}
+.opt-pill:hover { border-color:var(--border-bright); color:var(--cream); }
+.opt-pill.active { border-color:var(--gold); background:rgba(201,164,110,0.1); color:var(--cream); font-weight:500; }
+
+/* Interview (one-at-a-time) */
+.iv-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.iv-step { font-size:0.74rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+.iv-timer {
+  display:flex; align-items:center; gap:7px; font-family:var(--fd); font-size:1.05rem; color:var(--gold-light);
+  padding:5px 13px; border-radius:999px; border:1px solid var(--border-bright); background:rgba(201,164,110,0.05);
+}
+.iv-timer.warn { color:#E58A78; border-color:rgba(220,90,70,0.5); background:rgba(220,90,70,0.08); }
+.iv-bar-bg { height:3px; border-radius:999px; background:rgba(255,244,224,0.06); overflow:hidden; margin-bottom:18px; }
+.iv-bar-fill { height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#C9A46E,#E8C97A); transition:width .35s ease; }
+.iv-question { font-family:var(--fd); font-size:1.18rem; line-height:1.55; color:var(--cream); margin-bottom:16px; }
+.iv-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.btn.ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+.btn.ghost:hover { color:var(--cream); border-color:var(--border-bright); }
+
+/* Structured result pieces */
+.score-line { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.weak-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.weak-chip {
+  font-size:0.8rem; color:var(--cream); padding:6px 12px; border-radius:999px;
+  border:1px solid var(--border-bright); background:rgba(201,164,110,0.06);
+}
+.plan-steps { list-style:none; margin:12px 0 0; padding:0; counter-reset:step; }
+.plan-steps li {
+  position:relative; padding:8px 0 8px 30px; font-size:0.83rem; color:var(--muted); line-height:1.55;
+  border-top:1px solid rgba(255,244,224,0.05);
+}
+.plan-steps li:before {
+  counter-increment:step; content:counter(step);
+  position:absolute; left:0; top:8px; width:20px; height:20px; border-radius:50%;
+  background:rgba(201,164,110,0.14); color:var(--gold); font-size:0.72rem; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* Resources */
+.res-group { margin-bottom:16px; }
+.res-group:last-child { margin-bottom:0; }
+.res-area { font-size:0.8rem; color:var(--gold-light); font-weight:600; margin-bottom:8px; }
+.res-items { display:flex; flex-direction:column; gap:8px; }
+.res-item {
+  display:flex; align-items:center; gap:12px; text-decoration:none;
+  padding:11px 13px; border-radius:10px; border:1px solid var(--border);
+  background:rgba(255,244,224,0.02); transition:all .18s ease;
+}
+.res-item:hover { border-color:var(--border-bright); background:rgba(255,244,224,0.05); transform:translateY(-1px); }
+.res-icon { width:30px; height:30px; flex-shrink:0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; }
+.res-video { background:rgba(220,90,70,0.16); color:#E58A78; }
+.res-blog  { background:rgba(110,150,210,0.16); color:#8FB2E0; }
+.res-paper { background:rgba(150,120,200,0.16); color:#B69BE0; }
+.res-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.res-title { font-size:0.84rem; color:var(--cream); line-height:1.4; }
+.res-type { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+.res-open { color:var(--muted); font-size:0.9rem; flex-shrink:0; }
+.res-item:hover .res-open { color:var(--gold); }
+</style>
+
+<script>
+window.addEventListener('load', () => document.body.classList.add('loaded'));
+const API_BASE = ""; // same-origin: lets the session cookie flow
+
+// The persona is PRIVATE — it lives only on the server. The client never holds it
+// and never sends it. The backend reads it to shape questions and feedback.
+let selectedMode = "role";   // "role" | "topic"
+let activeLabel = "";        // role or topic label returned by the server
+const opts = { type: "technical", difficulty: "medium", duration: "20" };
+
+// Interview runtime state
+let ivQuestions = [], ivAnswers = {}, ivIndex = 0, ivTimerId = null, ivRemaining = 0, ivSubmitting = false;
+
+function selectMode(mode) {
+  selectedMode = mode;
+  document.getElementById("modeRole").classList.toggle("active", mode === "role");
+  document.getElementById("modeTopic").classList.toggle("active", mode === "topic");
+  document.getElementById("roleOptions").style.display = mode === "role" ? "block" : "none";
+  document.getElementById("topicRow").style.display = mode === "topic" ? "flex" : "none";
+  document.getElementById("startBtn").textContent = mode === "topic" ? "Start quiz →" : "Start interview →";
+}
+
+// Wire option pills (round type / difficulty / duration)
+document.querySelectorAll(".opt-row").forEach(row => {
+  const group = row.dataset.group;
+  row.querySelectorAll(".opt-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      row.querySelectorAll(".opt-pill").forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      opts[group] = pill.dataset.val;
+    });
+  });
+});
+
+async function startQuiz() {
+  let topic = "";
+  if (selectedMode === "topic") {
+    topic = document.getElementById("topicInput").value.trim();
+    if (!topic) { document.getElementById("topicInput").focus(); return; }
+  }
+  const qc = document.getElementById("quizContainer");
+  document.getElementById("resultContainer").innerHTML = "";
+  document.getElementById("modeCard").style.display = "none";
+  qc.innerHTML = `<div class="card"><div class="loading-state">${
+    selectedMode === "role" ? "Aira is preparing your interview…" : `Generating questions for <em>${topic}</em>…`
+  }</div></div>`;
+
+  const payload = { mode: selectedMode, topic };
+  if (selectedMode === "role") Object.assign(payload, opts);
+
+  try {
+    const res = await fetch(`${API_BASE}/quiz/generate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    ivQuestions = Array.isArray(data.questions) ? data.questions : [];
+    activeLabel = data.topic || topic || "your interview";
+    if (!ivQuestions.length) { qc.innerHTML = `<div class="card"><p style="color:var(--muted);">No questions generated.</p></div>`; return; }
+    beginInterview();
+  } catch (err) {
+    qc.innerHTML = `<div class="card"><p style="color:var(--muted);">Could not start the interview. Is the backend running?<br><small>${err.message}</small></p></div>`;
+  }
+}
+
+// ---- One-question-at-a-time interview ----
+function beginInterview() {
+  ivAnswers = {}; ivIndex = 0; ivSubmitting = false;
+  const timed = selectedMode === "role";
+  if (timed) {
+    ivRemaining = (parseInt(opts.duration, 10) || 20) * 60;
+    startTimer();
+  }
+  renderQuestion();
+}
+
+function startTimer() {
+  clearInterval(ivTimerId);
+  ivTimerId = setInterval(() => {
+    ivRemaining--;
+    updateTimerDisplay();
+    if (ivRemaining <= 0) { clearInterval(ivTimerId); finishInterview(true); }
+  }, 1000);
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById("ivTimer");
+  if (!el) return;
+  el.textContent = "⏱ " + fmtTime(Math.max(0, ivRemaining));
+  el.classList.toggle("warn", ivRemaining <= 60);
+}
+
+function saveCurrent() {
+  const ta = document.getElementById("ivAnswer");
+  if (ta) ivAnswers[`Q${ivQuestions[ivIndex].id}`] = ta.value.trim();
+}
+
+function renderQuestion() {
+  const timed = selectedMode === "role";
+  const q = ivQuestions[ivIndex];
+  const total = ivQuestions.length;
+  const saved = ivAnswers[`Q${q.id}`] || "";
+  const isLast = ivIndex === total - 1;
+  const pct = Math.round(((ivIndex) / total) * 100);
+
+  const qc = document.getElementById("quizContainer");
+  qc.innerHTML = `
+    <div class="card">
+      <div class="iv-top">
+        <div class="iv-step">${selectedMode === "role"
+            ? `${opts.type} · ${opts.difficulty} · Question ${ivIndex + 1} of ${total}`
+            : `Question ${ivIndex + 1} of ${total}`}</div>
+        ${timed ? `<div class="iv-timer" id="ivTimer">⏱ ${fmtTime(ivRemaining)}</div>` : ""}
+      </div>
+      <div class="iv-bar-bg"><div class="iv-bar-fill" style="width:${pct}%"></div></div>
+      <div class="iv-question">${escAttr(q.question)}</div>
+      <textarea id="ivAnswer" placeholder="Answer out loud or in writing — explain your thinking.">${escAttr(saved)}</textarea>
+      <div class="iv-actions">
+        <button class="btn ghost" id="ivPrev" ${ivIndex === 0 ? "disabled style='opacity:.4;cursor:not-allowed;'" : ""}>‹ Previous</button>
+        <button class="btn primary" id="ivNext">${isLast ? "Finish & get feedback →" : "Next question ›"}</button>
+      </div>
+    </div>`;
+  updateTimerDisplay();
+
+  document.getElementById("ivPrev").onclick = () => { if (ivIndex > 0) { saveCurrent(); ivIndex--; renderQuestion(); } };
+  document.getElementById("ivNext").onclick = () => {
+    saveCurrent();
+    if (isLast) { finishInterview(false); }
+    else { ivIndex++; renderQuestion(); }
+  };
+  document.getElementById("ivAnswer").focus();
+}
+
+async function finishInterview(timedOut) {
+  if (ivSubmitting) return;
+  ivSubmitting = true;
+  saveCurrent();
+  clearInterval(ivTimerId);
+
+  const qc = document.getElementById("quizContainer");
+  qc.innerHTML = `<div class="card"><div class="loading-state">${
+    timedOut ? "Time's up! Reviewing what you got through…" : "Evaluating your interview…"
+  }</div></div>`;
+  const rc = document.getElementById("resultContainer");
+
+  // Send the full question→answer transcript so feedback is about THIS session,
+  // not generic. (answers kept for backward compatibility.)
+  const qa = ivQuestions.map(q => ({ question: q.question, answer: ivAnswers[`Q${q.id}`] || "" }));
+  const payload = { qa, answers: ivAnswers, topic: activeLabel, mode: selectedMode };
+  if (selectedMode === "role") { payload.type = opts.type; payload.difficulty = opts.difficulty; }
+
+  try {
+    const res = await fetch(`${API_BASE}/quiz/evaluate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include", body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    qc.innerHTML = "";
+    renderResults(data.feedback, activeLabel);
+  } catch (err) {
+    rc.innerHTML = `<div class="card"><p style="color:var(--muted);">Evaluation failed: ${err.message}</p></div>`;
+  }
+}
+
+function escAttr(s) { return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function renderResults(fb, topic) {
+  if (!fb) return;
+  // Mark Module 02 complete and store result for report
+  localStorage.setItem('aira_mcq_done', 'true');
+  const quizCount = parseInt(localStorage.getItem('aira_quiz_count') || '0') + 1;
+  localStorage.setItem('aira_quiz_count', quizCount);
+  localStorage.setItem('aira_quiz_result', JSON.stringify({ topic: topic, feedback: fb.feedback || '', study_plan: fb.study_plan || '' }));
+
+  const rc = document.getElementById("resultContainer");
+  rc.innerHTML = "";
+
+  const esc = s => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const weak = fb.weak_areas && fb.weak_areas.length ? fb.weak_areas : ["None identified"];
+  const suggestions = fb.suggestions || [];
+  const resources = fb.resources || [];
+
+  const resourcesHtml = resources.length ? `
+    <div class="result-card full">
+      <div class="result-label">Resources to help</div>
+      <div class="result-title">Where to get stronger</div>
+      <div class="result-body" style="margin-bottom:14px;">Hand-picked starting points for the areas you slipped on. Each opens a live search — pick what fits you.</div>
+      ${resources.map(g => `
+        <div class="res-group">
+          <div class="res-area">${esc(g.area)}</div>
+          <div class="res-items">
+            ${(g.items || []).map(it => `
+              <a class="res-item" href="${encodeURI(it.url)}" target="_blank" rel="noopener noreferrer">
+                <span class="res-icon res-${esc(it.type)}">${esc(it.icon)}</span>
+                <span class="res-text">
+                  <span class="res-title">${esc(it.title)}</span>
+                  <span class="res-type">${esc(it.type)}</span>
+                </span>
+                <span class="res-open">↗</span>
+              </a>`).join("")}
+          </div>
+        </div>`).join("")}
+    </div>` : "";
+
+  const grid = document.createElement("div");
+  grid.className = "results-grid";
+  grid.innerHTML = `
+    <div class="result-card full">
+      <div class="result-label">Step 3 · Feedback</div>
+      <div class="score-line">
+        ${fb.score ? `<span class="score-badge">${esc(fb.score)}</span>` : ""}
+        <span class="result-title" style="margin:0;">What Aira observed</span>
+      </div>
+      <div class="result-body">${esc(fb.feedback) || "No feedback available."}</div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-label">Weak areas</div>
+      <div class="result-title">Focus here next</div>
+      <div class="weak-chips">${weak.map(w => `<span class="weak-chip">${esc(w)}</span>`).join("")}</div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-label">Study plan</div>
+      <div class="result-title">Your next steps</div>
+      <div class="result-body">${esc(fb.study_plan) || "—"}</div>
+      ${suggestions.length ? `<ol class="plan-steps">${suggestions.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
+    </div>
+
+    ${resourcesHtml}
+
+    <div class="result-card full">
+      <div class="result-label">Up next</div>
+      <div class="result-title">Ready to apply this plan?</div>
+      <div class="result-body" style="margin-bottom:14px;">Save this plan and come back after 1–2 focused sessions. Consistency is what moves the needle.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn primary" onclick="window.location.href='Welcome.html'">Back to session hub →</button>
+        <button class="btn ghost" onclick="window.location.reload()">New interview</button>
+      </div>
+    </div>
+  `;
+  rc.appendChild(grid);
+}
+</script>
+</body>
+</html>
