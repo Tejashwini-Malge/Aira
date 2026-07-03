@@ -5,159 +5,310 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Soft Skills</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
-  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.42);
-  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
-  --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-height: 100vh; }
+* { margin: 0; padding: 0; }
 
 .header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 40px; border-bottom: 1px solid var(--border);
-  background: rgba(12,10,7,0.96); backdrop-filter: blur(10px);
+  padding: 12px 40px; border-bottom: 2px dashed var(--dash);
+  background: rgba(18,38,28,0.95); backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 10;
 }
 .header-left { display: flex; align-items: center; gap: 14px; }
-.back-btn { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); cursor: pointer; border: 1px solid var(--border); background: none; font-family: var(--fb); padding: 5px 12px; border-radius: 8px; transition: all 0.2s; }
-.back-btn:hover { color: var(--cream); border-color: var(--border-bright); }
+.back-btn { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); cursor: pointer; border: 1.5px dashed var(--dash); background: none; font-family: var(--fb); padding: 5px 12px; border-radius: 8px; transition: all 0.2s; }
+.back-btn:hover { color: var(--chalk); border-color: var(--chalk); }
 .brand { display: flex; align-items: center; gap: 8px; }
-.brand-badge { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%); display: flex; align-items: center; justify-content: center; color: #0C0A07; font-weight: 700; font-size: 0.78rem; }
-.brand-name { font-family: var(--fd); font-size: 0.9rem; font-weight: 600; color: var(--cream); }
-.module-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); border: 1px solid rgba(201,164,110,0.3); padding: 3px 10px; border-radius: 999px; }
+.brand-badge { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%); display: flex; align-items: center; justify-content: center; color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 0.9rem; }
+.brand-name { font-family: var(--fd); font-size: 0.95rem; color: var(--chalk); }
+.module-badge { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.4); padding: 3px 10px; border-radius: 999px; }
 
-.main { max-width: 900px; margin: 0 auto; padding: 44px 40px 80px; }
+.main { max-width: 900px; margin: 0 auto; padding: 44px 40px 80px; position: relative; z-index: 1; }
 
 /* Hero */
-.hero { margin-bottom: 44px; padding-bottom: 36px; border-bottom: 1px solid var(--border); }
-.hero-tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 12px; }
-.hero-title { font-family: var(--fd); font-size: 2rem; color: var(--cream); line-height: 1.2; margin-bottom: 10px; }
-.hero-title em { font-style: italic; color: var(--gold-light); }
-.hero-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.7; max-width: 560px; }
+.hero { margin-bottom: 40px; }
+.hero-title { font-size: 2.2rem; line-height: 1.25; margin: 10px 0; }
+.hero-sub { font-size: 0.95rem; color: var(--muted); line-height: 1.7; max-width: 560px; }
 
 /* Persona pill */
 .persona-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 7px 14px; border-radius: 999px;
-  border: 1px solid var(--border-bright); background: rgba(201,164,110,0.06);
-  font-size: 0.76rem; color: var(--cream); margin-top: 16px;
+  border: 1.5px dashed rgba(242,226,160,0.4);
+  font-size: 0.8rem; color: var(--chalk); margin-top: 16px;
 }
-.persona-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+.persona-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-yellow); }
+
+/* ══════════════════════════════════════════════════
+   THE JOURNEY — from the green board to AI.
+   A horizontal timeline of eras; the viewer scrolls
+   through school memories and lands on "today".
+   ══════════════════════════════════════════════════ */
+.journey-wrap { margin: 30px 0 60px; }
+.journey-heading { text-align: center; margin-bottom: 8px; }
+.journey-heading .jh-title { font-size: 1.8rem; }
+.journey-heading .jh-sub { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
+
+.era-track { position: relative; margin-top: 40px; }
+/* the chalk line running down the middle */
+.era-track::before {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px;
+  background: repeating-linear-gradient(180deg, var(--chalk-faint) 0 10px, transparent 10px 18px);
+  transform: translateX(-50%);
+}
+.era {
+  display: flex; align-items: center; gap: 30px; margin-bottom: 46px;
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.era.visible { opacity: 1; transform: translateY(0); }
+.era:nth-child(even) { flex-direction: row-reverse; }
+.era-half { flex: 1; }
+.era-art {
+  display: flex; justify-content: flex-end;
+}
+.era:nth-child(even) .era-art { justify-content: flex-start; }
+.era-dot {
+  position: relative; z-index: 2; flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 2.5px dashed var(--chalk-faint);
+  background: var(--board);
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.era.now .era-dot { border-style: solid; border-color: var(--chalk-yellow); box-shadow: 0 0 22px rgba(242,226,160,0.25); }
+.era-year { font-family: var(--fd); font-size: 1rem; color: var(--chalk-yellow); margin-bottom: 4px; }
+.era-name { font-family: var(--fd); font-size: 1.3rem; color: var(--chalk); margin-bottom: 6px; }
+.era-desc { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.6; max-width: 340px; }
+.era:nth-child(odd) .era-half.text { text-align: right; }
+.era:nth-child(odd) .era-half.text .era-desc { margin-left: auto; }
+
+/* Era illustrations — little inline SVG scenes */
+.era-scene {
+  width: 200px; height: 130px; border-radius: 10px;
+  border: 2px dashed var(--dash); padding: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.4s ease, border-color 0.4s ease;
+}
+.era:hover .era-scene { transform: scale(1.05) rotate(-0.5deg); border-color: rgba(244,241,228,0.5); }
+.era.now .era-scene { border-style: solid; border-color: rgba(242,226,160,0.55); }
+.era-scene svg { width: 100%; height: 100%; }
 
 /* Skills grid */
-.section-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; font-family: var(--fb); }
+.section-label::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 8px, transparent 8px 13px); }
 
-.skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
-.skill-card {
-  padding: 20px 20px; border-radius: 14px; border: 1px solid var(--border);
-  background: var(--card); transition: all 0.25s; cursor: pointer;
-}
-.skill-card:hover { border-color: var(--border-bright); background: var(--card-hover); transform: translateY(-2px); }
-.skill-card.selected { border-color: var(--gold); background: rgba(201,164,110,0.07); box-shadow: 0 0 0 1px rgba(201,164,110,0.25); }
+.skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+.skill-card { padding: 22px 20px; cursor: pointer; }
+.skill-card:hover { transform: translateY(-3px); }
+.skill-card.selected { border-color: var(--chalk-yellow); border-style: solid; background: rgba(242,226,160,0.05); }
 .skill-icon { font-size: 1.3rem; margin-bottom: 10px; }
-.skill-name { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 5px; }
-.skill-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
-.skill-tag { display: inline-block; margin-top: 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+.skill-name { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 5px; }
+.skill-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+.skill-tag { display: inline-block; margin-top: 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.35); padding: 2px 8px; border-radius: 999px; }
 
 /* Teach panel (framework + example from the server) */
-.teach-panel { margin-bottom: 40px; border: 1px solid var(--border-bright); border-radius: 16px; background: rgba(201,164,110,0.04); padding: 26px 26px; }
-.teach-loading { color: var(--muted); font-style: italic; font-size: 0.86rem; }
-.fw-name { font-family: var(--fd); font-size: 1.2rem; color: var(--gold-light); margin-bottom: 6px; }
-.fw-why { font-size: 0.86rem; color: var(--muted); line-height: 1.65; margin-bottom: 16px; }
+.teach-panel { margin-bottom: 40px; border: 2px solid rgba(242,226,160,0.4); border-radius: 12px; padding: 26px 26px; background: rgba(242,226,160,0.03); }
+.teach-loading { color: var(--muted); font-style: italic; font-size: 0.88rem; }
+.fw-name { font-family: var(--fd); font-size: 1.35rem; color: var(--chalk-yellow); margin-bottom: 6px; }
+.fw-why { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.65; margin-bottom: 16px; }
 .fw-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.fw-step { font-size: 0.78rem; color: var(--cream); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; }
+.fw-step { font-size: 0.8rem; color: var(--chalk); border: 1.5px dashed var(--dash); border-radius: 999px; padding: 5px 12px; }
 .fw-step span { color: var(--muted); }
-.fw-example-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 6px; }
-.fw-example { font-size: 0.88rem; color: var(--cream); line-height: 1.7; font-style: italic; border-left: 2px solid var(--border-bright); padding-left: 14px; margin-bottom: 18px; }
+.fw-example-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 6px; opacity: 0.85; }
+.fw-example { font-size: 0.9rem; color: var(--chalk); line-height: 1.7; font-style: italic; border-left: 3px solid rgba(242,226,160,0.5); padding-left: 14px; margin-bottom: 18px; }
 .project-pick { margin-bottom: 18px; }
-.project-pick label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; }
+.project-pick label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
 .project-pick select {
-  width: 100%; max-width: 420px; padding: 10px 12px; border-radius: 10px;
-  border: 1px solid var(--border); background: #14110B; color: var(--cream);
-  font-family: var(--fb); font-size: 0.86rem;
+  width: 100%; max-width: 420px; padding: 10px 12px; border-radius: 8px;
+  border: 1.5px dashed var(--dash); background: #16311f; color: var(--chalk);
+  font-family: var(--fb); font-size: 0.88rem;
 }
 
 /* What to expect */
-.expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
-.expect-card { padding: 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); text-align: center; }
-.expect-num { font-family: var(--fd); font-size: 1.6rem; color: rgba(201,164,110,0.25); line-height: 1; margin-bottom: 8px; }
-.expect-text { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
-.expect-text strong { color: var(--cream); display: block; margin-bottom: 3px; font-size: 0.85rem; }
+.expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+.expect-card { padding: 18px; text-align: center; }
+.expect-num { font-family: var(--fd); font-size: 1.7rem; color: rgba(244,241,228,0.2); line-height: 1; margin-bottom: 8px; }
+.expect-text { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+.expect-text strong { color: var(--chalk); display: block; margin-bottom: 3px; font-size: 0.88rem; font-family: var(--fd); }
 
 /* CTA block */
 .cta-block {
-  padding: 28px 28px; border-radius: 16px;
-  border: 1px solid var(--border-bright);
-  background: rgba(201,164,110,0.04);
+  padding: 28px 28px; border-radius: 12px;
+  border: 2px solid rgba(242,226,160,0.4);
+  background: rgba(242,226,160,0.03);
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   flex-wrap: wrap;
 }
-.cta-text .cta-title { font-family: var(--fd); font-size: 1.1rem; color: var(--cream); margin-bottom: 4px; }
-.cta-text .cta-sub { font-size: 0.82rem; color: var(--muted); }
-.btn-start {
-  padding: 13px 28px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, #C9A46E 0%, #E8C97A 50%, #C9A46E 100%);
-  color: #0C0A07; font-size: 0.95rem; font-weight: 700; font-family: var(--fb);
-  cursor: pointer; transition: all 0.25s; white-space: nowrap;
-  box-shadow: 0 6px 20px rgba(201,164,110,0.3);
-}
-.btn-start:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(201,164,110,0.45); }
+.cta-text .cta-title { font-family: var(--fd); font-size: 1.25rem; color: var(--chalk); margin-bottom: 4px; }
+.cta-text .cta-sub { font-size: 0.84rem; color: var(--muted); }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .main { padding: 28px 16px 60px; }
-  .header { padding: 14px 16px; }
+  .header { padding: 12px 16px; }
   .skills-grid { grid-template-columns: 1fr; }
   .expect-grid { grid-template-columns: 1fr; }
   .cta-block { flex-direction: column; }
-  .btn-start { width: 100%; }
+  /* timeline collapses to single column */
+  .era-track::before { left: 22px; }
+  .era, .era:nth-child(even) { flex-direction: column; align-items: flex-start; gap: 12px; padding-left: 54px; position: relative; }
+  .era-dot { position: absolute; left: 0; top: 0; }
+  .era:nth-child(odd) .era-half.text { text-align: left; }
+  .era:nth-child(odd) .era-half.text .era-desc { margin-left: 0; }
+  .era-art, .era:nth-child(even) .era-art { justify-content: flex-start; }
 }
 </style>
 </head>
-<body>
+<body class="board">
 
 <header class="header">
   <div class="header-left">
-    <button class="back-btn" onclick="window.location.href='Welcome.html'">&#8592; Dashboard</button>
+    <button class="back-btn" onclick="window.location.href='Welcome.html'">&#8592; Classroom</button>
     <div class="brand">
       <div class="brand-badge">A</div>
       <div class="brand-name">Aira</div>
     </div>
   </div>
-  <div class="module-badge">Step 02 · Soft Skills</div>
+  <div class="module-badge">Period 02 · Soft Skills</div>
 </header>
 
 <div class="main">
 
   <div class="hero">
-    <div class="hero-tag">Step 02 of 03 · Soft Skills practice</div>
-    <h1 class="hero-title">The skills that get you<br><em>hired and help you thrive.</em></h1>
-    <p class="hero-sub">Technical knowledge opens the door. How you communicate, carry yourself, and think under pressure is what keeps you in the room. This module trains that.</p>
+    <div class="chalk-tag">Period 02 of 03 · Elocution &amp; expression</div>
+    <h1 class="chalk-title hero-title">The skills that get you<br><em>hired and help you thrive.</em></h1>
+    <p class="hero-sub chalk-sub">Technical knowledge opens the door. How you communicate, carry yourself, and think under pressure is what keeps you in the room. This period trains exactly that.</p>
     <div class="persona-pill" id="personaPill" style="display:none">
       <div class="persona-dot"></div>
       <span>Personalised for <strong id="personaNamePill">you</strong></span>
     </div>
   </div>
 
+  <!-- ═══ THE JOURNEY: from the green board to AI ═══ -->
+  <div class="journey-wrap">
+    <div class="journey-heading">
+      <div class="chalk-tag">How far we've come</div>
+      <h2 class="chalk-title jh-title">From the green board<br>to <em>a coach that knows you.</em></h2>
+      <p class="jh-sub chalk-sub">Speaking practice has always been part of school. Only the tools changed.</p>
+    </div>
+
+    <div class="era-track">
+
+      <!-- Era 1: the green board -->
+      <div class="era">
+        <div class="era-half text">
+          <div class="era-year">The early 2000s</div>
+          <div class="era-name">The green board era</div>
+          <p class="era-desc">Chalk squeaking, duster clouds, and "stand up and read your essay aloud." One teacher, forty students, and thirty seconds of feedback if you were lucky.</p>
+        </div>
+        <div class="era-dot">🖍️</div>
+        <div class="era-half era-art">
+          <div class="era-scene">
+            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="12" width="160" height="86" rx="4" fill="#16311f" stroke="rgba(244,241,228,0.4)" stroke-width="2"/>
+              <rect x="14" y="98" width="172" height="8" rx="2" fill="#7a5230"/>
+              <text x="36" y="42" font-family="Schoolbell, cursive" font-size="15" fill="rgba(244,241,228,0.8)">a b c d…</text>
+              <path d="M36 58 Q 70 52 104 58 T 164 56" stroke="rgba(244,241,228,0.45)" stroke-width="2" fill="none"/>
+              <path d="M36 74 Q 66 70 96 74 T 148 73" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
+              <rect x="30" y="99" width="18" height="5" rx="2" fill="#f4f1e4"/>
+              <rect x="54" y="99" width="22" height="6" rx="2" fill="#5a3a20" stroke="rgba(0,0,0,0.3)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Era 2: whiteboard -->
+      <div class="era">
+        <div class="era-half text">
+          <div class="era-year">The 2010s</div>
+          <div class="era-name">Whiteboards &amp; projectors</div>
+          <p class="era-desc">Markers replaced chalk, slides replaced handwriting. Group discussions and PowerPoint presentations — but feedback was still one-size-fits-all.</p>
+        </div>
+        <div class="era-dot">📽️</div>
+        <div class="era-half era-art">
+          <div class="era-scene">
+            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+              <rect x="24" y="14" width="152" height="84" rx="4" fill="rgba(244,241,228,0.85)" stroke="rgba(244,241,228,0.5)" stroke-width="2"/>
+              <line x1="40" y1="36" x2="120" y2="36" stroke="#2266aa" stroke-width="3" stroke-linecap="round"/>
+              <line x1="40" y1="52" x2="150" y2="52" stroke="#cc3344" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="40" y1="66" x2="132" y2="66" stroke="#117744" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="150" cy="82" r="9" fill="none" stroke="#2266aa" stroke-width="2.5"/>
+              <rect x="86" y="102" width="28" height="6" rx="3" fill="rgba(244,241,228,0.35)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Era 3: online -->
+      <div class="era">
+        <div class="era-half text">
+          <div class="era-year">The 2020s</div>
+          <div class="era-name">Screens &amp; video calls</div>
+          <p class="era-desc">Classrooms moved into laptops. Recorded lectures, video interviews, online tests — practice anywhere, but still nobody listening to <em>how you speak</em>.</p>
+        </div>
+        <div class="era-dot">💻</div>
+        <div class="era-half era-art">
+          <div class="era-scene">
+            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+              <rect x="46" y="18" width="108" height="70" rx="6" fill="#16311f" stroke="rgba(244,241,228,0.5)" stroke-width="2"/>
+              <rect x="58" y="30" width="38" height="28" rx="3" fill="none" stroke="rgba(244,241,228,0.4)" stroke-width="1.5"/>
+              <circle cx="77" cy="41" r="6" fill="none" stroke="rgba(244,241,228,0.5)" stroke-width="1.5"/>
+              <path d="M68 56 Q 77 48 86 56" stroke="rgba(244,241,228,0.5)" stroke-width="1.5" fill="none"/>
+              <rect x="104" y="30" width="38" height="28" rx="3" fill="none" stroke="rgba(242,226,160,0.5)" stroke-width="1.5"/>
+              <circle cx="123" cy="41" r="6" fill="none" stroke="rgba(242,226,160,0.6)" stroke-width="1.5"/>
+              <path d="M114 56 Q 123 48 132 56" stroke="rgba(242,226,160,0.6)" stroke-width="1.5" fill="none"/>
+              <rect x="58" y="66" width="84" height="12" rx="3" fill="rgba(244,241,228,0.12)"/>
+              <path d="M38 92 L162 92 L172 104 L28 104 Z" fill="rgba(244,241,228,0.25)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Era 4: NOW — Aira -->
+      <div class="era now">
+        <div class="era-half text">
+          <div class="era-year">Today · you are here</div>
+          <div class="era-name">An AI that actually listens</div>
+          <p class="era-desc">Aira hears every word, scores your fluency, clarity and confidence, and coaches you one-on-one — the personal attention the green board era never had time for. Same classroom soul. A teacher for every single student.</p>
+        </div>
+        <div class="era-dot">✨</div>
+        <div class="era-half era-art">
+          <div class="era-scene">
+            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="100" cy="56" r="30" fill="none" stroke="rgba(242,226,160,0.7)" stroke-width="2.5" stroke-dasharray="6 5"/>
+              <text x="100" y="66" font-family="Schoolbell, cursive" font-size="26" fill="#f2e2a0" text-anchor="middle">A</text>
+              <path d="M42 56 Q 55 40 68 56" stroke="rgba(244,241,228,0.5)" stroke-width="2" fill="none"/>
+              <path d="M34 56 Q 52 30 72 56" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
+              <path d="M132 56 Q 145 40 158 56" stroke="rgba(244,241,228,0.5)" stroke-width="2" fill="none"/>
+              <path d="M128 56 Q 148 30 166 56" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
+              <line x1="70" y1="102" x2="74" y2="90" stroke="rgba(183,217,168,0.8)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="84" y1="102" x2="88" y2="84" stroke="rgba(183,217,168,0.8)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="98" y1="102" x2="102" y2="78" stroke="rgba(242,226,160,0.9)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="112" y1="102" x2="116" y2="88" stroke="rgba(169,201,224,0.8)" stroke-width="3" stroke-linecap="round"/>
+              <line x1="126" y1="102" x2="130" y2="82" stroke="rgba(169,201,224,0.8)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="section-label">Pick your track</div>
   <div class="skills-grid">
-    <div class="skill-card" data-track="communication" onclick="selectTrack('communication')">
+    <div class="skill-card board-card" data-track="communication" onclick="selectTrack('communication')">
       <div class="skill-icon">&#128172;</div>
       <div class="skill-name">Communication practice</div>
       <p class="skill-desc">Speak clearly and to the point on any prompt, using the PREP framework: Point, Reason, Example, Point.</p>
       <div class="skill-tag">Clarity · Structure</div>
     </div>
-    <div class="skill-card" data-track="intro" onclick="selectTrack('intro')">
+    <div class="skill-card board-card" data-track="intro" onclick="selectTrack('intro')">
       <div class="skill-icon">&#127908;</div>
       <div class="skill-name">Self-introduction</div>
       <p class="skill-desc">Nail "tell me about yourself" with a simple order: who you are now, the past that got you here, where you're headed.</p>
       <div class="skill-tag">Present · Past · Future</div>
     </div>
-    <div class="skill-card" data-track="project" onclick="selectTrack('project')">
+    <div class="skill-card board-card" data-track="project" onclick="selectTrack('project')">
       <div class="skill-icon">&#9650;</div>
       <div class="skill-name">Talk about your project</div>
       <p class="skill-desc">Explain your own resume project without freezing: what, why, how, the impact, and your specific role in it.</p>
@@ -170,17 +321,17 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
 
   <div class="section-label">What a session looks like</div>
   <div class="expect-grid">
-    <div class="expect-card">
+    <div class="expect-card board-card">
       <div class="expect-num">01</div>
       <div class="expect-text"><strong>Get a prompt</strong>Receive a speaking prompt (guided or free talk mode)</div>
     </div>
-    <div class="expect-card">
+    <div class="expect-card board-card">
       <div class="expect-num">02</div>
       <div class="expect-text"><strong>Speak your answer</strong>Use your mic or type your response in real time</div>
     </div>
-    <div class="expect-card">
+    <div class="expect-card board-card">
       <div class="expect-num">03</div>
-      <div class="expect-text"><strong>Get scored</strong>Fluency, clarity and confidence rated after every session</div>
+      <div class="expect-text"><strong>Get scored &amp; hear the bell</strong>Fluency, clarity and confidence rated after every session</div>
     </div>
   </div>
 
@@ -189,7 +340,7 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
       <div class="cta-title">Ready to practice?</div>
       <div class="cta-sub" id="ctaSub">Pick a track above — Aira will teach you the framework first.</div>
     </div>
-    <button class="btn-start" id="startBtn" disabled style="opacity:0.45;cursor:not-allowed;">Start speaking practice &#8594;</button>
+    <button class="btn-chalk primary" style="font-size:1.15rem" id="startBtn" disabled>Start speaking practice &#8594;</button>
   </div>
 
 </div>
@@ -201,6 +352,14 @@ let selectedProject = null;
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// Reveal the eras as they scroll into view.
+const eraObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); eraObserver.unobserve(e.target); }
+  });
+}, { threshold: 0.25 });
+document.querySelectorAll('.era').forEach(function(el) { eraObserver.observe(el); });
 
 async function selectTrack(track) {
   selectedTrack = track;
@@ -256,8 +415,6 @@ async function selectTrack(track) {
 function setStartEnabled(on) {
   const btn = document.getElementById('startBtn');
   btn.disabled = !on;
-  btn.style.opacity = on ? '1' : '0.45';
-  btn.style.cursor = on ? 'pointer' : 'not-allowed';
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {

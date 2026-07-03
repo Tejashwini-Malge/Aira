@@ -5,73 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Profile ready</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07;
-  --card: rgba(255,244,224,0.04);
-  --border: rgba(202,156,77,0.18);
-  --border-bright: rgba(202,156,77,0.38);
-  --gold: #C9A46E;
-  --gold-light: #E8C97A;
-  --cream: #F2E8D8;
-  --muted: #9B8E7E;
-  --fd: 'Playfair Display', Georgia, serif;
-  --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--fb); background: var(--bg); color: var(--cream);
-  min-height: 100vh; display: flex; flex-direction: column;
+* { margin: 0; padding: 0; }
+body.board {
+  display: flex; flex-direction: column;
   align-items: center; justify-content: center; padding: 40px 18px;
   text-align: center; opacity: 0; transition: opacity 0.6s ease;
 }
 body.loaded { opacity: 1; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background: radial-gradient(ellipse 80% 45% at 50% 10%, rgba(196,149,58,0.10) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-}
-.wrap { max-width: 520px; width: 100%; position: relative; z-index: 1; }
+.wrap { max-width: 540px; width: 100%; position: relative; z-index: 1; }
 
+/* chalk circle around the "A" — like the teacher circled it on the board */
 .orb {
-  width: 86px; height: 86px; border-radius: 50%; margin: 0 auto 30px;
-  background: radial-gradient(circle at 35% 25%, #F2E8D8 0%, #C9A46E 50%, #7A5218 100%);
-  box-shadow: 0 0 40px rgba(201,164,110,0.35);
+  width: 92px; height: 92px; border-radius: 50%; margin: 0 auto 30px;
+  border: 3px dashed rgba(244,241,228,0.55);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--fd); font-size: 2rem; color: #0C0A07; font-weight: 700;
+  font-family: var(--fd); font-size: 2.4rem; color: var(--chalk-yellow);
+  text-shadow: 0 0 10px rgba(242,226,160,0.3);
   animation: pulse 2.6s ease-in-out infinite;
 }
 @keyframes pulse {
-  0%,100% { transform: scale(1); box-shadow: 0 0 40px rgba(201,164,110,0.35); }
-  50%     { transform: scale(1.04); box-shadow: 0 0 56px rgba(201,164,110,0.5); }
+  0%,100% { transform: scale(1) rotate(-2deg); }
+  50%     { transform: scale(1.05) rotate(2deg); }
 }
-.eyebrow { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 14px; }
-h1 { font-family: var(--fd); font-size: 1.8rem; line-height: 1.3; color: var(--cream); margin-bottom: 16px; }
-p.lead { font-size: 0.92rem; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
-p.fine { font-size: 0.8rem; color: rgba(155,142,126,0.8); line-height: 1.6; margin-bottom: 34px; font-style: italic; }
-
-.btn {
-  padding: 13px 30px; border-radius: 999px; border: none; cursor: pointer;
-  font-size: 0.92rem; font-weight: 600; font-family: var(--fb);
-  background: linear-gradient(90deg, #C9A46E, #E8C97A); color: #0C0A07;
-  transition: all 0.2s ease;
-}
-.btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
-.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+h1 { font-family: var(--fd); font-size: 2rem; line-height: 1.3; color: var(--chalk); margin: 12px 0 16px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+p.lead { font-size: 0.95rem; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+p.fine { font-size: 0.84rem; color: var(--chalk-faint); line-height: 1.6; margin-bottom: 34px; font-style: italic; }
 
 .spinner {
-  width: 34px; height: 34px; margin: 0 auto 20px;
-  border: 3px solid rgba(201,164,110,0.25); border-top-color: var(--gold);
-  border-radius: 50%; animation: spin 0.9s linear infinite;
+  width: 38px; height: 38px; margin: 0 auto 20px;
+  border: 3px dashed rgba(244,241,228,0.4); border-top-color: var(--chalk-yellow);
+  border-radius: 50%; animation: spin 1.1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.err { color: #C17B5A; font-size: 0.85rem; margin-top: 14px; min-height: 18px; }
+.err { color: #eaacb8; font-size: 0.88rem; margin-top: 14px; min-height: 18px; }
 </style>
 </head>
-<body>
+<body class="board">
   <div class="wrap" id="root"></div>
 
+<script src="assets/aira.js"></script>
 <script>
 const API_BASE = "";
 
@@ -80,9 +55,9 @@ function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 function renderBuilding() {
   document.getElementById('root').innerHTML = `
     <div class="spinner"></div>
-    <div class="eyebrow">Reading your answers</div>
+    <div class="chalk-tag">Reading your answers</div>
     <h1>Aira is getting to know you…</h1>
-    <p class="lead">Putting together a private picture of how you think, work, and communicate.</p>
+    <p class="lead">Putting together a private picture of how you think, work, and communicate — like a teacher reading your first essay.</p>
   `;
 }
 
@@ -90,60 +65,47 @@ function renderDone(name) {
   const first = (name || '').split(' ')[0] || 'there';
   document.getElementById('root').innerHTML = `
     <div class="orb">A</div>
-    <div class="eyebrow">Profile ready</div>
+    <div class="chalk-tag">Profile ready</div>
     <h1>I’ve got a real sense of you now, ${escHtml(first)}.</h1>
-    <p class="lead">Your profile is built. From here on, your mock interviews and practice are shaped around how <em>you</em> actually work — no two people get the same Aira.</p>
-    <p class="fine">Your profile stays private. You don’t need to read it — you’ll feel it in everything that comes next.</p>
-    <button class="btn" onclick="window.location.href='Welcome.html'">Let’s begin →</button>
+    <p class="lead">Your profile is built. From here on, your mock interviews and practice are shaped around how <em>you</em> actually work — no two students get the same Aira.</p>
+    <p class="fine">Your profile stays private, like the notes a good teacher keeps. You don’t need to read it — you’ll feel it in everything that comes next.</p>
+    <button class="btn-chalk primary" style="font-size:1.15rem;padding:12px 30px" onclick="window.location.href='Welcome.html'">Back to the classroom →</button>
   `;
 }
 
 function renderError(msg) {
   const noAnswers = (msg || '').includes('No onboarding responses') || (msg || '').includes('questions answered');
   document.getElementById('root').innerHTML = `
-    <div class="eyebrow">One moment</div>
+    <div class="chalk-tag">One moment</div>
     <h1>${noAnswers ? 'Let’s finish your questions first' : 'That didn’t go through'}</h1>
     <p class="lead">${noAnswers
       ? 'Your answers weren’t saved yet — complete the questions and Aira will build your profile.'
       : escHtml(msg)}</p>
     <div style="margin-top:24px;">
       ${noAnswers
-        ? `<button class="btn" onclick="window.location.href='questions.html'">Go to questions →</button>`
-        : `<button class="btn" onclick="build()">Try again</button>`}
+        ? `<button class="btn-chalk primary" onclick="window.location.href='questions.html'">Go to questions →</button>`
+        : `<button class="btn-chalk primary" onclick="build()">Try again</button>`}
     </div>
     <div class="err"></div>
   `;
 }
 
-async function build() {
+async function build(name) {
   renderBuilding();
-  let name = '';
-  try { name = (JSON.parse(localStorage.getItem('aira_user') || '{}').name) || ''; } catch (e) {}
   try {
     // Trigger one-time generation. We deliberately DO NOT display what comes back —
     // the persona is private and lives only on the server.
-    const res = await fetch(`${API_BASE}/session/generate-persona`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    await res.json();
-    // Mark step done WITHOUT caching the persona content on the client.
-    localStorage.setItem('aira_persona_done', 'true');
-    localStorage.removeItem('aira_persona');
+    await Aira.api(`${API_BASE}/session/generate-persona`, { method: 'POST', body: {} });
     renderDone(name);
   } catch (err) {
-    let msg = err.message || 'Please try again.';
-    try { msg = JSON.parse(msg).error || msg; } catch (e) {}
-    renderError(msg);
+    renderError(err.message || 'Please try again.');
   }
 }
 
-window.addEventListener('load', () => {
-  if (!localStorage.getItem('aira_user')) { window.location.replace('login.html'); return; }
+window.addEventListener('load', async () => {
+  const user = await Aira.requireAuth();
   document.body.classList.add('loaded');
-  build();
+  build(user.name || '');
 });
 </script>
 </body>

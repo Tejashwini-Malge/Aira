@@ -5,27 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Voice Practice</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
-  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.38);
-  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
-  --danger: #C17B5A;
-  --r: 16px; --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--fb); background: var(--bg); color: var(--cream);
-  min-height: 100vh; display: flex; flex-direction: column;
+* { margin: 0; padding: 0; }
+body.board {
+  display: flex; flex-direction: column;
   align-items: center; justify-content: center; padding: 24px 16px;
-  position: relative;
-}
-body::before {
-  content: ''; position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-  width: 600px; height: 400px;
-  background: radial-gradient(ellipse, rgba(196,149,58,0.06) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
 }
 
 .layout {
@@ -44,107 +30,97 @@ body::before {
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-badge {
   width: 32px; height: 32px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
   display: flex; align-items: center; justify-content: center;
-  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
-  box-shadow: 0 0 16px rgba(201,164,110,0.3);
+  color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
-.brand-name { font-family: var(--fd); font-size: 0.95rem; font-weight: 600; color: var(--cream); }
-.brand-sub { font-size: 0.7rem; color: var(--muted); }
-.nav-back { font-size: 0.76rem; color: var(--muted); cursor: pointer; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); transition: all 0.2s; }
-.nav-back:hover { color: var(--cream); border-color: var(--border-bright); }
+.brand-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
+.brand-sub { font-size: 0.72rem; color: var(--muted); }
+.nav-back { font-size: 0.78rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
+.nav-back:hover { color: var(--chalk); border-color: var(--chalk); }
 
-/* Practice card */
+/* Practice card — standing at the board */
 .practice-card {
-  width: 100%; background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 24px 22px;
+  width: 100%; padding: 24px 22px;
   display: flex; flex-direction: column; gap: 16px;
 }
 
-.calm-note { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic; }
-.calm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(201,164,110,0.2); flex-shrink: 0; }
+.calm-note { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--muted); font-style: italic; }
+.calm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-yellow); flex-shrink: 0; }
 
 /* Coach reaction line */
-.reaction { font-size: 0.82rem; color: var(--gold-light); font-style: italic; display: none; }
+.reaction { font-size: 0.86rem; color: var(--chalk-yellow); font-style: italic; display: none; }
 .reaction.show { display: block; }
 
 /* Question */
 .q-meta { display: flex; align-items: center; gap: 10px; }
-.q-pill { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.72rem; color: var(--gold); }
-.diff-pill { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
-.progress-track { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,244,224,0.07); overflow: hidden; }
-.progress-bar { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #C9A46E, #E8C97A); transition: width 0.35s ease-out; }
-.step-text { font-size: 0.72rem; color: var(--muted); }
+.q-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.74rem; color: var(--chalk-yellow); }
+.diff-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.progress-track { flex: 1; height: 5px; border-radius: 999px; background: rgba(244,241,228,0.08); overflow: hidden; border: 1px dashed var(--dash); }
+.progress-bar { height: 100%; width: 0%; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--chalk) 0 5px, transparent 5px 8px); transition: width 0.35s ease-out; }
+.step-text { font-size: 0.74rem; color: var(--muted); }
 
-.question-text { font-family: var(--fd); font-size: 1.15rem; line-height: 1.55; color: var(--cream); }
+.question-text { font-family: var(--fd); font-size: 1.3rem; line-height: 1.5; color: var(--chalk); text-shadow: 0 0 1px rgba(255,255,255,0.4); }
 
 /* Textarea */
 .input-group { position: relative; }
 textarea {
   width: 100%; height: 130px; padding: 12px 50px 12px 14px;
-  border-radius: 10px; border: 1px solid var(--border);
-  background: rgba(255,244,224,0.03); color: var(--cream);
-  font-size: 0.9rem; font-family: var(--fb); resize: none; line-height: 1.6;
+  border-radius: 8px; border: 1.5px dashed var(--dash);
+  background: rgba(244,241,228,0.04); color: var(--chalk);
+  font-size: 0.94rem; font-family: var(--fb); resize: none; line-height: 1.6;
   transition: all 0.2s;
 }
-textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
-textarea::placeholder { color: rgba(155,142,126,0.5); }
+textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
+textarea::placeholder { color: rgba(244,241,228,0.3); }
 
 #mic-btn {
   position: absolute; bottom: 12px; right: 12px;
-  background: rgba(255,244,224,0.05); border: 1px solid var(--border);
+  background: rgba(244,241,228,0.06); border: 1.5px dashed var(--dash);
   cursor: pointer; padding: 8px; border-radius: 999px; color: var(--muted);
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
 }
-#mic-btn:hover { border-color: var(--border-bright); color: var(--cream); }
+#mic-btn:hover { border-color: var(--chalk); color: var(--chalk); }
 #mic-btn svg { width: 20px; height: 20px; fill: currentColor; }
-#mic-btn.listening { color: var(--danger); border-color: rgba(193,123,90,0.5); background: rgba(193,123,90,0.08); animation: micPulse 1.6s ease-out infinite; }
-@keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(193,123,90,0.3); } 70% { box-shadow: 0 0 0 12px rgba(193,123,90,0); } 100% { box-shadow: 0 0 0 0 rgba(193,123,90,0); } }
+#mic-btn.listening { color: var(--chalk-pink); border-color: rgba(234,172,184,0.6); border-style: solid; background: rgba(234,172,184,0.08); animation: micPulse 1.6s ease-out infinite; }
+@keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(234,172,184,0.3); } 70% { box-shadow: 0 0 0 12px rgba(234,172,184,0); } 100% { box-shadow: 0 0 0 0 rgba(234,172,184,0); } }
 
-.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; color: var(--muted); }
+.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
 
 /* Button row */
 .btn-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.btn-skip { background: none; border: none; font-size: 0.82rem; color: var(--muted); cursor: pointer; font-family: var(--fb); padding: 4px 0; }
-.btn-skip:hover { color: var(--cream); }
-.btn-primary {
-  padding: 10px 22px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E);
-  color: #0C0A07; font-size: 0.88rem; font-weight: 700; font-family: var(--fb);
-  cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 18px rgba(201,164,110,0.22);
-}
-.btn-primary:hover { box-shadow: 0 8px 22px rgba(201,164,110,0.35); transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.5; cursor: default; transform: none; }
+.btn-skip { background: none; border: none; font-size: 0.84rem; color: var(--muted); cursor: pointer; font-family: var(--fb); padding: 4px 0; text-decoration: underline dashed; }
+.btn-skip:hover { color: var(--chalk); }
 
 /* Toast */
 #toast {
   visibility: hidden; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  padding: 10px 18px; border-radius: 999px; font-size: 0.82rem;
-  background: rgba(30,24,16,0.95); border: 1px solid var(--border);
-  color: var(--cream); opacity: 0; transition: opacity 0.25s, bottom 0.25s;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.6); z-index: 100;
+  padding: 10px 18px; border-radius: 999px; font-size: 0.84rem;
+  background: rgba(18,38,28,0.97); border: 1.5px dashed var(--dash);
+  color: var(--chalk); opacity: 0; transition: opacity 0.25s, bottom 0.25s;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6); z-index: 100; font-family: var(--fb);
 }
 #toast.show { visibility: visible; opacity: 1; bottom: 40px; }
-#toast.success { border-color: rgba(201,164,110,0.5); color: var(--gold); }
+#toast.success { border-color: rgba(242,226,160,0.6); color: var(--chalk-yellow); }
 
 @media (max-width: 480px) { .practice-card { padding: 18px 16px; } }
 </style>
 </head>
-<body>
+<body class="board">
 <div class="layout">
   <div class="header">
     <div class="brand">
       <div class="brand-badge">A</div>
       <div>
         <div class="brand-name">Aira</div>
-        <div class="brand-sub">Voice practice</div>
+        <div class="brand-sub">Stand and deliver</div>
       </div>
     </div>
     <div class="nav-back" onclick="window.location.href='soft_skills.html'">‹ Tracks</div>
   </div>
 
-  <div class="practice-card">
+  <div class="practice-card board-card pin-yellow">
     <div class="calm-note">
       <div class="calm-dot"></div>
       Aira adapts each question to how you answer. Just share what comes to mind.
@@ -175,13 +151,14 @@ textarea::placeholder { color: rgba(155,142,126,0.5); }
 
     <div class="btn-row">
       <button class="btn-skip" id="skipBtn">Skip</button>
-      <button class="btn-primary" id="continueBtn" disabled>Continue →</button>
+      <button class="btn-chalk primary" id="continueBtn" disabled>Continue →</button>
     </div>
   </div>
 </div>
 
 <div id="toast">Notification</div>
 
+<script src="assets/aira.js"></script>
 <script>
 // ---- Session state: the server holds the real history; we only send answers. ----
 const params = new URLSearchParams(window.location.search);
@@ -305,8 +282,10 @@ function finishSession() {
   };
   // Display-only hand-off to the reflection page; the graded transcript lives server-side.
   sessionStorage.setItem("aira_comm_session", JSON.stringify(payload));
-  showToast("Session complete. Aira is reviewing it…", true);
-  setTimeout(() => { window.location.href = "reflection.html"; }, 1200);
+  // The period is over — ring the school bell.
+  Aira.ringBell();
+  showToast("🔔 The bell has rung — session complete. Aira is reviewing it…", true);
+  setTimeout(() => { window.location.href = "reflection.html"; }, 1400);
 }
 
 continueBtn.addEventListener("click", () => {

@@ -77,14 +77,31 @@ accepted from it. Endpoints only ever confirm that it exists.
 - `POST /comm/redo` → Input `{ beat, attempt1, attempt2 }` → one-line improvement
   verdict (not persisted).
 
-### Speaking (legacy)
-- `POST /me/speaking` → Client-reported speaking scores (used by reflection.html).
-  Known trust hole — flagged with a TODO to move scoring server-side.
-- `GET /me/speaking` → `{ sessions: [...] }`
+### Speaking
+- `GET /me/speaking` → `{ sessions: [...] }`. Read-only — sessions are only ever
+  written server-side by `/comm/evaluate`, so a client can never self-report a score.
 
 ### Reports
-- `GET /me/report` → `{ user, persona, quizzes, speaking, speaking_averages }`.
-  Note: `persona` here is the summary/dimensions used by the report page.
+- `GET /me/report` → aggregated progress used by `report.html`:
+  ```
+  {
+    user, onboarding,               // onboarding = { study, goal, target_role, target_industry, timeline, language, note }
+    persona,                        // { summary, dimensions } or null — the report-page view of the persona
+    quizzes, quiz_history,          // both the full quiz_results list (same data, two keys for frontend compatibility)
+    speaking, speaking_history,     // both the full speaking_sessions list
+    speaking_averages,              // { fluency, clarity, confidence } or null
+    recurring_weak_areas            // [{ area, count }] — weak areas appearing more than once across quizzes + speaking
+  }
+  ```
+- `POST /me/report/snapshot` → Archives the current report (same shape as above,
+  plus a computed `overall_pct`/`overall_grade`/`result_text`) as a permanent,
+  timestamped copy. Called when the user opens the PTM folder on the report page.
+  Output: `{ success, snapshot: { id, created_at, overall_grade, overall_pct, result_text } }`.
+- `GET /me/report/snapshots` → List of saved snapshots (summaries only, newest
+  first): `{ snapshots: [{ id, created_at, overall_grade, overall_pct, result_text }] }`.
+- `GET /me/report/snapshots/<id>` → One archived snapshot in full:
+  `{ snapshot: {...summary}, payload: {...same shape as GET /me/report} }`.
+  404 if the id doesn't belong to the logged-in user.
 
 ---
 

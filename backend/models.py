@@ -157,6 +157,33 @@ class QuizResult(db.Model):
         }
 
 
+class ReportSnapshot(db.Model):
+    """A saved copy of the report card at one point in time — issued the moment
+    the user opens the PTM folder on report.html. Past snapshots let a
+    returning user compare "Term 1" against "Term 2" instead of only ever
+    seeing one live, ever-changing view.
+    """
+    __tablename__ = "report_snapshots"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+
+    payload = db.Column(db.JSON, nullable=False)   # same shape as GET /me/report
+    overall_grade = db.Column(db.String(4))
+    overall_pct = db.Column(db.Integer)
+    result_text = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_summary(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at.isoformat(),
+            "overall_grade": self.overall_grade,
+            "overall_pct": self.overall_pct,
+            "result_text": self.result_text,
+        }
+
+
 class SpeakingSession(db.Model):
     __tablename__ = "speaking_sessions"
 

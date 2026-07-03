@@ -3,150 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aira · Dashboard</title>
+<title>Aira · Classroom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
-  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.42);
-  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
-  --green: rgba(92,138,92,1);
-  --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-height: 100vh; }
+* { margin: 0; padding: 0; }
 
-/* ── Header ── */
+/* ── Header (top wood ledge) ── */
 .header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 40px; border-bottom: 1px solid var(--border);
-  background: rgba(12,10,7,0.96); backdrop-filter: blur(10px);
-  position: sticky; top: 0; z-index: 10;
+  padding: 10px 40px 10px 24px;
 }
 .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .brand-badge {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
   display: flex; align-items: center; justify-content: center;
-  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
-  box-shadow: 0 0 16px rgba(201,164,110,0.35);
+  color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
-.brand-name { font-family: var(--fd); font-size: 0.95rem; font-weight: 600; color: var(--cream); }
+.brand-name { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); }
 .header-right { display: flex; align-items: center; gap: 10px; }
-.user-pill { display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.76rem; color: var(--muted); }
-.user-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(201,164,110,0.2); }
-.btn-logout { background: none; border: 1px solid rgba(202,156,77,0.22); color: var(--muted); font-family: var(--fb); font-size: 0.75rem; padding: 5px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-.btn-logout:hover { color: var(--cream); border-color: rgba(202,156,77,0.4); }
+.user-pill { display: flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); font-size: 0.8rem; color: var(--chalk); font-family: var(--fb); }
+.user-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-yellow); }
+.btn-logout {
+  background: none; border: none; color: var(--muted); font-family: var(--fb);
+  font-size: 0.82rem; padding: 5px 10px; cursor: pointer; text-decoration: underline dashed;
+}
+.btn-logout:hover { color: var(--chalk); }
 
 /* ── Main ── */
-.main { max-width: 1000px; margin: 0 auto; padding: 40px 40px 80px; }
+.main { max-width: 1000px; margin: 0 auto; padding: 40px 40px 90px; position: relative; z-index: 1; }
 
 /* ── Welcome ── */
-.welcome { margin-bottom: 44px; }
-.welcome-tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 10px; }
-.welcome-title { font-family: var(--fd); font-size: 2rem; color: var(--cream); line-height: 1.25; margin-bottom: 6px; }
-.welcome-title em { font-style: italic; color: var(--gold-light); }
-.welcome-sub { font-size: 0.88rem; color: var(--muted); line-height: 1.65; max-width: 500px; margin-bottom: 20px; }
+.welcome { margin-bottom: 40px; }
+.welcome-title { font-size: 2.4rem; line-height: 1.25; margin-bottom: 8px; }
+.welcome-sub { font-size: 1rem; max-width: 520px; margin-bottom: 22px; }
 
-/* Progress bar */
+/* Progress bar — chalk-drawn line */
 .prog-row { display: flex; align-items: center; gap: 12px; }
-.prog-bar-bg { flex: 1; max-width: 280px; height: 3px; background: rgba(255,244,224,0.07); border-radius: 999px; overflow: hidden; }
-.prog-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #C9A46E, #E8C97A); transition: width 0.8s ease; }
-.prog-label { font-size: 0.73rem; color: var(--muted); }
-.prog-label span { color: var(--gold); }
+.prog-bar-bg { flex: 1; max-width: 280px; height: 6px; background: rgba(244,241,228,0.1); border-radius: 999px; overflow: hidden; border: 1px dashed var(--dash); }
+.prog-bar-fill { height: 100%; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--chalk) 0 6px, transparent 6px 9px); transition: width 0.8s ease; }
+.prog-label { font-size: 0.85rem; color: var(--muted); }
+.prog-label span { color: var(--chalk-yellow); }
 
 /* ── Journey ── */
-.journey { display: flex; align-items: flex-start; gap: 0; margin-bottom: 48px; position: relative; }
+.journey { display: flex; align-items: flex-start; gap: 0; margin-bottom: 20px; position: relative; }
+.step-connector { display: flex; align-items: center; padding-top: 46px; flex-shrink: 0; width: 34px; justify-content: center; }
+.connector-line { color: var(--muted); font-size: 1.2rem; }
 
-/* Step connector line */
-.step-connector {
-  display: flex; align-items: center; padding-top: 36px; flex-shrink: 0;
-}
-.connector-line { width: 40px; height: 1px; background: var(--border); position: relative; }
-.connector-arrow { position: absolute; right: -4px; top: -4px; width: 8px; height: 8px; border-right: 1px solid var(--border); border-top: 1px solid var(--border); transform: rotate(45deg); }
-
-/* Step cards */
-.step {
-  flex: 1; border: 1px solid var(--border); border-radius: 16px;
-  background: var(--card); overflow: hidden; transition: border-color 0.3s;
-}
-.step.active { border-color: var(--border-bright); }
-.step.done { border-color: rgba(92,138,92,0.4); }
-
-.step-header {
-  padding: 20px 22px 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-}
-.step-num { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: rgba(201,164,110,0.45); margin-bottom: 4px; }
-.step-title { font-family: var(--fd); font-size: 1.1rem; color: var(--cream); }
-.step-badge { font-size: 0.65rem; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
-.badge-pending  { color: var(--muted); border: 1px solid var(--border); }
-.badge-active   { color: var(--gold); border: 1px solid rgba(201,164,110,0.35); background: rgba(201,164,110,0.08); }
-.badge-done     { color: #7AB87A; border: 1px solid rgba(92,138,92,0.35); background: rgba(92,138,92,0.07); }
-
-.step-body { padding: 18px 22px 20px; }
-.step-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+.step { flex: 1; overflow: hidden; padding: 4px 4px 14px; }
+.step-header { padding: 20px 22px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.step-num { font-family: var(--fb); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
+.step-title { font-family: var(--fd); font-size: 1.4rem; }
+.step-body { padding: 0 22px 20px; }
+.step-desc { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.55; margin-bottom: 16px; }
 
 /* Toggle inside Step 2 */
 .toggle-wrap { display: flex; flex-direction: column; gap: 10px; }
 .toggle-tab {
-  padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
-  background: rgba(255,244,224,0.02); cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 8px; border: 1.5px dashed var(--dash);
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px;
 }
-.toggle-tab:hover { border-color: var(--border-bright); background: rgba(255,244,224,0.05); }
-.toggle-tab.selected { border-color: var(--gold); background: rgba(201,164,110,0.07); }
-.toggle-tab.done-tab { border-color: rgba(92,138,92,0.4); background: rgba(92,138,92,0.04); }
-.tab-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
-.tab-label { font-size: 0.82rem; color: var(--cream); font-weight: 500; }
-.tab-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
-.tab-check { margin-left: auto; font-size: 0.75rem; color: #7AB87A; }
-
-/* CTA buttons */
-.btn-primary {
-  width: 100%; padding: 11px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E);
-  color: #0C0A07; font-size: 0.88rem; font-weight: 700; font-family: var(--fb);
-  cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(201,164,110,0.25);
-}
-.btn-primary:hover { box-shadow: 0 6px 20px rgba(201,164,110,0.4); transform: translateY(-1px); }
-.btn-secondary {
-  width: 100%; padding: 10px; border-radius: 10px;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--cream); font-size: 0.85rem; font-family: var(--fb);
-  cursor: pointer; transition: all 0.2s;
-}
-.btn-secondary:hover { border-color: var(--border-bright); background: rgba(255,244,224,0.04); }
-.btn-disabled {
-  width: 100%; padding: 10px; border-radius: 10px;
-  border: 1px solid rgba(255,244,224,0.06); background: transparent;
-  color: rgba(155,142,126,0.4); font-size: 0.85rem; font-family: var(--fb);
-  cursor: not-allowed;
-}
+.toggle-tab:hover { border-color: var(--chalk); background: rgba(244,241,228,0.05); }
+.toggle-tab.selected { border-color: var(--chalk-yellow); border-style: solid; }
+.toggle-tab.done-tab { border-color: var(--chalk-green); }
+.tab-icon { width: 30px; height: 30px; border-radius: 6px; border: 1.5px dashed var(--dash); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+.tab-label { font-family: var(--fd); font-size: 1.02rem; }
+.tab-sub { font-size: 0.76rem; color: var(--muted); margin-top: 1px; }
+.tab-check { margin-left: auto; font-size: 0.78rem; color: var(--chalk-green); font-family: var(--fb); }
 
 /* ── Stats row ── */
-.section-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.section-label { font-family: var(--fb); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.section-label::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 8px, transparent 8px 13px); }
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.stat-card { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); }
-.stat-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 5px; }
-.stat-val { font-family: var(--fd); font-size: 1.3rem; color: var(--gold-light); }
-.stat-sub { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
+.stat-card { padding: 16px 18px; text-align: center; }
+.stat-label { font-family: var(--fb); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 5px; }
+.stat-val { font-family: var(--fd); font-size: 1.5rem; color: var(--chalk-yellow); }
+.stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 
 @media (max-width: 820px) {
-  .header { padding: 14px 20px; }
-  .main { padding: 28px 20px 60px; }
-  .journey { flex-direction: column; gap: 0; }
-  .step-connector { padding-top: 0; padding-left: 22px; height: 32px; }
-  .connector-line { width: 1px; height: 100%; border-left: 1px solid var(--border); }
-  .connector-arrow { bottom: -4px; top: auto; right: auto; left: -4px; border-right: none; border-bottom: 1px solid var(--border); }
+  .header { padding: 10px 20px; }
+  .main { padding: 28px 20px 70px; }
+  .journey { flex-direction: column; gap: 14px; }
+  .step-connector { display: none; }
   .stats-row { grid-template-columns: 1fr 1fr; }
-  .welcome-title { font-size: 1.65rem; }
+  .welcome-title { font-size: 1.9rem; }
 }
 </style>
 </head>
-<body>
+<body class="board">
+
+<div class="ledge-tray">
+  <div class="chalk-stick"></div>
+  <div class="chalk-stick yellow"></div>
+  <div class="chalk-stick pink"></div>
+  <div class="duster"></div>
+</div>
 
 <header class="header">
   <div class="brand" onclick="window.location.href='index.html'">
@@ -163,12 +116,12 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
 
   <!-- Welcome -->
   <div class="welcome">
-    <div class="welcome-tag">Your learning dashboard</div>
-    <h1 class="welcome-title">Good to see you, <em id="greetName">there</em>.</h1>
-    <p class="welcome-sub">Work through the three steps below. Start with Persona — Aira needs to understand you before it can personalise anything else.</p>
+    <div class="chalk-tag">Roll call · your classroom</div>
+    <h1 class="chalk-title welcome-title">Good to see you, <em id="greetName">there</em>.</h1>
+    <p class="chalk-sub welcome-sub">Work through the three periods below. Start with Persona — Aira needs to know you before it can teach you anything else.</p>
     <div class="prog-row">
       <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
-      <div class="prog-label"><span id="progText">0</span> of 3 steps complete</div>
+      <div class="prog-label"><span id="progText">0</span> of 3 periods complete</div>
     </div>
   </div>
 
@@ -176,36 +129,33 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
   <div class="journey" id="journey">
 
     <!-- STEP 1: Persona -->
-    <div class="step active" id="step1">
+    <div class="step board-card pin-yellow active" id="step1">
       <div class="step-header">
         <div>
-          <div class="step-num">Step 01</div>
-          <div class="step-title">Persona</div>
+          <div class="step-num">Period 01</div>
+          <div class="step-title chalk-title">Persona</div>
         </div>
-        <div class="step-badge badge-active" id="badge1">Start here</div>
+        <div class="chalk-badge active" id="badge1">Start here</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">Answer 10 questions about how you learn, handle pressure, and think. Aira maps your answers into a personalised coach profile used across every other module.</p>
-        <button class="btn-primary" id="cta1" onclick="window.location.href='questions.html'">Begin Persona →</button>
+        <p class="step-desc">Answer 10 questions about how you learn, handle pressure, and think. Aira maps your answers into a personal coach profile used across every other module.</p>
+        <button class="btn-chalk primary" style="width:100%" id="cta1" onclick="window.location.href='questions.html'">Begin Persona →</button>
       </div>
     </div>
 
-    <!-- Connector -->
-    <div class="step-connector">
-      <div class="connector-line"><div class="connector-arrow"></div></div>
-    </div>
+    <div class="step-connector"><div class="connector-line">✎</div></div>
 
     <!-- STEP 2: MCQs or Soft Skills toggle -->
-    <div class="step" id="step2">
+    <div class="step board-card" id="step2">
       <div class="step-header">
         <div>
-          <div class="step-num">Step 02</div>
-          <div class="step-title">Practice</div>
+          <div class="step-num">Period 02</div>
+          <div class="step-title chalk-title">Practice</div>
         </div>
-        <div class="step-badge badge-pending" id="badge2">After Persona</div>
+        <div class="chalk-badge pending" id="badge2">After Persona</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">Choose your practice mode. Your Persona profile is used to personalise both paths.</p>
+        <p class="step-desc">Choose your practice mode. Your Persona profile shapes both paths.</p>
         <div class="toggle-wrap" id="toggleWrap">
 
           <div class="toggle-tab" id="tab-mcq" onclick="goTo('ai_quiz.html')">
@@ -221,7 +171,7 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
             <div class="tab-icon">◎</div>
             <div>
               <div class="tab-label">Soft Skills</div>
-              <div class="tab-sub">Speaking, delivery & communication practice</div>
+              <div class="tab-sub">Speaking, delivery &amp; communication practice</div>
             </div>
             <div class="tab-check" id="check-skills" style="display:none">✓ Done</div>
           </div>
@@ -230,42 +180,43 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
       </div>
     </div>
 
-    <!-- Connector -->
-    <div class="step-connector">
-      <div class="connector-line"><div class="connector-arrow"></div></div>
-    </div>
+    <div class="step-connector"><div class="connector-line">✎</div></div>
 
     <!-- STEP 3: Report -->
-    <div class="step" id="step3">
+    <div class="step board-card pin-green tilt-3d" id="step3">
+      <div class="tilt-inner">
       <div class="step-header">
         <div>
-          <div class="step-num">Step 03</div>
-          <div class="step-title">Report</div>
+          <div class="step-num">Period 03</div>
+          <div class="step-title chalk-title">Report Card</div>
         </div>
-        <div class="step-badge badge-pending" id="badge3">Final step</div>
+        <div class="chalk-badge pending" id="badge3">Final period</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">A full downloadable summary of your Persona, quiz performance and Soft Skills scores — your proof of progress, ready to share.</p>
-        <button class="btn-disabled" id="cta3">Complete steps 1 &amp; 2 first</button>
+        <p class="step-desc">A full downloadable summary of your Persona, quiz performance and Soft Skills scores — like a PTM report card, ready to share.</p>
+        <button class="btn-chalk disabled" style="width:100%" id="cta3" disabled>Complete periods 1 &amp; 2 first</button>
+      </div>
       </div>
     </div>
 
   </div>
 
+  <hr class="chalk-rule">
+
   <!-- Stats -->
-  <div class="section-label">At a glance</div>
+  <div class="section-label">Attendance record</div>
   <div class="stats-row">
-    <div class="stat-card">
+    <div class="stat-card board-card">
       <div class="stat-label">Persona</div>
       <div class="stat-val" id="statPersona">Not built</div>
-      <div class="stat-sub">complete step 01</div>
+      <div class="stat-sub">complete period 01</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card board-card">
       <div class="stat-label">Quiz topics</div>
       <div class="stat-val" id="statQuiz">0</div>
       <div class="stat-sub">attempted</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card board-card">
       <div class="stat-label">Speaking sessions</div>
       <div class="stat-val" id="statSessions">0</div>
       <div class="stat-sub">recorded</div>
@@ -274,21 +225,31 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
 
 </div>
 
+<script src="assets/aira.js"></script>
 <script>
-(function() {
-  // Auth guard
-  const raw = localStorage.getItem('aira_user');
-  if (!raw) { window.location.replace('login.html'); return; }
-  let user;
-  try { user = JSON.parse(raw); } catch(e) { window.location.replace('login.html'); return; }
+// Set once the server confirms the persona exists — gates the step-2 tabs.
+let personaReady = false;
+
+(async function() {
+  // Server-truth auth + progress: one /me/report call replaces the old
+  // localStorage mirror (aira_persona_done, aira_mcq_done, ...).
+  let p;
+  try {
+    p = await Aira.progress();
+  } catch (e) {
+    window.location.replace('login.html');
+    return;
+  }
+  const user = p.user || {};
 
   const first = (user.name || '').split(' ')[0];
   document.getElementById('greetName').textContent = first;
   document.getElementById('headerName').textContent = first;
 
-  const personaDone = !!localStorage.getItem('aira_persona_done');
-  const mcqDone     = !!localStorage.getItem('aira_mcq_done');
-  const skillsDone  = !!localStorage.getItem('aira_skills_done');
+  const personaDone = p.personaReady;
+  personaReady = personaDone;
+  const mcqDone     = p.quizzes.length > 0;
+  const skillsDone  = p.speaking.length > 0;
   const step2Done   = mcqDone || skillsDone;
   const completed   = [personaDone, step2Done].filter(Boolean).length;
 
@@ -301,15 +262,15 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
     const s1 = document.getElementById('step1');
     s1.classList.remove('active'); s1.classList.add('done');
     document.getElementById('badge1').textContent = 'Complete ✓';
-    document.getElementById('badge1').className = 'step-badge badge-done';
+    document.getElementById('badge1').className = 'chalk-badge done';
     document.getElementById('cta1').textContent = 'Revisit Persona →';
-    document.getElementById('cta1').className = 'btn-secondary';
+    document.getElementById('cta1').className = 'btn-chalk';
     document.getElementById('statPersona').textContent = 'Built ✓';
 
     // Activate Step 2
     document.getElementById('step2').classList.add('active');
     document.getElementById('badge2').textContent = 'Choose a path';
-    document.getElementById('badge2').className = 'step-badge badge-active';
+    document.getElementById('badge2').className = 'chalk-badge active';
   } else {
     // Lock Step 2 tabs
     document.getElementById('tab-mcq').onclick = null;
@@ -324,62 +285,43 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
   if (mcqDone) {
     document.getElementById('check-mcq').style.display = 'block';
     document.getElementById('tab-mcq').classList.add('done-tab');
-    const qc = parseInt(localStorage.getItem('aira_quiz_count') || '1');
-    document.getElementById('statQuiz').textContent = qc;
+    document.getElementById('statQuiz').textContent = p.quizzes.length;
   }
 
   // Soft skills done tick
   if (skillsDone) {
     document.getElementById('check-skills').style.display = 'block';
     document.getElementById('tab-skills').classList.add('done-tab');
+    document.getElementById('statSessions').textContent = p.speaking.length;
   }
-
-  // Speaking sessions count
-  try {
-    const hist = JSON.parse(localStorage.getItem('speakingHistory') || '[]');
-    if (hist.length) document.getElementById('statSessions').textContent = hist.length;
-  } catch(e) {}
-
-  // Verify persona status from DB — fixes stale localStorage after cache clear or new device.
-  // Runs silently in the background; reloads only if the DB disagrees with localStorage.
-  fetch('/me/persona', { credentials: 'include' })
-    .then(r => r.json())
-    .then(({ persona }) => {
-      if (persona && !personaDone) {
-        // Persona is private — record only that it exists, never its content.
-        localStorage.setItem('aira_persona_done', 'true');
-        localStorage.removeItem('aira_persona');
-        location.reload();
-      }
-    })
-    .catch(() => {});
 
   // Step 2 done
   if (step2Done) {
     document.getElementById('badge2').textContent = 'Done ✓';
-    document.getElementById('badge2').className = 'step-badge badge-done';
+    document.getElementById('badge2').className = 'chalk-badge done';
     document.getElementById('step2').classList.remove('active');
     document.getElementById('step2').classList.add('done');
 
     // Unlock Step 3
     document.getElementById('step3').classList.add('active');
     document.getElementById('badge3').textContent = 'Ready';
-    document.getElementById('badge3').className = 'step-badge badge-active';
+    document.getElementById('badge3').className = 'chalk-badge active';
     const cta3 = document.getElementById('cta3');
-    cta3.textContent = 'View my report →';
-    cta3.className = 'btn-primary';
+    cta3.textContent = 'View my report card →';
+    cta3.className = 'btn-chalk primary';
+    cta3.disabled = false;
     cta3.onclick = function() { window.location.href = 'report.html'; };
   }
 })();
 
 function goTo(page) {
-  if (!localStorage.getItem('aira_persona_done')) return;
+  if (!personaReady) return;
   window.location.href = page;
 }
 
 async function logout() {
-  try { await fetch('/logout', { method: 'POST' }); } catch (e) {}
-  // Clear cached per-user state so the next account starts clean.
+  try { await Aira.api('/logout', { method: 'POST', allow401: true }); } catch (e) {}
+  // Sweep any legacy mirror keys so an old cache can't leak into the next account.
   ['aira_user','aira_persona','aira_persona_done','aira_quiz_result','aira_quiz_count',
    'aira_mcq_done','aira_skills_done','speakingHistory'].forEach(k => localStorage.removeItem(k));
   window.location.href = 'login.html';

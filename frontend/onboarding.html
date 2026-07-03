@@ -5,129 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Getting to know you</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07;
-  --card: rgba(255,244,224,0.04);
-  --border: rgba(202,156,77,0.18);
-  --border-bright: rgba(202,156,77,0.38);
-  --gold: #C9A46E;
-  --gold-light: #E8C97A;
-  --cream: #F2E8D8;
-  --muted: #9B8E7E;
-  --r: 16px;
-  --fd: 'Playfair Display', Georgia, serif;
-  --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--fb); background: var(--bg); color: var(--cream);
-  min-height: 100vh; display: flex; flex-direction: column;
+* { margin: 0; padding: 0; }
+body.board {
+  display: flex; flex-direction: column;
   align-items: center; padding: 24px 16px 48px;
   opacity: 0; transition: opacity 0.5s ease;
 }
 body.loaded { opacity: 1; }
-body::before {
-  content: ''; position: fixed; top: 0; left: 0; right: 0; height: 320px;
-  background: radial-gradient(ellipse at top, rgba(196,149,58,0.08) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-}
+
 .header {
   max-width: 640px; width: 100%; display: flex; align-items: center;
   gap: 10px; margin-bottom: 26px; position: relative; z-index: 1;
 }
 .brand-badge {
   width: 34px; height: 34px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
   display: flex; align-items: center; justify-content: center;
-  color: #0C0A07; font-weight: 700; font-size: 0.9rem;
-  box-shadow: 0 0 16px rgba(201,164,110,0.3);
+  color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1.05rem;
 }
-.brand-name { font-family: var(--fd); font-size: 1rem; font-weight: 600; }
-.brand-sub { font-size: 0.7rem; color: var(--muted); }
+.brand-name { font-family: var(--fd); font-size: 1.1rem; color: var(--chalk); }
+.brand-sub { font-size: 0.74rem; color: var(--muted); }
 
 .container { max-width: 640px; width: 100%; position: relative; z-index: 1; }
 
 .intro { margin-bottom: 26px; }
-.intro .greeting { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 10px; }
-.intro h1 { font-family: var(--fd); font-size: 1.6rem; line-height: 1.35; color: var(--cream); margin-bottom: 10px; }
-.intro p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.intro h1 { font-family: var(--fd); font-size: 1.8rem; line-height: 1.3; color: var(--chalk); margin: 8px 0 10px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+.intro p { font-size: 0.92rem; color: var(--muted); line-height: 1.6; }
 
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 26px 24px;
-  animation: fadeUp 0.4s ease forwards;
-}
+.card { padding: 26px 24px 22px; animation: fadeUp 0.4s ease forwards; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 .field { margin-bottom: 20px; }
-.field label { display: block; font-size: 0.8rem; color: var(--cream); margin-bottom: 7px; font-weight: 500; }
-.field .hint { font-size: 0.74rem; color: var(--muted); font-style: italic; margin-top: 5px; }
-.req { color: var(--gold); }
+.field label { display: block; font-size: 0.86rem; color: var(--chalk); margin-bottom: 7px; }
+.field .hint { font-size: 0.76rem; color: var(--muted); font-style: italic; margin-top: 5px; }
+.req { color: var(--chalk-yellow); }
 
 input[type="text"], select, textarea {
-  width: 100%; padding: 11px 13px; border-radius: 10px;
-  border: 1px solid var(--border); background: rgba(255,244,224,0.03);
-  color: var(--cream); font-size: 0.88rem; font-family: var(--fb);
+  width: 100%; padding: 11px 13px; border-radius: 8px;
+  border: 1.5px dashed var(--dash); background: rgba(244,241,228,0.04);
+  color: var(--chalk); font-size: 0.92rem; font-family: var(--fb);
   transition: all 0.2s ease;
 }
 textarea { min-height: 80px; resize: vertical; line-height: 1.6; }
-input::placeholder, textarea::placeholder { color: rgba(155,142,126,0.5); }
+input::placeholder, textarea::placeholder { color: rgba(244,241,228,0.3); }
 input:focus, select:focus, textarea:focus {
-  outline: none; border-color: rgba(201,164,110,0.45);
-  background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08);
+  outline: none; border-color: var(--chalk-yellow); border-style: solid;
+  background: rgba(244,241,228,0.07);
 }
-select option { background: #14110B; color: var(--cream); }
+select option { background: #16311f; color: var(--chalk); }
 
-/* Resume drop / file field */
+/* Resume drop / file field — like handing in your homework */
 .file-field {
-  border: 1px dashed var(--border-bright); border-radius: 12px;
+  border: 2px dashed var(--dash); border-radius: 10px;
   padding: 18px 16px; text-align: center; cursor: pointer;
-  background: rgba(255,244,224,0.02); transition: all 0.2s ease;
+  transition: all 0.2s ease; display: block;
 }
-.file-field:hover { background: rgba(255,244,224,0.04); border-color: var(--gold); }
+.file-field:hover { background: rgba(244,241,228,0.05); border-color: var(--chalk); }
 .file-field .fi-icon { font-size: 1.3rem; }
-.file-field .fi-main { font-size: 0.85rem; color: var(--cream); margin: 6px 0 3px; }
-.file-field .fi-sub { font-size: 0.74rem; color: var(--muted); }
-.file-field.has-file { border-style: solid; border-color: var(--gold); }
-.file-field.has-file .fi-main { color: var(--gold-light); }
+.file-field .fi-main { font-size: 0.9rem; color: var(--chalk); margin: 6px 0 3px; }
+.file-field .fi-sub { font-size: 0.76rem; color: var(--muted); }
+.file-field.has-file { border-style: solid; border-color: var(--chalk-yellow); }
+.file-field.has-file .fi-main { color: var(--chalk-yellow); }
 input[type="file"] { display: none; }
 
 .row { display: flex; gap: 14px; }
 .row .field { flex: 1; }
 
 .actions { margin-top: 8px; display: flex; flex-direction: column; gap: 12px; }
-.btn-primary {
-  width: 100%; padding: 13px; border-radius: 10px; border: none;
-  background: linear-gradient(90deg, #C9A46E, #E8C97A); color: #0C0A07;
-  font-size: 0.92rem; font-weight: 600; font-family: var(--fb); cursor: pointer;
-  transition: all 0.2s ease;
-}
-.btn-primary:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-.notice { font-size: 0.82rem; text-align: center; min-height: 18px; }
+.notice { font-size: 0.86rem; text-align: center; min-height: 18px; color: var(--muted); }
 
 @media (max-width: 520px) { .row { flex-direction: column; gap: 0; } }
 </style>
 </head>
-<body>
+<body class="board">
   <div class="header">
     <div class="brand-badge">A</div>
     <div>
       <div class="brand-name">Aira</div>
-      <div class="brand-sub">Your career companion</div>
+      <div class="brand-sub">Your own classroom</div>
     </div>
   </div>
 
   <div class="container">
     <div class="intro">
-      <div class="greeting" id="greeting">Hi there</div>
-      <h1>Before we begin — tell me a little about you.</h1>
-      <p>This is how I tune everything that comes next: your mock interviews, your practice, your feedback. A minute now, and the whole journey fits you better.</p>
+      <div class="chalk-tag" id="greeting">Hi there</div>
+      <h1>First day of class — tell me a little about you.</h1>
+      <p class="chalk-sub">This is how I tune everything that comes next: your mock interviews, your practice, your feedback. A minute now, and the whole journey fits you better.</p>
     </div>
 
-    <form class="card" id="onboardingForm">
+    <form class="card board-card pin-yellow" id="onboardingForm">
       <div class="field">
         <label>What are you studying? <span class="req">*</span></label>
         <input type="text" name="study" id="study" placeholder="e.g. B.Tech Computer Science, 3rd year" required>
@@ -176,7 +145,7 @@ input[type="file"] { display: none; }
         <label>Your resume <span class="req">*</span></label>
         <label class="file-field" id="fileField" for="resume">
           <div class="fi-icon">📄</div>
-          <div class="fi-main" id="fileMain">Click to upload your resume</div>
+          <div class="fi-main" id="fileMain">Hand in your resume</div>
           <div class="fi-sub" id="fileSub">PDF or DOCX — this helps me understand your real experience</div>
         </label>
         <input type="file" name="resume" id="resume" accept=".pdf,.docx" required>
@@ -188,7 +157,7 @@ input[type="file"] { display: none; }
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn-primary" id="submitBtn">Continue →</button>
+        <button type="submit" class="btn-chalk primary" style="width:100%;font-size:1.1rem" id="submitBtn">Continue →</button>
         <div class="notice" id="notice"></div>
       </div>
     </form>
@@ -231,14 +200,14 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
   const notice = document.getElementById('notice');
 
   if (!fileInput.files.length) {
-    notice.style.color = '#C17B5A';
+    notice.style.color = '#eaacb8';
     notice.textContent = 'Please upload your resume to continue.';
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Reading your resume…';
-  notice.style.color = 'var(--gold)';
+  notice.style.color = 'var(--chalk-yellow)';
   notice.textContent = 'Give me a moment — I\'m getting to know you.';
 
   try {
@@ -250,19 +219,19 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.success) {
-      notice.style.color = 'var(--gold)';
+      notice.style.color = 'var(--chalk-yellow)';
       notice.textContent = 'Got it. Let\'s begin.';
       setTimeout(() => { window.location.href = 'questions.html'; }, 700);
     } else {
       btn.disabled = false;
       btn.textContent = 'Continue →';
-      notice.style.color = '#C17B5A';
+      notice.style.color = '#eaacb8';
       notice.textContent = data.message || 'Something went wrong. Please try again.';
     }
   } catch (err) {
     btn.disabled = false;
     btn.textContent = 'Continue →';
-    notice.style.color = '#C17B5A';
+    notice.style.color = '#eaacb8';
     notice.textContent = 'Could not reach the server. Is it running?';
   }
 });

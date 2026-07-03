@@ -17,11 +17,22 @@ from communication_bp import comm_bp
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-only-change-me")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE_DIR, "aira.db")
+
+# DATABASE_URL is set by the host (Render/Railway) when a managed Postgres
+# instance is attached. Falls back to a local SQLite file for local dev.
+# Older Postgres URLs use the "postgres://" scheme, which SQLAlchemy 1.4+
+# no longer accepts — normalize to "postgresql://".
+database_url = os.getenv("DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "aira.db"))
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# Same-origin session cookie (frontend is served by this app over http in dev).
+
+# Same-origin session cookie (frontend is served by this app). In production
+# (behind HTTPS) the cookie is also marked Secure so it's never sent over plain http.
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("FLASK_ENV") == "production"
 
 # Credentials must be allowed for the session cookie to round-trip.
 CORS(app, supports_credentials=True)
@@ -110,4 +121,6 @@ def me():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # Local dev only — in production this module is served by gunicorn (see Procfile),
+    # which never calls this block, so debug mode never accidentally ships live.
+    app.run(host="127.0.0.1", port=int(os.getenv("PORT", 5000)), debug=True)

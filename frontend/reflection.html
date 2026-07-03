@@ -4,389 +4,117 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speaking Reflection | Aira</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/chalkboard.css">
   <style>
-    :root {
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --accent: #22c55e;
-      --bg: #0f172a;
-      --glass-bg: rgba(15, 23, 42, 0.85);
-      --glass-soft: rgba(15, 23, 42, 0.9);
-      --glass-border: rgba(148, 163, 184, 0.6);
-      --text-main: #e5e7eb;
-      --text-sub: #9ca3af;
-      --danger: #ef4444;
-    }
+    * { margin: 0; padding: 0; }
+    body.board { display: flex; align-items: center; justify-content: center; }
 
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, sans-serif;
-    }
+    .layout { width: 100%; max-width: 860px; padding: 20px 16px; position: relative; z-index: 1; }
 
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top, #4f46e5 0%, rgba(15,23,42,1) 36%, #020617 100%);
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .layout {
-      width: 100%;
-      max-width: 860px;
-      padding: 20px 16px;
-    }
-
-    .header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
     .brand-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 0, #e5e7eb 0, #6366f1 45%, #1d4ed8 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #f9fafb;
-      font-weight: 600;
-      box-shadow: 0 8px 20px rgba(15,23,42,0.5);
-      font-size: 0.9rem;
+      width: 32px; height: 32px; border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
     }
-
-    .brand-texts {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .brand-texts span:first-child {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .brand-texts span:last-child {
-      font-size: 0.78rem;
-      color: var(--text-sub);
-    }
-
-    .header-right {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .chip {
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      font-size: 0.78rem;
-      color: var(--text-sub);
-      background: rgba(15,23,42,0.7);
-    }
-
+    .brand-texts { display: flex; flex-direction: column; }
+    .brand-texts span:first-child { font-family: var(--fd); font-size: 1rem; color: var(--chalk); }
+    .brand-texts span:last-child { font-size: 0.76rem; color: var(--muted); }
+    .header-right { display: flex; gap: 10px; align-items: center; }
+    .chip { padding: 5px 11px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.78rem; color: var(--chalk-yellow); }
     .nav-btn {
-      font-size: 0.78rem;
-      color: #e5e7eb;
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.8);
+      font-size: 0.78rem; color: var(--muted); cursor: pointer;
+      padding: 6px 11px; border-radius: 999px; border: 1.5px dashed var(--dash);
+      background: none; font-family: var(--fb); transition: all 0.2s;
     }
+    .nav-btn:hover { color: var(--chalk); border-color: var(--chalk); }
 
-    h1 {
-      margin: 0 0 4px;
-      font-size: 1.5rem;
-    }
+    h1 { font-family: var(--fd); font-size: 1.8rem; color: var(--chalk); margin: 0 0 4px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; }
 
-    .subtitle {
-      font-size: 0.88rem;
-      color: var(--text-sub);
-      margin-bottom: 14px;
-    }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr); gap: 20px; }
+    .card { padding: 16px 16px 14px; }
+    .card h2 { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin: 0 0 6px; }
+    .card small { font-size: 0.78rem; color: var(--muted); }
+    .card.full { grid-column: 1 / -1; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
-      gap: 16px;
-    }
-
-    .card {
-      background: var(--glass-bg);
-      border-radius: 18px;
-      padding: 14px 14px 12px;
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 16px 38px rgba(15,23,42,0.7);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-    }
-
-    .card h2 {
-      font-size: 1rem;
-      margin: 0 0 6px;
-    }
-
-    .card small {
-      font-size: 0.76rem;
-      color: var(--text-sub);
-    }
-
-    .card.full {
-      grid-column: 1 / -1;
-    }
-
-    .metrics-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .metric {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .metric-label {
-      min-width: 90px;
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-
+    .metrics-row { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .metric { display: flex; align-items: center; gap: 8px; }
+    .metric-label { min-width: 90px; font-size: 0.84rem; color: var(--muted); }
     .metric-bar-bg {
-      flex: 1;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(31,41,55,0.8);
-      overflow: hidden;
-      position: relative;
+      flex: 1; height: 8px; border-radius: 999px;
+      background: rgba(244,241,228,0.08); border: 1px dashed var(--dash);
+      overflow: hidden; position: relative;
     }
-
     .metric-bar-fill {
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg,#22c55e,#6366f1);
+      height: 100%; width: 0; border-radius: inherit;
+      background: repeating-linear-gradient(90deg, var(--chalk-yellow) 0 5px, transparent 5px 8px);
       transition: width 0.4s ease-out;
     }
+    .metric-score { font-size: 0.8rem; color: var(--chalk-yellow); min-width: 42px; text-align: right; font-family: var(--fd); }
 
-    .metric-score {
-      font-size: 0.78rem;
-      color: var(--text-sub);
-      min-width: 40px;
-      text-align: right;
-    }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .pill { font-size: 0.76rem; padding: 4px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); color: var(--muted); }
+    .pill.good { border-color: rgba(183,217,168,0.6); color: var(--chalk-green); }
+    .pill.warn { border-color: rgba(234,172,184,0.6); color: var(--chalk-pink); }
 
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
-    }
+    .section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); margin-bottom: 4px; opacity: 0.85; }
+    .summary-text { font-size: 0.88rem; line-height: 1.6; color: var(--chalk); }
 
-    .pill {
-      font-size: 0.76rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      color: var(--text-sub);
-      background: rgba(15,23,42,0.9);
-    }
-
-    .pill.good {
-      border-color: rgba(34,197,94,0.9);
-      color: #bbf7d0;
-      background: rgba(22,163,74,0.12);
-    }
-
-    .pill.warn {
-      border-color: rgba(249,115,22,0.9);
-      color: #fed7aa;
-      background: rgba(248,113,22,0.1);
-    }
-
-    .pill.bad {
-      border-color: rgba(248,113,113,0.9);
-      color: #fecaca;
-      background: rgba(248,113,113,0.1);
-    }
-
-    .section-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-sub);
-      margin-bottom: 4px;
-    }
-
-    .summary-text {
-      font-size: 0.85rem;
-      line-height: 1.5;
-      color: #e5e7eb;
-    }
-
-    .answers-list {
-      margin: 8px 0 0;
-      padding: 0;
-      list-style: none;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
+    .answers-list { margin: 8px 0 0; padding: 0; list-style: none; max-height: 240px; overflow-y: auto; }
     .answers-list li {
-      font-size: 0.82rem;
-      color: #e5e7eb;
-      padding: 7px 8px;
-      border-radius: 10px;
-      background: rgba(15,23,42,0.95);
-      border: 1px solid rgba(55,65,81,0.8);
-      margin-bottom: 6px;
+      font-size: 0.84rem; color: var(--chalk);
+      padding: 8px 10px; border-radius: 8px;
+      border: 1.5px dashed var(--dash); margin-bottom: 6px;
     }
-
-    .answers-list span.q-tag {
-      font-size: 0.74rem;
-      color: var(--text-sub);
-      display: inline-block;
-      margin-bottom: 2px;
-    }
-
+    .answers-list span.q-tag { font-size: 0.75rem; color: var(--muted); display: inline-block; margin-bottom: 2px; }
     .answers-list .verdict {
-      float: right;
-      font-size: 0.72rem;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.5);
-      color: var(--text-sub);
+      float: right; font-size: 0.72rem; padding: 2px 9px; border-radius: 999px;
+      border: 1.5px dashed var(--dash); color: var(--muted);
     }
+    .answers-list .verdict.Strong { border-color: rgba(183,217,168,0.7); color: var(--chalk-green); }
+    .answers-list .verdict.Weak { border-color: rgba(234,172,184,0.7); color: var(--chalk-pink); }
 
-    .answers-list .verdict.Strong { border-color: rgba(34,197,94,0.9); color: #bbf7d0; }
-    .answers-list .verdict.Weak { border-color: rgba(248,113,113,0.9); color: #fecaca; }
-
-    .tips-list {
-      margin: 8px 0 0;
-      padding-left: 18px;
-      font-size: 0.83rem;
-      line-height: 1.55;
-      color: #e5e7eb;
-    }
+    .tips-list { margin: 8px 0 0; padding-left: 18px; font-size: 0.85rem; line-height: 1.6; color: var(--chalk-dim); }
 
     .resource-group { margin-top: 8px; }
-    .resource-area { font-size: 0.8rem; font-weight: 600; color: #e5e7eb; margin-bottom: 3px; }
-    .resource-links a {
-      display: inline-block;
-      font-size: 0.78rem;
-      color: #c7d2fe;
-      text-decoration: none;
-      margin: 2px 10px 2px 0;
-    }
-    .resource-links a:hover { text-decoration: underline; }
+    .resource-area { font-size: 0.84rem; font-weight: 700; color: var(--chalk); margin-bottom: 3px; }
+    .resource-links a { display: inline-block; font-size: 0.8rem; color: var(--chalk-blue); text-decoration: underline dashed; margin: 2px 10px 2px 0; }
 
     .redo-box textarea {
-      width: 100%;
-      height: 80px;
-      margin-top: 8px;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(148,163,184,0.5);
-      background: rgba(15,23,42,0.95);
-      color: var(--text-main);
-      font-size: 0.83rem;
-      resize: vertical;
+      width: 100%; height: 80px; margin-top: 8px; padding: 9px 10px;
+      border-radius: 8px; border: 1.5px dashed var(--dash);
+      background: rgba(244,241,228,0.04); color: var(--chalk);
+      font-size: 0.86rem; font-family: var(--fb); resize: vertical;
     }
-    .redo-box textarea:focus { outline: none; border-color: var(--primary); }
-    .redo-verdict { font-size: 0.82rem; margin-top: 6px; color: #bbf7d0; }
+    .redo-box textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; }
+    .redo-verdict { font-size: 0.85rem; margin-top: 6px; color: var(--chalk-green); }
 
-    .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-      align-items: center;
-    }
+    .actions-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
 
-    .btn-primary {
-      border: none;
-      border-radius: 999px;
-      padding: 9px 18px;
-      background: linear-gradient(120deg,#6366f1,#22c55e);
-      color: #f9fafb;
-      font-size: 0.86rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 12px 26px rgba(15,23,42,0.7);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-primary:disabled { opacity: 0.55; cursor: default; }
-
-    .btn-secondary {
-      border-radius: 999px;
-      padding: 8px 14px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.9);
-      color: var(--text-sub);
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .loading-note {
-      font-size: 0.85rem;
-      color: var(--text-sub);
-      padding: 24px 0;
-      text-align: center;
-    }
+    .loading-note { font-size: 0.9rem; color: var(--muted); padding: 24px 0; text-align: center; font-style: italic; }
+    .loading-note a { color: var(--chalk-yellow); }
 
     .toast {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 24px;
-      background: #16a34a;
-      color: #f9fafb;
-      padding: 9px 14px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      box-shadow: 0 10px 20px rgba(15,23,42,0.8);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s, bottom 0.25s;
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
+      background: rgba(18,38,28,0.97); color: var(--chalk); border: 1.5px dashed var(--dash);
+      padding: 9px 15px; border-radius: 999px; font-size: 0.8rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s, bottom 0.25s;
     }
-
-    .toast.show {
-      opacity: 1;
-      bottom: 40px;
-      pointer-events: all;
-    }
+    .toast.show { opacity: 1; bottom: 40px; pointer-events: all; }
 
     @media (max-width: 720px) {
-      .grid {
-        grid-template-columns: minmax(0,1fr);
-      }
-      .card.full {
-        grid-column: auto;
-      }
+      .grid { grid-template-columns: minmax(0,1fr); }
+      .card.full { grid-column: auto; }
     }
   </style>
 </head>
-<body>
+<body class="board">
 
 <div class="layout">
   <div class="header-row">
@@ -405,18 +133,18 @@
     </div>
   </div>
 
-  <h1>How did that round go?</h1>
-  <p class="subtitle">
-    Aira reviewed the full session — what was asked, what you said, and how you delivered it.
+  <h1>🔔 The bell has rung — how did that round go?</h1>
+  <p class="subtitle chalk-sub">
+    Aira reviewed the full session — what was asked, what you said, and how you delivered it. Like a teacher going through your answer sheet with you.
   </p>
 
   <div class="loading-note" id="loadingNote">Aira is reviewing your session…</div>
 
   <div class="grid" id="resultGrid" style="display:none">
     <!-- Metrics + weak areas -->
-    <div class="card">
+    <div class="card board-card pin-yellow">
       <div class="section-label">Speaking scores</div>
-      <h2>Fluency, clarity, confidence & structure</h2>
+      <h2>Fluency, clarity, confidence &amp; structure</h2>
       <small>Scored by Aira from your actual answers and measured pace — not self-reported.</small>
 
       <div class="metrics-row">
@@ -446,8 +174,8 @@
     </div>
 
     <!-- Coach verdict + suggestions -->
-    <div class="card">
-      <div class="section-label">Coach's verdict</div>
+    <div class="card board-card">
+      <div class="section-label">Teacher's remarks</div>
       <h2>What Aira noticed</h2>
       <p class="summary-text" id="summaryText"></p>
 
@@ -455,18 +183,18 @@
       <ul class="tips-list" id="suggestionsList"></ul>
 
       <div class="actions-row">
-        <button class="btn-secondary" onclick="window.location.href='report.html'">
-          View overall report
+        <button class="btn-chalk" onclick="window.location.href='report.html'">
+          View report card
         </button>
-        <button class="btn-secondary" onclick="window.location.href='soft_skills.html'">
+        <button class="btn-chalk" onclick="window.location.href='soft_skills.html'">
           Practice again
         </button>
       </div>
-      <p class="mode-tag" id="modeText" style="margin-top:6px; font-size:0.78rem; color:var(--text-sub);"></p>
+      <p class="mode-tag" id="modeText" style="margin-top:6px; font-size:0.78rem; color:var(--muted);"></p>
     </div>
 
     <!-- Redo the weakest beat -->
-    <div class="card full" id="redoCard" style="display:none">
+    <div class="card board-card pin-green full" id="redoCard" style="display:none">
       <div class="section-label">One more try</div>
       <h2 id="redoTitle">Retry your weakest moment</h2>
       <small id="redoWhy"></small>
@@ -475,13 +203,13 @@
         <textarea id="redoAnswer" placeholder="Give it one more go — a few focused sentences."></textarea>
       </div>
       <div class="actions-row">
-        <button class="btn-primary" id="redoBtn">Check my retry</button>
+        <button class="btn-chalk primary" id="redoBtn">Check my retry</button>
       </div>
       <p class="redo-verdict" id="redoVerdict"></p>
     </div>
 
     <!-- Transcript with per-beat verdicts -->
-    <div class="card full">
+    <div class="card board-card full">
       <div class="section-label">What you actually said</div>
       <h2>Round by round</h2>
       <small>Aira's read on each answer. Look for where the verdict dips.</small>
@@ -489,7 +217,7 @@
     </div>
 
     <!-- Resources -->
-    <div class="card full" id="resourcesCard" style="display:none">
+    <div class="card board-card full" id="resourcesCard" style="display:none">
       <div class="section-label">Level up</div>
       <h2>Resources picked for these habits</h2>
       <div id="resourcesWrap"></div>
@@ -551,7 +279,7 @@
       ? transcript.map((t, i) => {
           const b = beats[i] || {};
           const verdict = b.verdict ? `<span class="verdict ${esc(b.verdict)}">${esc(b.verdict)}</span>` : "";
-          const note = b.note ? `<div style="font-size:0.76rem;color:var(--text-sub);margin-top:3px;">${esc(b.note)}</div>` : "";
+          const note = b.note ? `<div style="font-size:0.76rem;color:var(--muted);margin-top:3px;">${esc(b.note)}</div>` : "";
           return `<li>${verdict}<span class="q-tag">Q${i + 1} · ${esc(t.prompt || "")}</span>${esc(t.answer || "(blank)")}${note}</li>`;
         }).join("")
       : `<li><span class="q-tag">No transcript</span>This session's answers weren't handed over for display.</li>`;
@@ -605,7 +333,7 @@
     const trackLabel = (handoff && handoff.track) || "communication";
     document.getElementById("modeChip").textContent = "Track: " + trackLabel;
     document.getElementById("modeText").textContent =
-      "This round was saved to your report automatically.";
+      "This round was saved to your report card automatically.";
 
     loadingNote.style.display = "none";
     resultGrid.style.display = "grid";
@@ -614,7 +342,7 @@
   async function evaluate() {
     if (!handoff) {
       loadingNote.innerHTML =
-        'No session to review. <a href="soft_skills.html" style="color:#c7d2fe">Start a practice round</a> first.';
+        'No session to review. <a href="soft_skills.html">Start a practice round</a> first.';
       return;
     }
     try {
@@ -632,7 +360,7 @@
       render(data.feedback || {});
     } catch (err) {
       loadingNote.innerHTML = esc(err.message || "Could not evaluate this session.") +
-        ' <a href="soft_skills.html" style="color:#c7d2fe">Practice again</a>';
+        ' <a href="soft_skills.html">Practice again</a>';
     }
   }
 

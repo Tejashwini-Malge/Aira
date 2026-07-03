@@ -3,135 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aira · AI Quiz</title>
+<title>Aira · Class Test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07; --card: rgba(255,244,224,0.04); --card-hover: rgba(255,244,224,0.07);
-  --border: rgba(202,156,77,0.18); --border-bright: rgba(202,156,77,0.38);
-  --gold: #C9A46E; --gold-light: #E8C97A; --cream: #F2E8D8; --muted: #9B8E7E;
-  --r: 16px; --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--fb); background: var(--bg); color: var(--cream);
-  min-height: 100vh; padding: 24px 16px 40px; opacity: 0; transition: opacity 0.5s;
-}
+* { margin: 0; padding: 0; }
+body.board { padding: 24px 16px 40px; opacity: 0; transition: opacity 0.5s; }
 body.loaded { opacity: 1; }
-body::before {
-  content: ''; position: fixed; top: 0; left: 0; right: 0; height: 300px;
-  background: radial-gradient(ellipse at top, rgba(196,149,58,0.06) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-}
 .page { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-badge {
   width: 32px; height: 32px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
   display: flex; align-items: center; justify-content: center;
-  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
-  box-shadow: 0 0 16px rgba(201,164,110,0.3);
+  color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
-.brand-name { font-family: var(--fd); font-size: 0.95rem; font-weight: 600; color: var(--cream); }
-.brand-sub { font-size: 0.7rem; color: var(--muted); }
-.nav-back { font-size: 0.76rem; color: var(--muted); cursor: pointer; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); transition: all 0.2s; }
-.nav-back:hover { color: var(--cream); border-color: var(--border-bright); }
+.brand-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
+.brand-sub { font-size: 0.72rem; color: var(--muted); }
+.nav-back { font-size: 0.78rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
+.nav-back:hover { color: var(--chalk); border-color: var(--chalk); }
 
-.page-title { font-family: var(--fd); font-size: 1.6rem; color: var(--cream); margin-bottom: 6px; }
-.page-sub { font-size: 0.84rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.page-title { font-family: var(--fd); font-size: 1.8rem; color: var(--chalk); margin-bottom: 6px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+.page-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
 
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 22px 20px; margin-bottom: 16px;
-}
-.card-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 14px; }
-.card-note { font-size: 0.76rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
+.card { padding: 22px 20px; margin-bottom: 20px; }
+.card-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 14px; }
+.card-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
 
 .topic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 input[type="text"] {
   flex: 1; min-width: 200px; padding: 10px 13px;
-  border-radius: 10px; border: 1px solid var(--border);
-  background: rgba(255,244,224,0.03); color: var(--cream);
-  font-size: 0.9rem; font-family: var(--fb); transition: all 0.2s;
+  border-radius: 8px; border: 1.5px dashed var(--dash);
+  background: rgba(244,241,228,0.04); color: var(--chalk);
+  font-size: 0.94rem; font-family: var(--fb); transition: all 0.2s;
 }
-input::placeholder { color: rgba(155,142,126,0.5); }
-input:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
+input::placeholder { color: rgba(244,241,228,0.3); }
+input:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
 
-label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 500; margin-top: 14px; margin-bottom: 5px; }
+label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 14px; margin-bottom: 5px; }
 label:first-child { margin-top: 0; }
 textarea {
   width: 100%; min-height: 80px; padding: 11px 13px;
-  border-radius: 10px; border: 1px solid var(--border);
-  background: rgba(255,244,224,0.03); color: var(--cream);
-  font-size: 0.86rem; font-family: var(--fb); resize: vertical; line-height: 1.6;
+  border-radius: 8px; border: 1.5px dashed var(--dash);
+  background: rgba(244,241,228,0.04); color: var(--chalk);
+  font-size: 0.9rem; font-family: var(--fb); resize: vertical; line-height: 1.6;
 }
-textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background: rgba(255,244,224,0.05); box-shadow: 0 0 0 3px rgba(201,164,110,0.08); }
-
-.btn {
-  padding: 10px 22px; border-radius: 10px; border: none;
-  font-size: 0.88rem; font-weight: 600; font-family: var(--fb);
-  cursor: pointer; transition: all 0.2s ease;
-}
-.btn.primary {
-  background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E);
-  color: #0C0A07; box-shadow: 0 6px 18px rgba(201,164,110,0.22);
-}
-.btn.primary:hover { box-shadow: 0 8px 22px rgba(201,164,110,0.35); transform: translateY(-1px); }
+textarea::placeholder { color: rgba(244,241,228,0.3); }
+textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
 
 /* Result cards */
-.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-.result-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 18px 16px;
-}
+.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.result-card { padding: 18px 16px; }
 .result-card.full { grid-column: 1 / -1; }
-.result-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 8px; }
-.result-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 10px; }
-.result-body { font-size: 0.83rem; color: var(--muted); line-height: 1.65; }
+.result-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 8px; opacity: 0.85; }
+.result-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 10px; }
+.result-body { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.65; }
 .result-list { margin: 0; padding-left: 16px; }
-.result-list li { font-size: 0.82rem; color: var(--muted); margin-bottom: 5px; line-height: 1.5; }
+.result-list li { font-size: 0.85rem; color: var(--chalk-dim); margin-bottom: 5px; line-height: 1.5; }
 
+/* Score circled in chalk — like marks on a test paper */
 .score-badge {
-  display: inline-block; padding: 6px 14px; border-radius: 999px;
-  border: 1px solid var(--border-bright); color: var(--gold);
-  font-family: var(--fd); font-size: 1.1rem; margin-bottom: 8px;
+  display: inline-block; padding: 6px 16px; border-radius: 50%;
+  border: 2.5px dashed var(--chalk-yellow); color: var(--chalk-yellow);
+  font-family: var(--fd); font-size: 1.25rem;
+  transform: rotate(-3deg);
 }
 
-.loading-state { padding: 32px; text-align: center; color: var(--muted); font-style: italic; font-size: 0.9rem; }
+.loading-state { padding: 32px; text-align: center; color: var(--muted); font-style: italic; font-size: 0.95rem; }
 
 @media (max-width: 600px) { .topic-row { flex-direction: column; align-items: stretch; } }
 </style>
 </head>
-<body>
+<body class="board">
 <div class="page">
   <div class="header">
     <div class="brand">
       <div class="brand-badge">A</div>
       <div>
         <div class="brand-name">Aira</div>
-        <div class="brand-sub">Persona-aware quiz</div>
+        <div class="brand-sub">Persona-aware class test</div>
       </div>
     </div>
-    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Hub</div>
+    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Classroom</div>
   </div>
 
-  <h2 class="page-title">Mock Interview</h2>
-  <p class="page-sub">Aira interviews you using your private profile. Your answers are judged against how you actually work — no two people get the same interview.</p>
+  <h2 class="page-title chalk-title">Mock Interview</h2>
+  <p class="page-sub chalk-sub">Aira interviews you using your private profile — like a teacher who's read your whole notebook. No two students get the same paper.</p>
 
-  <div class="card" id="modeCard">
+  <div class="card board-card pin-yellow" id="modeCard">
     <div class="card-title">Step 1 · Choose your mode</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
       <div class="mode-tab active" id="modeRole" onclick="selectMode('role')"
-           style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .18s;">
-        <div style="font-weight:600;color:var(--cream);margin-bottom:4px;">🎤 Role interview</div>
-        <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;">Aira interviews you for your target role, using your resume. No topic needed.</div>
+           style="flex:1;min-width:220px;padding:14px 16px;border:1.5px dashed var(--dash);border-radius:10px;cursor:pointer;transition:all .18s;">
+        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--chalk);margin-bottom:4px;">🎤 Role interview</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">Aira interviews you for your target role, using your resume. No topic needed.</div>
       </div>
       <div class="mode-tab" id="modeTopic" onclick="selectMode('topic')"
-           style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .18s;">
-        <div style="font-weight:600;color:var(--cream);margin-bottom:4px;">📚 Topic quiz</div>
-        <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;">Pick any subject — questions are still tuned to you.</div>
+           style="flex:1;min-width:220px;padding:14px 16px;border:1.5px dashed var(--dash);border-radius:10px;cursor:pointer;transition:all .18s;">
+        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--chalk);margin-bottom:4px;">📚 Topic quiz</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">Pick any subject — questions are still tuned to you.</div>
       </div>
     </div>
     <div id="roleOptions" style="margin-top:18px;">
@@ -158,7 +130,7 @@ textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background
       <input type="text" id="topicInput" placeholder="e.g. DBMS, Operating Systems, Python, System Design…">
     </div>
     <div style="margin-top:18px;">
-      <button class="btn primary" id="startBtn" onclick="startQuiz()">Start interview →</button>
+      <button class="btn-chalk primary" id="startBtn" onclick="startQuiz()">Start interview →</button>
     </div>
   </div>
 
@@ -167,75 +139,74 @@ textarea:focus { outline: none; border-color: rgba(201,164,110,0.45); background
 </div>
 
 <style>
-.mode-tab.active { border-color: var(--gold) !important; background: rgba(201,164,110,0.07); box-shadow: 0 0 0 1px rgba(201,164,110,0.25); }
-.mode-tab:hover { border-color: var(--border-bright); }
+.mode-tab.active { border-color: var(--chalk-yellow) !important; border-style: solid !important; background: rgba(242,226,160,0.06); }
+.mode-tab:hover { border-color: var(--chalk); }
 
 /* Option pills (type / difficulty / duration) */
-.opt-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); margin:14px 0 8px; }
+.opt-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--chalk-yellow); margin:14px 0 8px; opacity:0.85; }
 .opt-row { display:flex; gap:8px; flex-wrap:wrap; }
 .opt-pill {
-  padding:7px 15px; border-radius:999px; border:1px solid var(--border);
-  font-size:0.82rem; color:var(--muted); cursor:pointer; transition:all .16s ease; user-select:none;
+  padding:7px 15px; border-radius:999px; border:1.5px dashed var(--dash);
+  font-size:0.84rem; color:var(--muted); cursor:pointer; transition:all .16s ease; user-select:none;
 }
-.opt-pill:hover { border-color:var(--border-bright); color:var(--cream); }
-.opt-pill.active { border-color:var(--gold); background:rgba(201,164,110,0.1); color:var(--cream); font-weight:500; }
+.opt-pill:hover { border-color:var(--chalk); color:var(--chalk); }
+.opt-pill.active { border-color:var(--chalk-yellow); border-style:solid; background:rgba(242,226,160,0.08); color:var(--chalk); }
 
 /* Interview (one-at-a-time) */
 .iv-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
-.iv-step { font-size:0.74rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+.iv-step { font-size:0.76rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
 .iv-timer {
-  display:flex; align-items:center; gap:7px; font-family:var(--fd); font-size:1.05rem; color:var(--gold-light);
-  padding:5px 13px; border-radius:999px; border:1px solid var(--border-bright); background:rgba(201,164,110,0.05);
+  display:flex; align-items:center; gap:7px; font-family:var(--fd); font-size:1.1rem; color:var(--chalk-yellow);
+  padding:5px 14px; border-radius:999px; border:1.5px dashed rgba(242,226,160,0.5);
 }
-.iv-timer.warn { color:#E58A78; border-color:rgba(220,90,70,0.5); background:rgba(220,90,70,0.08); }
-.iv-bar-bg { height:3px; border-radius:999px; background:rgba(255,244,224,0.06); overflow:hidden; margin-bottom:18px; }
-.iv-bar-fill { height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#C9A46E,#E8C97A); transition:width .35s ease; }
-.iv-question { font-family:var(--fd); font-size:1.18rem; line-height:1.55; color:var(--cream); margin-bottom:16px; }
+.iv-timer.warn { color:#eaacb8; border-color:rgba(234,172,184,0.6); }
+.iv-bar-bg { height:5px; border-radius:999px; background:rgba(244,241,228,0.08); overflow:hidden; margin-bottom:18px; border:1px dashed var(--dash); }
+.iv-bar-fill { height:100%; width:0; border-radius:999px; background:repeating-linear-gradient(90deg, var(--chalk) 0 5px, transparent 5px 8px); transition:width .35s ease; }
+.iv-question { font-family:var(--fd); font-size:1.3rem; line-height:1.5; color:var(--chalk); margin-bottom:16px; }
 .iv-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
-.btn.ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
-.btn.ghost:hover { color:var(--cream); border-color:var(--border-bright); }
 
 /* Structured result pieces */
-.score-line { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.score-line { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
 .weak-chips { display:flex; flex-wrap:wrap; gap:8px; }
 .weak-chip {
-  font-size:0.8rem; color:var(--cream); padding:6px 12px; border-radius:999px;
-  border:1px solid var(--border-bright); background:rgba(201,164,110,0.06);
+  font-size:0.82rem; color:var(--chalk-pink); padding:6px 12px; border-radius:999px;
+  border:1.5px dashed rgba(234,172,184,0.5);
 }
 .plan-steps { list-style:none; margin:12px 0 0; padding:0; counter-reset:step; }
 .plan-steps li {
-  position:relative; padding:8px 0 8px 30px; font-size:0.83rem; color:var(--muted); line-height:1.55;
-  border-top:1px solid rgba(255,244,224,0.05);
+  position:relative; padding:8px 0 8px 30px; font-size:0.85rem; color:var(--chalk-dim); line-height:1.55;
+  border-top:1px dashed rgba(244,241,228,0.12);
 }
 .plan-steps li:before {
   counter-increment:step; content:counter(step);
   position:absolute; left:0; top:8px; width:20px; height:20px; border-radius:50%;
-  background:rgba(201,164,110,0.14); color:var(--gold); font-size:0.72rem; font-weight:600;
+  border:1.5px dashed var(--chalk-yellow); color:var(--chalk-yellow); font-size:0.72rem; font-weight:700;
   display:flex; align-items:center; justify-content:center;
 }
 
 /* Resources */
 .res-group { margin-bottom:16px; }
 .res-group:last-child { margin-bottom:0; }
-.res-area { font-size:0.8rem; color:var(--gold-light); font-weight:600; margin-bottom:8px; }
+.res-area { font-size:0.84rem; color:var(--chalk-yellow); font-weight:700; margin-bottom:8px; }
 .res-items { display:flex; flex-direction:column; gap:8px; }
 .res-item {
   display:flex; align-items:center; gap:12px; text-decoration:none;
-  padding:11px 13px; border-radius:10px; border:1px solid var(--border);
-  background:rgba(255,244,224,0.02); transition:all .18s ease;
+  padding:11px 13px; border-radius:8px; border:1.5px dashed var(--dash);
+  transition:all .18s ease;
 }
-.res-item:hover { border-color:var(--border-bright); background:rgba(255,244,224,0.05); transform:translateY(-1px); }
+.res-item:hover { border-color:var(--chalk); background:rgba(244,241,228,0.05); transform:translateY(-1px); }
 .res-icon { width:30px; height:30px; flex-shrink:0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; }
-.res-video { background:rgba(220,90,70,0.16); color:#E58A78; }
-.res-blog  { background:rgba(110,150,210,0.16); color:#8FB2E0; }
-.res-paper { background:rgba(150,120,200,0.16); color:#B69BE0; }
+.res-video { background:rgba(234,172,184,0.15); color:var(--chalk-pink); }
+.res-blog  { background:rgba(169,201,224,0.15); color:var(--chalk-blue); }
+.res-paper { background:rgba(183,217,168,0.15); color:var(--chalk-green); }
 .res-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-.res-title { font-size:0.84rem; color:var(--cream); line-height:1.4; }
+.res-title { font-size:0.86rem; color:var(--chalk); line-height:1.4; }
 .res-type { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
 .res-open { color:var(--muted); font-size:0.9rem; flex-shrink:0; }
-.res-item:hover .res-open { color:var(--gold); }
+.res-item:hover .res-open { color:var(--chalk-yellow); }
 </style>
 
+<script src="assets/aira.js"></script>
 <script>
 window.addEventListener('load', () => document.body.classList.add('loaded'));
 const API_BASE = ""; // same-origin: lets the session cookie flow
@@ -279,8 +250,8 @@ async function startQuiz() {
   const qc = document.getElementById("quizContainer");
   document.getElementById("resultContainer").innerHTML = "";
   document.getElementById("modeCard").style.display = "none";
-  qc.innerHTML = `<div class="card"><div class="loading-state">${
-    selectedMode === "role" ? "Aira is preparing your interview…" : `Generating questions for <em>${topic}</em>…`
+  qc.innerHTML = `<div class="card board-card"><div class="loading-state">${
+    selectedMode === "role" ? "Aira is writing your question paper…" : `Setting questions for <em>${topic}</em>…`
   }</div></div>`;
 
   const payload = { mode: selectedMode, topic };
@@ -294,10 +265,10 @@ async function startQuiz() {
     const data = await res.json();
     ivQuestions = Array.isArray(data.questions) ? data.questions : [];
     activeLabel = data.topic || topic || "your interview";
-    if (!ivQuestions.length) { qc.innerHTML = `<div class="card"><p style="color:var(--muted);">No questions generated.</p></div>`; return; }
+    if (!ivQuestions.length) { qc.innerHTML = `<div class="card board-card"><p style="color:var(--muted);">No questions generated.</p></div>`; return; }
     beginInterview();
   } catch (err) {
-    qc.innerHTML = `<div class="card"><p style="color:var(--muted);">Could not start the interview. Is the backend running?<br><small>${err.message}</small></p></div>`;
+    qc.innerHTML = `<div class="card board-card"><p style="color:var(--muted);">Could not start the interview. Is the backend running?<br><small>${err.message}</small></p></div>`;
   }
 }
 
@@ -348,7 +319,7 @@ function renderQuestion() {
 
   const qc = document.getElementById("quizContainer");
   qc.innerHTML = `
-    <div class="card">
+    <div class="card board-card pin-yellow">
       <div class="iv-top">
         <div class="iv-step">${selectedMode === "role"
             ? `${opts.type} · ${opts.difficulty} · Question ${ivIndex + 1} of ${total}`
@@ -359,8 +330,8 @@ function renderQuestion() {
       <div class="iv-question">${escAttr(q.question)}</div>
       <textarea id="ivAnswer" placeholder="Answer out loud or in writing — explain your thinking.">${escAttr(saved)}</textarea>
       <div class="iv-actions">
-        <button class="btn ghost" id="ivPrev" ${ivIndex === 0 ? "disabled style='opacity:.4;cursor:not-allowed;'" : ""}>‹ Previous</button>
-        <button class="btn primary" id="ivNext">${isLast ? "Finish & get feedback →" : "Next question ›"}</button>
+        <button class="btn-chalk" id="ivPrev" ${ivIndex === 0 ? "disabled" : ""}>‹ Previous</button>
+        <button class="btn-chalk primary" id="ivNext">${isLast ? "Finish & get feedback →" : "Next question ›"}</button>
       </div>
     </div>`;
   updateTimerDisplay();
@@ -381,8 +352,8 @@ async function finishInterview(timedOut) {
   clearInterval(ivTimerId);
 
   const qc = document.getElementById("quizContainer");
-  qc.innerHTML = `<div class="card"><div class="loading-state">${
-    timedOut ? "Time's up! Reviewing what you got through…" : "Evaluating your interview…"
+  qc.innerHTML = `<div class="card board-card"><div class="loading-state">${
+    timedOut ? "Time's up! Pens down — reviewing what you got through…" : "Correcting your paper…"
   }</div></div>`;
   const rc = document.getElementById("resultContainer");
 
@@ -397,9 +368,11 @@ async function finishInterview(timedOut) {
     });
     const data = await res.json();
     qc.innerHTML = "";
+    // The period is over — ring the school bell.
+    Aira.ringBell();
     renderResults(data.feedback, activeLabel);
   } catch (err) {
-    rc.innerHTML = `<div class="card"><p style="color:var(--muted);">Evaluation failed: ${err.message}</p></div>`;
+    rc.innerHTML = `<div class="card board-card"><p style="color:var(--muted);">Evaluation failed: ${err.message}</p></div>`;
   }
 }
 
@@ -422,7 +395,7 @@ function renderResults(fb, topic) {
   const resources = fb.resources || [];
 
   const resourcesHtml = resources.length ? `
-    <div class="result-card full">
+    <div class="result-card board-card full">
       <div class="result-label">Resources to help</div>
       <div class="result-title">Where to get stronger</div>
       <div class="result-body" style="margin-bottom:14px;">Hand-picked starting points for the areas you slipped on. Each opens a live search — pick what fits you.</div>
@@ -446,8 +419,8 @@ function renderResults(fb, topic) {
   const grid = document.createElement("div");
   grid.className = "results-grid";
   grid.innerHTML = `
-    <div class="result-card full">
-      <div class="result-label">Step 3 · Feedback</div>
+    <div class="result-card board-card pin-yellow full">
+      <div class="result-label">🔔 The bell has rung · Feedback</div>
       <div class="score-line">
         ${fb.score ? `<span class="score-badge">${esc(fb.score)}</span>` : ""}
         <span class="result-title" style="margin:0;">What Aira observed</span>
@@ -455,28 +428,28 @@ function renderResults(fb, topic) {
       <div class="result-body">${esc(fb.feedback) || "No feedback available."}</div>
     </div>
 
-    <div class="result-card">
+    <div class="result-card board-card">
       <div class="result-label">Weak areas</div>
       <div class="result-title">Focus here next</div>
       <div class="weak-chips">${weak.map(w => `<span class="weak-chip">${esc(w)}</span>`).join("")}</div>
     </div>
 
-    <div class="result-card">
+    <div class="result-card board-card">
       <div class="result-label">Study plan</div>
-      <div class="result-title">Your next steps</div>
+      <div class="result-title">Your homework</div>
       <div class="result-body">${esc(fb.study_plan) || "—"}</div>
       ${suggestions.length ? `<ol class="plan-steps">${suggestions.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
     </div>
 
     ${resourcesHtml}
 
-    <div class="result-card full">
+    <div class="result-card board-card pin-green full">
       <div class="result-label">Up next</div>
       <div class="result-title">Ready to apply this plan?</div>
       <div class="result-body" style="margin-bottom:14px;">Save this plan and come back after 1–2 focused sessions. Consistency is what moves the needle.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn primary" onclick="window.location.href='Welcome.html'">Back to session hub →</button>
-        <button class="btn ghost" onclick="window.location.reload()">New interview</button>
+        <button class="btn-chalk primary" onclick="window.location.href='Welcome.html'">Back to the classroom →</button>
+        <button class="btn-chalk" onclick="window.location.reload()">New interview</button>
       </div>
     </div>
   `;

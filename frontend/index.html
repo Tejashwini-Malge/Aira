@@ -5,18 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira — Your AI Study Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
 <style>
-:root {
-  --bg: #0C0A07; --gold: #C9A46E; --gold-light: #E8C97A;
-  --cream: #F2E8D8; --muted: #9B8E7E;
-  --border: rgba(202,156,77,0.2); --border-bright: rgba(202,156,77,0.42);
-  --card: rgba(255,244,224,0.04);
-  --fd: 'Playfair Display', Georgia, serif; --fb: 'Inter', system-ui, sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { font-family: var(--fb); background: var(--bg); color: var(--cream); overflow-x: hidden; }
+body.board { overflow-x: hidden; }
 
 /* ── Scroll animation base ── */
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
@@ -30,182 +24,129 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); overf
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 56px;
-  background: rgba(12,10,7,0.0); backdrop-filter: blur(0px);
-  border-bottom: 1px solid transparent;
+  padding: 12px 56px;
+  background: transparent;
+  border-bottom: 2px solid transparent;
   transition: all 0.4s ease;
 }
 nav.scrolled {
-  background: rgba(12,10,7,0.92); backdrop-filter: blur(14px);
-  border-bottom-color: var(--border);
+  background: rgba(18,38,28,0.94); backdrop-filter: blur(10px);
+  border-bottom: 2px dashed var(--dash);
 }
 .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-badge {
   width: 32px; height: 32px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #F2E8D8 0%, #C9A46E 55%, #8B6520 100%);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
   display: flex; align-items: center; justify-content: center;
-  color: #0C0A07; font-weight: 700; font-size: 0.85rem;
-  box-shadow: 0 0 16px rgba(201,164,110,0.4);
+  color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
-.brand-name { font-family: var(--fd); font-size: 1rem; font-weight: 600; color: var(--cream); }
+.brand-name { font-family: var(--fd); font-size: 1.2rem; color: var(--chalk); }
 .nav-links { display: flex; align-items: center; gap: 12px; }
-.btn-ghost-sm { padding: 7px 18px; border-radius: 8px; border: 1px solid rgba(202,156,77,0.35); background: transparent; color: var(--cream); font-size: 0.85rem; font-family: var(--fb); cursor: pointer; transition: all 0.2s; }
-.btn-ghost-sm:hover { border-color: var(--gold); background: rgba(201,164,110,0.06); }
-.btn-gold-sm { padding: 7px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #C9A46E, #E8C97A, #C9A46E); color: #0C0A07; font-size: 0.85rem; font-weight: 700; font-family: var(--fb); cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(201,164,110,0.3); }
-.btn-gold-sm:hover { box-shadow: 0 6px 20px rgba(201,164,110,0.5); transform: translateY(-1px); }
 
-/* ── HERO ── */
+/* ── HERO — the big blackboard ── */
 .hero {
   position: relative; min-height: 100vh;
-  display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 0 56px 80px; overflow: hidden;
-}
-.hero-bg {
-  position: absolute; inset: 0;
-  background-image: url('/assets/campus.jpg'), url('/assets/study.jpg');
-  background-size: cover; background-position: center 30%;
-  background-color: #0E0B06;
-  transform: scale(1.05);
-  transition: transform 12s ease-out;
-  will-change: transform;
-}
-.hero-bg.loaded { transform: scale(1); }
-.hero-overlay {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(to top, rgba(8,6,3,0.97) 0%, rgba(8,6,3,0.55) 40%, rgba(8,6,3,0.2) 70%, rgba(8,6,3,0.5) 100%),
-    linear-gradient(to right, rgba(8,6,3,0.7) 0%, rgba(8,6,3,0.1) 60%);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 90px 56px 80px; overflow: hidden;
 }
 .hero-content {
-  position: relative; z-index: 2; max-width: 700px;
+  position: relative; z-index: 2; max-width: 760px; margin: 0 auto; text-align: center;
   opacity: 0; transform: translateY(32px);
   animation: heroIn 1s ease 0.3s forwards;
 }
 @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
 
-.hero-eyebrow { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--gold); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-.eyebrow-line { width: 28px; height: 1px; background: var(--gold); opacity: 0.6; }
-.hero-title { font-family: var(--fd); font-size: clamp(2.8rem, 5.5vw, 4.4rem); line-height: 1.1; color: var(--cream); margin-bottom: 20px; }
-.hero-title em { font-style: italic; color: var(--gold-light); }
-.hero-sub { font-size: 1.05rem; color: rgba(242,232,216,0.6); line-height: 1.7; max-width: 500px; margin-bottom: 36px; }
-.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
-.btn-hero-primary { padding: 14px 34px; border-radius: 10px; border: none; background: linear-gradient(135deg, #C9A46E 0%, #E8C97A 50%, #C9A46E 100%); color: #0C0A07; font-size: 1rem; font-weight: 700; font-family: var(--fb); cursor: pointer; transition: all 0.25s; box-shadow: 0 8px 28px rgba(201,164,110,0.4); }
-.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(201,164,110,0.55); }
-.btn-hero-ghost { padding: 14px 28px; border-radius: 10px; border: 1px solid rgba(202,156,77,0.4); background: rgba(255,244,224,0.04); color: var(--cream); font-size: 1rem; font-family: var(--fb); cursor: pointer; transition: all 0.2s; }
-.btn-hero-ghost:hover { background: rgba(255,244,224,0.09); border-color: var(--gold); }
+.hero-eyebrow { margin-bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.eyebrow-line { width: 28px; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 6px, transparent 6px 10px); }
+.hero-title { font-size: clamp(2.6rem, 5.5vw, 4.2rem); line-height: 1.15; margin-bottom: 20px; }
+.hero-sub { font-size: 1.1rem; color: var(--chalk-dim); line-height: 1.7; max-width: 540px; margin: 0 auto 36px; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 52px; }
 
-/* Hero stats bar */
+/* chalk underline squiggle under the title */
+.squiggle { display: block; margin: 10px auto 0; width: 220px; opacity: 0.7; }
+
+/* Hero stats bar — like tally marks on the board corner */
 .hero-stats {
-  display: flex; gap: 32px; padding-top: 28px;
-  border-top: 1px solid rgba(202,156,77,0.15);
+  display: flex; gap: 40px; padding-top: 26px; justify-content: center;
+  border-top: 2px dashed var(--dash);
 }
-.h-stat { display: flex; flex-direction: column; gap: 2px; }
-.h-stat-val { font-family: var(--fd); font-size: 1.4rem; color: var(--gold-light); }
-.h-stat-label { font-size: 0.72rem; color: rgba(242,232,216,0.4); text-transform: uppercase; letter-spacing: 0.1em; }
+.h-stat { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.h-stat-val { font-family: var(--fd); font-size: 1.6rem; color: var(--chalk-yellow); }
+.h-stat-label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 
-/* Hero scroll indicator */
-.scroll-hint { position: absolute; bottom: 28px; right: 56px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.scroll-hint-line { width: 1px; height: 40px; background: linear-gradient(to bottom, transparent, rgba(201,164,110,0.5)); animation: scrollPulse 2s ease-in-out infinite; }
+.scroll-hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2; color: var(--muted); font-size: 0.8rem; animation: scrollPulse 2s ease-in-out infinite; }
 @keyframes scrollPulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
-.scroll-hint-text { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.16em; color: rgba(242,232,216,0.3); writing-mode: vertical-lr; }
 
-/* ── IMAGE BREAK SECTION ── */
+/* ── QUOTE BREAK — like a line the teacher left on the board ── */
 .image-break {
-  position: relative; height: 480px; overflow: hidden;
-  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  position: relative; padding: 90px 56px; overflow: hidden;
+  border-top: 2px dashed var(--dash); border-bottom: 2px dashed var(--dash);
+  background: rgba(0,0,0,0.12);
 }
-.image-break-bg {
-  position: absolute; inset: -40px;
-  background-image: url('/assets/campus.jpg'), url('/assets/study.jpg');
-  background-size: cover; background-position: center 40%;
-  background-attachment: fixed;
-  background-color: #110D08;
-}
-.image-break-overlay {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(to right, rgba(8,6,3,0.92) 0%, rgba(8,6,3,0.4) 50%, rgba(8,6,3,0.75) 100%),
-    linear-gradient(to bottom, rgba(8,6,3,0.5) 0%, transparent 40%, rgba(8,6,3,0.6) 100%);
-}
-.image-break-content {
-  position: relative; z-index: 2; height: 100%;
-  display: flex; align-items: center; padding: 0 56px;
-  max-width: 680px;
-}
-.break-quote { font-family: var(--fd); font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.5; color: var(--cream); }
-.break-quote em { color: var(--gold-light); font-style: italic; }
-.break-attr { font-size: 0.76rem; color: rgba(242,232,216,0.4); margin-top: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+.image-break-content { position: relative; z-index: 2; max-width: 680px; margin: 0 auto; text-align: center; }
+.break-quote { font-family: var(--fd); font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.5; color: var(--chalk); }
+.break-quote em { color: var(--chalk-yellow); font-style: normal; }
+.break-attr { font-size: 0.8rem; color: var(--muted); margin-top: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* ── SHARED SECTION ── */
-section { padding: 96px 56px; }
-.section-eyebrow { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--gold); margin-bottom: 14px; }
-.section-title { font-family: var(--fd); font-size: clamp(1.8rem, 3.5vw, 2.6rem); color: var(--cream); line-height: 1.2; margin-bottom: 14px; }
-.section-title em { font-style: italic; color: var(--gold-light); }
-.section-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.7; max-width: 480px; }
+section { padding: 96px 56px; position: relative; z-index: 1; }
+.section-title { font-size: clamp(1.9rem, 3.5vw, 2.7rem); line-height: 1.2; margin-bottom: 14px; }
+.section-sub { font-size: 0.95rem; color: var(--muted); line-height: 1.7; max-width: 480px; }
 
-/* ── MODULES ── */
-.modules-section { background: rgba(255,244,224,0.012); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+/* ── MODULES — index cards pinned to the board ── */
 .modules-header { max-width: 1100px; margin: 0 auto 52px; }
-.modules-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.modules-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .module-card {
-  border-radius: 16px; border: 1px solid var(--border);
-  background: var(--card); padding: 28px 24px 24px;
+  padding: 30px 24px 24px;
   display: flex; flex-direction: column; gap: 14px;
-  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative; overflow: hidden;
 }
-.module-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0; transition: opacity 0.35s; }
-.module-card:hover { border-color: var(--border-bright); transform: translateY(-5px); box-shadow: 0 24px 52px rgba(0,0,0,0.55), 0 0 28px rgba(201,164,110,0.07); }
-.module-card:hover::before { opacity: 1; }
-.module-num { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: rgba(201,164,110,0.45); }
-.module-icon-wrap { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border); background: rgba(201,164,110,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.3s; }
-.module-card:hover .module-icon-wrap { border-color: var(--border-bright); background: rgba(201,164,110,0.1); }
-.module-title { font-family: var(--fd); font-size: 1.2rem; color: var(--cream); }
-.module-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.65; flex: 1; }
-.module-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--gold); border: 1px solid rgba(201,164,110,0.22); padding: 4px 10px; border-radius: 999px; width: fit-content; }
+.module-card:hover { transform: translateY(-5px) rotate(0deg); }
+.module-num { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+.module-icon-wrap { width: 44px; height: 44px; border-radius: 10px; border: 2px dashed var(--dash); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.module-title { font-family: var(--fd); font-size: 1.35rem; color: var(--chalk); }
+.module-desc { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.6; flex: 1; }
+.module-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.4); padding: 4px 10px; border-radius: 999px; width: fit-content; }
 
-/* Wide card for Report */
 .module-card.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 24px; }
 .module-card.wide .module-desc { max-width: 480px; }
 .module-card.wide .module-tag { margin-left: auto; }
 
-/* ── HOW IT WORKS ── */
+/* ── HOW IT WORKS — a timetable ruled on the board ── */
 .how-wrap { max-width: 1100px; margin: 0 auto; }
-.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 52px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-.how-step { padding: 32px 28px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; background: var(--card); transition: background 0.3s; }
+.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 52px; border: 2px dashed var(--dash); border-radius: 12px; overflow: hidden; }
+.how-step { padding: 32px 28px; border-right: 2px dashed var(--dash); display: flex; flex-direction: column; gap: 12px; transition: background 0.3s; }
 .how-step:last-child { border-right: none; }
-.how-step:hover { background: rgba(255,244,224,0.06); }
-.how-num { font-family: var(--fd); font-size: 3rem; color: rgba(201,164,110,0.15); line-height: 1; }
-.how-title { font-family: var(--fd); font-size: 1rem; color: var(--cream); }
-.how-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+.how-step:hover { background: rgba(244,241,228,0.05); }
+.how-num { font-family: var(--fd); font-size: 3rem; color: rgba(244,241,228,0.15); line-height: 1; }
+.how-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); }
+.how-desc { font-size: 0.85rem; color: var(--chalk-dim); line-height: 1.6; }
 
 /* ── BOTTOM CTA ── */
 .cta-section {
   text-align: center; padding: 96px 56px;
-  background: radial-gradient(ellipse at 50% 100%, rgba(201,164,110,0.08) 0%, transparent 65%);
-  border-top: 1px solid var(--border);
+  border-top: 2px dashed var(--dash);
+  position: relative; z-index: 1;
 }
-.cta-title { font-family: var(--fd); font-size: clamp(1.8rem, 3vw, 2.6rem); color: var(--cream); margin-bottom: 12px; line-height: 1.2; }
-.cta-title em { font-style: italic; color: var(--gold-light); }
-.cta-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; }
+.cta-title { font-size: clamp(1.8rem, 3vw, 2.6rem); margin-bottom: 12px; line-height: 1.25; }
+.cta-sub { font-size: 0.95rem; color: var(--muted); margin-bottom: 32px; }
 
 /* ── FOOTER ── */
-footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; color: rgba(155,142,126,0.5); }
+footer { padding: 22px 56px; border-top: 2px dashed var(--dash); display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); position: relative; z-index: 1; }
 
 @media (max-width: 900px) {
   .modules-grid { grid-template-columns: repeat(2, 1fr); }
   .module-card.wide { grid-column: auto; flex-direction: column; }
   .module-card.wide .module-tag { margin-left: 0; }
   .how-grid { grid-template-columns: 1fr; }
-  .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .how-step { border-right: none; border-bottom: 2px dashed var(--dash); }
   .how-step:last-child { border-bottom: none; }
 }
 @media (max-width: 640px) {
-  nav { padding: 14px 20px; }
-  .hero { padding: 0 20px 60px; }
+  nav { padding: 12px 20px; }
+  .hero { padding: 90px 20px 60px; }
   section { padding: 60px 20px; }
   .hero-stats { gap: 20px; flex-wrap: wrap; }
-  .image-break-content { padding: 0 20px; }
+  .image-break { padding: 60px 20px; }
   .modules-grid { grid-template-columns: 1fr; }
   .cta-section { padding: 60px 20px; }
   footer { padding: 20px; flex-direction: column; gap: 8px; text-align: center; }
@@ -213,7 +154,7 @@ footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex;
 }
 </style>
 </head>
-<body>
+<body class="board">
 
 <!-- NAV -->
 <nav id="mainNav">
@@ -222,104 +163,98 @@ footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex;
     <div class="brand-name">Aira</div>
   </a>
   <div class="nav-links">
-    <button class="btn-ghost-sm" onclick="window.location.href='login.html'">Log in</button>
-    <button class="btn-gold-sm" onclick="window.location.href='signup.html'">Get started</button>
+    <button class="btn-chalk" onclick="window.location.href='login.html'">Log in</button>
+    <button class="btn-chalk primary" onclick="window.location.href='signup.html'">Get started</button>
   </div>
 </nav>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-bg" id="heroBg"></div>
-  <div class="hero-overlay"></div>
   <div class="hero-content">
-    <div class="hero-eyebrow"><div class="eyebrow-line"></div>For fresh graduates &amp; job seekers</div>
-    <h1 class="hero-title">
-      Turn study hours<br>into <em>real momentum.</em>
+    <div class="hero-eyebrow chalk-tag"><div class="eyebrow-line"></div>For fresh graduates &amp; job seekers<div class="eyebrow-line"></div></div>
+    <h1 class="chalk-title hero-title">
+      Today's lesson:<br>turning study hours into <em>real momentum.</em>
+      <svg class="squiggle" viewBox="0 0 220 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 8 Q 20 2, 40 8 T 80 8 T 120 8 T 160 8 T 217 7" stroke="rgba(242,226,160,0.75)" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
     </h1>
-    <p class="hero-sub">Aira is a structured AI companion built around who you are — not generic templates. Three steps. One clear path from uncertain to unstoppable.</p>
+    <p class="hero-sub">Aira is your own classroom — the green board, the chalk, the bell — rebuilt with an AI coach that actually knows you. Three periods. One clear path from uncertain to unstoppable.</p>
     <div class="hero-ctas">
-      <button class="btn-hero-primary" onclick="window.location.href='signup.html'">Start for free →</button>
-      <button class="btn-hero-ghost" onclick="window.location.href='login.html'">I have an account</button>
+      <button class="btn-chalk primary" style="font-size:1.2rem;padding:13px 32px" onclick="window.location.href='signup.html'">Take a seat →</button>
+      <button class="btn-chalk" style="font-size:1.1rem;padding:13px 26px" onclick="window.location.href='login.html'">I have an account</button>
     </div>
     <div class="hero-stats">
-      <div class="h-stat"><div class="h-stat-val">3</div><div class="h-stat-label">Focused modules</div></div>
-      <div class="h-stat"><div class="h-stat-val">AI</div><div class="h-stat-label">Personalised to you</div></div>
-      <div class="h-stat"><div class="h-stat-val">1</div><div class="h-stat-label">Clear path forward</div></div>
+      <div class="h-stat"><div class="h-stat-val">3</div><div class="h-stat-label">Periods a day</div></div>
+      <div class="h-stat"><div class="h-stat-val">AI</div><div class="h-stat-label">Your class teacher</div></div>
+      <div class="h-stat"><div class="h-stat-val">1</div><div class="h-stat-label">Report card</div></div>
     </div>
   </div>
-  <div class="scroll-hint">
-    <div class="scroll-hint-line"></div>
-    <div class="scroll-hint-text">Scroll</div>
-  </div>
+  <div class="scroll-hint">▼ scroll</div>
 </div>
 
-<!-- IMAGE BREAK with quote -->
+<!-- QUOTE BREAK -->
 <div class="image-break">
-  <div class="image-break-bg"></div>
-  <div class="image-break-overlay"></div>
   <div class="image-break-content reveal">
-    <div>
-      <div class="break-quote">"The gap between where you are and where you want to be is closed by <em>deliberate, structured practice</em> — not wishful thinking."</div>
-      <div class="break-attr">The Aira approach</div>
-    </div>
+    <div class="break-quote">"The gap between where you are and where you want to be is closed by <em>deliberate, structured practice</em> — not wishful thinking."</div>
+    <div class="break-attr">— written on the board, The Aira approach</div>
   </div>
 </div>
 
 <!-- MODULES -->
-<section class="modules-section" id="modules">
+<section id="modules">
   <div class="modules-header reveal">
-    <div class="section-eyebrow">What Aira gives you</div>
-    <h2 class="section-title">Three steps. Every tool<br>you need to <em>get there.</em></h2>
-    <p class="section-sub">Persona first, then practice. Both paths lead to a downloadable report that proves your growth.</p>
+    <div class="chalk-tag">Today's timetable</div>
+    <h2 class="chalk-title section-title">Three periods. Every tool<br>you need to <em>get there.</em></h2>
+    <p class="section-sub chalk-sub">Persona first, then practice. Both paths lead to a downloadable report card that proves your growth.</p>
   </div>
   <div class="modules-grid">
 
-    <div class="module-card reveal reveal-delay-1">
-      <div class="module-num">Step 01</div>
+    <div class="module-card board-card pin-yellow reveal reveal-delay-1">
+      <div class="module-num">Period 01</div>
       <div class="module-icon-wrap">◈</div>
       <div class="module-title">Persona</div>
       <p class="module-desc">Answer 10 deep questions. Aira maps your strengths, learning style, and mindset into a coach profile that personalises every other module.</p>
-      <div class="module-tag">&#10003; Required first</div>
+      <div class="module-tag">&#10003; Attendance first</div>
     </div>
 
-    <div class="module-card reveal reveal-delay-2">
-      <div class="module-num">Step 02 · Option A</div>
+    <div class="module-card board-card reveal reveal-delay-2">
+      <div class="module-num">Period 02 · Option A</div>
       <div class="module-icon-wrap">⬡</div>
       <div class="module-title">MCQs</div>
       <p class="module-desc">Pick any topic. Aira generates interview-style questions tailored to your weak areas and evaluates your answers with a specific study plan.</p>
-      <div class="module-tag">&#9654; Knowledge practice</div>
+      <div class="module-tag">&#9654; Class test</div>
     </div>
 
-    <div class="module-card reveal reveal-delay-3">
-      <div class="module-num">Step 02 · Option B</div>
+    <div class="module-card board-card reveal reveal-delay-3">
+      <div class="module-num">Period 02 · Option B</div>
       <div class="module-icon-wrap">◎</div>
       <div class="module-title">Soft Skills</div>
       <p class="module-desc">Practice speaking, delivery, and communication under pressure. Scored on fluency, clarity and confidence — every single session.</p>
-      <div class="module-tag">&#9670; Speaking practice</div>
+      <div class="module-tag">&#9670; Elocution period</div>
     </div>
 
-    <div class="module-card wide reveal reveal-delay-4">
+    <div class="module-card board-card pin-green wide reveal reveal-delay-4">
       <div class="module-icon-wrap">&#9646;</div>
       <div>
-        <div class="module-num">Step 03</div>
-        <div class="module-title">Report</div>
+        <div class="module-num">Period 03</div>
+        <div class="module-title">Report Card</div>
         <p class="module-desc">A downloadable summary of your Persona, quiz performance, and soft skills scores. Your evidence of growth — ready to share with recruiters or keep for yourself.</p>
       </div>
-      <div class="module-tag">&#8595; Downloadable</div>
+      <div class="module-tag">&#8595; Take it home</div>
     </div>
 
   </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section>
+<section style="padding-top:0">
   <div class="how-wrap">
-    <div class="section-eyebrow reveal">The process</div>
-    <h2 class="section-title reveal">Simple to start,<br><em>structured to stick.</em></h2>
+    <div class="chalk-tag reveal">The process</div>
+    <h2 class="chalk-title section-title reveal">Simple to start,<br><em>structured to stick.</em></h2>
     <div class="how-grid">
       <div class="how-step reveal reveal-delay-1">
         <div class="how-num">01</div>
-        <div class="how-title">Create your account</div>
+        <div class="how-title">Enrol yourself</div>
         <p class="how-desc">One signup. No subscriptions. Your data stays yours and every module is available from day one.</p>
       </div>
       <div class="how-step reveal reveal-delay-2">
@@ -330,7 +265,7 @@ footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex;
       <div class="how-step reveal reveal-delay-3">
         <div class="how-num">03</div>
         <div class="how-title">Practice, report, repeat</div>
-        <p class="how-desc">MCQs or Soft Skills — your choice. Both build towards a downloadable report. Every session compounds into a clearer, more confident version of you.</p>
+        <p class="how-desc">MCQs or Soft Skills — your choice. Both build towards a downloadable report card. Every session compounds into a clearer, more confident version of you.</p>
       </div>
     </div>
   </div>
@@ -338,9 +273,9 @@ footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex;
 
 <!-- BOTTOM CTA -->
 <div class="cta-section reveal">
-  <h2 class="cta-title">The best day to start was yesterday.<br><em>Today works just fine.</em></h2>
-  <p class="cta-sub">Free. Structured. Built for people who are serious about what comes next.</p>
-  <button class="btn-hero-primary" onclick="window.location.href='signup.html'">Create my account →</button>
+  <h2 class="chalk-title cta-title">The best day to start was yesterday.<br><em>Today works just fine.</em></h2>
+  <p class="cta-sub chalk-sub">Free. Structured. Built for people who are serious about what comes next.</p>
+  <button class="btn-chalk primary" style="font-size:1.2rem;padding:13px 32px" onclick="window.location.href='signup.html'">Enrol me →</button>
 </div>
 
 <!-- FOOTER -->
@@ -350,19 +285,16 @@ footer { padding: 22px 56px; border-top: 1px solid var(--border); display: flex;
 </footer>
 
 <script>
-// Redirect logged-in users
-try { if (localStorage.getItem('aira_user')) { JSON.parse(localStorage.getItem('aira_user')); window.location.replace('Welcome.html'); } } catch(e) {}
+// Redirect logged-in users — ask the server, not a possibly-stale localStorage key.
+fetch('/me', { credentials: 'include' })
+  .then(r => { if (r.ok) window.location.replace('Welcome.html'); })
+  .catch(() => {});
 
 // Nav scroll effect
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', function() {
   nav.classList.toggle('scrolled', window.scrollY > 60);
 }, { passive: true });
-
-// Hero bg subtle zoom-in on load
-window.addEventListener('load', function() {
-  document.getElementById('heroBg').classList.add('loaded');
-});
 
 // Scroll reveal with IntersectionObserver
 const observer = new IntersectionObserver(function(entries) {
@@ -371,15 +303,6 @@ const observer = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-
-// Parallax on hero bg
-window.addEventListener('scroll', function() {
-  const y = window.scrollY;
-  const bg = document.getElementById('heroBg');
-  if (bg && y < window.innerHeight) {
-    bg.style.transform = 'scale(1) translateY(' + (y * 0.25) + 'px)';
-  }
-}, { passive: true });
 </script>
 </body>
 </html>
