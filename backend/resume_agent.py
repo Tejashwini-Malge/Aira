@@ -15,18 +15,8 @@ Two steps, mirroring the existing Groq-call pattern used elsewhere in the app:
    fixed questions and blended into the quiz server-side.
 """
 import io
-import os
-import re
-import json
-import requests
-from pathlib import Path
-from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parent / ".env")
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
+from groq_client import groq_json, GroqError, GROQ_API_KEY
 
 # Dimensions the generated questions are allowed to probe (must match
 # session_controller.DIMENSION_ORDER).
@@ -167,25 +157,15 @@ def parse_resume(resume_text, onboarding=None):
 
     prompt = _build_prompt(resume_text, onboarding)
     try:
-        resp = requests.post(
-            GROQ_URL,
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": MODEL_NAME,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.4,
-                "max_tokens": 1500,
-            },
-            timeout=45,
-        )
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        data = json.loads(match.group(0)) if match else {}
-    except Exception as e:
+        # json_mode off: this prompt asks for a JSON object with nested arrays and the
+        # historical behaviour relied on regex extraction rather than response_format.
+        data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False)
+    except GroqError as e:
         print("Resume agent error:", e)
         raise ResumeError("Couldn't analyse the resume. Please try again.")
 
+    if not isinstance(data, dict):
+        raise ResumeError("Resume analysis came back incomplete. Please try again.")
     return _normalize(data)
 
 

@@ -1,24 +1,14 @@
 from flask import Blueprint, request, jsonify
 import json
 import os
-import re
 import random
-import requests
-from pathlib import Path
-from dotenv import load_dotenv
 
 from models import db, Persona
 from auth import current_user, login_required
 from resume_agent import extract_text, parse_resume, build_resume_questions, ResumeError
-
-# Load .env next to this file regardless of the launch working directory.
-load_dotenv(Path(__file__).resolve().parent / ".env")
+from groq_client import groq_json
 
 session_bp = Blueprint("session_bp", __name__)
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
 
 _BANK_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "question_bank.json")
 with open(_BANK_PATH) as _f:
@@ -240,29 +230,10 @@ def _run_generation(responses, onboarding=None, resume_data=None):
     prompt = _build_llm_prompt(responses, onboarding, resume_data)
 
     try:
-        resp = requests.post(
-            GROQ_URL,
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": MODEL_NAME,
-                "messages": [{"role": "user", "content": prompt}],
-                # Low temperature so the same answers score consistently and the
-                # rubric is followed rather than improvised.
-                "temperature": 0.2,
-                "max_tokens": 1100,
-                # Force valid JSON so we never fail on stray prose or markdown fences.
-                "response_format": {"type": "json_object"},
-            },
-            timeout=45,
-        )
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            data = json.loads(match.group(0)) if match else {}
-        if not data.get("summary") or not data.get("dimensions"):
+        # Low temperature so the same answers score consistently and the rubric is
+        # followed rather than improvised. json_mode forces valid JSON output.
+        data = groq_json(prompt, max_tokens=1100, temperature=0.2)
+        if not isinstance(data, dict) or not data.get("summary") or not data.get("dimensions"):
             raise ValueError("Incomplete persona JSON from LLM")
     except Exception as e:
         # A genuine LLM/network failure. Completeness is enforced before we get here,

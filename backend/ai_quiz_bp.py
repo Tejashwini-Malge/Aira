@@ -12,22 +12,13 @@ content back — it is read server-side from the database and only used to steer
 prompts. The user just experiences questions that happen to fit them.
 """
 from flask import Blueprint, request, jsonify
-import os, json, requests, re, urllib.parse
-from pathlib import Path
-from dotenv import load_dotenv
+import urllib.parse
 
-from models import db, QuizResult
+from models import db, QuizResult, get_pending, set_pending, clear_pending
 from auth import current_user, login_required
-
-# Load .env next to this file regardless of the launch working directory.
-load_dotenv(Path(__file__).resolve().parent / ".env")
+from groq_client import groq_json, GroqError
 
 quiz_bp = Blueprint("quiz_bp", __name__)
-
-# --- Groq config ---
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
 
 _DIM_LABELS = {
     "work_culture_preferences": "work culture fit",
@@ -42,30 +33,14 @@ _DIM_LABELS = {
 
 
 def _call_groq(prompt, max_tokens=700, temperature=0.4):
-    """One Groq chat call returning parsed JSON, or None on failure."""
-    if not GROQ_API_KEY:
-        return None
+    """One Groq chat call returning parsed JSON, or None on failure.
+
+    The quiz/communication flows always have a hand-written fallback, so failures
+    degrade quietly instead of erroring the request.
+    """
     try:
-        r = requests.post(
-            GROQ_URL,
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": MODEL_NAME,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "response_format": {"type": "json_object"},
-            },
-            timeout=45,
-        )
-        r.raise_for_status()
-        text = r.json()["choices"][0]["message"]["content"]
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            m = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
-            return json.loads(m.group(1)) if m else None
-    except Exception as e:
+        return groq_json(prompt, max_tokens=max_tokens, temperature=temperature)
+    except GroqError as e:
         print("Groq call failed:", e)
         return None
 
@@ -271,6 +246,10 @@ Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... 5 total]}}"""
         print("Quiz fallback for", label)
         questions = _fallback_questions(label)[:count]
 
+    # Hold the generated set server-side: /quiz/evaluate grades THESE questions, so
+    # a client can't post back a forged transcript and have it scored into history.
+    set_pending(current_user().id, "quiz", {"questions": questions, "mode": mode, "topic": label, **meta})
+
     return jsonify({"questions": questions, "mode": mode, "topic": label, **meta}), 200
 
 
@@ -282,24 +261,32 @@ Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... 5 total]}}"""
 @login_required
 def evaluate_quiz():
     data = request.get_json() or {}
-    qa = data.get("qa")           # [{question, answer}] — preferred
-    answers = data.get("answers") # {Q1: "..."} — legacy fallback
-    topic = (data.get("topic") or "this interview").strip()
-    itype = (data.get("type") or "").strip()
-    difficulty = (data.get("difficulty") or "").strip()
+    answers = data.get("answers")  # {"Q<id>": "..."} keyed by question id
+    if not isinstance(answers, dict):
+        return jsonify({"error": "Expected 'answers' as an object keyed by question id."}), 400
+
+    # Grade only the question set WE generated and stored for this user — the client
+    # sends answers alone. No stored set means there is nothing legitimate to score.
+    user_id = current_user().id
+    stored = get_pending(user_id, "quiz")
+    if not stored or not stored.get("questions"):
+        return jsonify({"error": "No active interview to evaluate. Generate questions first."}), 400
+
+    questions = stored["questions"]
+    topic = (stored.get("topic") or "this interview").strip()
+    itype = (stored.get("type") or "").strip()
+    difficulty = (stored.get("difficulty") or "").strip()
     round_label = topic + (f" · {itype} round ({difficulty})" if itype else "")
-    n_questions = len(qa) if isinstance(qa, list) and qa else (len(answers) if isinstance(answers, dict) else 5)
+    n_questions = len(questions)
     brief, focus_areas, target_role = _persona_brief(for_eval=True)
 
     # Build a readable transcript so the model judges the ACTUAL questions asked, not
     # answers in a vacuum. This is what makes the feedback specific to THIS session.
-    if isinstance(qa, list) and qa:
-        transcript = "\n\n".join(
-            f"Q{i+1}: {item.get('question','')}\nTheir answer: {(item.get('answer') or '').strip() or '(left blank)'}"
-            for i, item in enumerate(qa)
-        )
-    else:
-        transcript = "\n".join(f"{k}: {v}" for k, v in (answers or {}).items())
+    lines = []
+    for i, q in enumerate(questions):
+        answer = (answers.get(f"Q{q.get('id')}") or "").strip() or "(left blank)"
+        lines.append(f"Q{i+1}: {q.get('question','')}\nTheir answer: {answer}")
+    transcript = "\n\n".join(lines)
 
     prompt = f"""You are an honest, supportive interview coach. Evaluate how this candidate did in
 the interview transcript below. You know them from their private profile — use it only to set
@@ -362,7 +349,7 @@ Return ONLY JSON:
 
     # Persist this attempt for the logged-in user.
     record = QuizResult(
-        user_id=current_user().id,
+        user_id=user_id,
         topic=topic,
         score=result.get("score"),
         feedback=result.get("feedback"),
@@ -372,6 +359,9 @@ Return ONLY JSON:
     )
     db.session.add(record)
     db.session.commit()
+
+    # This set is spent — a fresh /quiz/generate is needed for the next attempt.
+    clear_pending(user_id, "quiz")
 
     return jsonify({"feedback": result}), 200
 

@@ -10,7 +10,7 @@ Reuses the quiz module's Groq helper, private persona context, and resource buil
 """
 from flask import Blueprint, request, jsonify
 
-from models import db, SpeakingSession
+from models import db, SpeakingSession, get_pending, set_pending, clear_pending
 from auth import current_user, login_required
 from ai_quiz_bp import _call_groq, _persona_brief, _build_resources
 
@@ -158,6 +158,17 @@ PRIVATE PROFILE (for your eyes only, do not quote):
 Return ONLY JSON: {{"prompt": "the question", "hint": "one short tip"}}"""
     gen = _call_groq(prompt, max_tokens=300, temperature=0.5)
     beat = _beat_from(gen, 1, START_LEVEL, fw)
+
+    # The session's prompts live server-side from here: /comm/next and /comm/evaluate
+    # extend and grade THIS stored history — the client only ever sends answers.
+    set_pending(current_user().id, "comm", {
+        "track": track,
+        "label": label,
+        "project_id": data.get("project_id"),
+        "level": START_LEVEL,
+        "history": [dict(beat, answer=None)],
+    })
+
     return jsonify({"track": track, "label": label, "beat": beat, "total": fw["total"]}), 200
 
 
@@ -178,20 +189,30 @@ def _beat_from(gen, beat_id, level, fw):
 @login_required
 def comm_next():
     data = request.get_json() or {}
-    track = (data.get("track") or "communication").lower()
-    if track not in FRAMEWORKS:
-        return jsonify({"error": "Unknown track."}), 400
+    answer = (data.get("answer") or "").strip()
+
+    # Only the stored session can advance — the client sends just its latest answer,
+    # and the prompts/difficulty come from what WE actually asked.
+    user_id = current_user().id
+    state = get_pending(user_id, "comm")
+    if not state or not state.get("history"):
+        return jsonify({"error": "No active session. Start one with /comm/start first."}), 400
+
+    track = state["track"]
     fw = FRAMEWORKS[track]
-    history = data.get("history") or []
-    cur_level = _clamp(data.get("level") or START_LEVEL)
-    label, proj_ctx = _project_ctx(track, data.get("project_id"))
+    history = state["history"]
+    cur_level = _clamp(state.get("level") or START_LEVEL)
+    label, proj_ctx = _project_ctx(track, state.get("project_id"))
+
+    # Record their answer against the beat we actually asked.
+    history[-1]["answer"] = answer
 
     answered = len(history)
     if answered >= fw["total"]:
+        set_pending(user_id, "comm", state)  # keep the finished transcript for /comm/evaluate
         return jsonify({"done": True}), 200
 
     brief, _, _ = _persona_brief()
-    last = history[-1] if history else {}
     transcript = "\n".join(
         f"Q{i+1} (level {h.get('difficulty','?')}): {h.get('prompt','')}\n  Their answer: {(h.get('answer') or '').strip() or '(blank)'}"
         for i, h in enumerate(history)
@@ -226,6 +247,13 @@ Return ONLY JSON:
     gen = gen if isinstance(gen, dict) else {}
     new_level = _clamp(gen.get("level") or cur_level)
     beat = _beat_from(gen, answered + 1, new_level, fw)
+
+    # Persist the new beat so the next round (and the final evaluation) grades what
+    # was really asked, at the difficulty we really set.
+    history.append(dict(beat, answer=None))
+    state["level"] = new_level
+    set_pending(user_id, "comm", state)
+
     return jsonify({
         "done": False,
         "reaction": (gen.get("reaction") or "").strip(),
@@ -242,11 +270,26 @@ Return ONLY JSON:
 @login_required
 def comm_evaluate():
     data = request.get_json() or {}
-    track = (data.get("track") or "communication").lower()
-    fw = FRAMEWORKS.get(track, FRAMEWORKS["communication"])
-    label = (data.get("label") or fw["label"]).strip()
-    qa = data.get("qa") or []
+    # Delivery signals (pace/fillers/words) are measured in the browser, so they stay
+    # client-sent — but the transcript itself is only ever the one WE accumulated.
     metrics = data.get("metrics") or {}
+
+    user_id = current_user().id
+    state = get_pending(user_id, "comm")
+    if not state or not state.get("history"):
+        return jsonify({"error": "No active session to evaluate. Start one with /comm/start first."}), 400
+
+    history = state["history"]
+    # If the client skipped the final /comm/next round-trip, accept its last answer
+    # here — but only slotted into the beat we actually asked.
+    final_answer = (data.get("answer") or "").strip()
+    if final_answer and not (history[-1].get("answer") or "").strip():
+        history[-1]["answer"] = final_answer
+
+    track = state["track"]
+    fw = FRAMEWORKS.get(track, FRAMEWORKS["communication"])
+    label = (state.get("label") or fw["label"]).strip()
+    qa = [{"prompt": h.get("prompt"), "answer": h.get("answer"), "difficulty": h.get("difficulty")} for h in history]
     brief, _, _ = _persona_brief(for_eval=True)
 
     transcript = "\n\n".join(
@@ -318,7 +361,7 @@ Return ONLY JSON:
 
     # Persist server-side (the client can't forge scores) — mirrors /quiz/evaluate.
     record = SpeakingSession(
-        user_id=current_user().id,
+        user_id=user_id,
         mode="practice",
         track=track,
         fluency=_s("fluency"),
@@ -332,6 +375,9 @@ Return ONLY JSON:
     )
     db.session.add(record)
     db.session.commit()
+
+    # This session is spent — a fresh /comm/start is needed for the next one.
+    clear_pending(user_id, "comm")
 
     return jsonify({"feedback": result}), 200
 

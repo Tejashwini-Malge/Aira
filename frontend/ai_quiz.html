@@ -386,11 +386,9 @@ async function finishInterview(timedOut) {
   }</div></div>`;
   const rc = document.getElementById("resultContainer");
 
-  // Send the full question→answer transcript so feedback is about THIS session,
-  // not generic. (answers kept for backward compatibility.)
-  const qa = ivQuestions.map(q => ({ question: q.question, answer: ivAnswers[`Q${q.id}`] || "" }));
-  const payload = { qa, answers: ivAnswers, topic: activeLabel, mode: selectedMode };
-  if (selectedMode === "role") { payload.type = opts.type; payload.difficulty = opts.difficulty; }
+  // Send ONLY the answers, keyed by question id — the server kept the question set
+  // it generated and grades that, so a forged transcript can't be scored.
+  const payload = { answers: ivAnswers };
 
   try {
     const res = await fetch(`${API_BASE}/quiz/evaluate`, {

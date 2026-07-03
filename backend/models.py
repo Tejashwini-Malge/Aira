@@ -85,6 +85,51 @@ class Persona(db.Model):
         }
 
 
+class PendingAssessment(db.Model):
+    """Server-held state for an in-flight assessment — the mock-interview question set
+    or a communication session's prompt history. Evaluation grades THIS stored set,
+    so a client can't forge its own transcript and have it scored into their history.
+    One row per (user, kind); a new generate/start replaces the previous one.
+    """
+    __tablename__ = "pending_assessments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    kind = db.Column(db.String(20), nullable=False)   # "quiz" | "comm"
+    payload = db.Column(db.JSON, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "kind"),)
+
+
+def get_pending(user_id, kind):
+    """The stored payload for this user's in-flight assessment, or None."""
+    row = PendingAssessment.query.filter_by(user_id=user_id, kind=kind).first()
+    return row.payload if row else None
+
+
+def set_pending(user_id, kind, payload):
+    """Create or replace the stored assessment state for this user."""
+    from sqlalchemy.orm.attributes import flag_modified
+
+    row = PendingAssessment.query.filter_by(user_id=user_id, kind=kind).first()
+    if row is None:
+        row = PendingAssessment(user_id=user_id, kind=kind)
+        db.session.add(row)
+    row.payload = payload
+    # Callers mutate the payload they got from get_pending in place, which plain
+    # JSON columns don't track — flag it so the update is never silently dropped.
+    flag_modified(row, "payload")
+    row.updated_at = datetime.utcnow()
+    db.session.commit()
+
+
+def clear_pending(user_id, kind):
+    """Drop the stored state once it has been evaluated (or abandoned)."""
+    PendingAssessment.query.filter_by(user_id=user_id, kind=kind).delete()
+    db.session.commit()
+
+
 class QuizResult(db.Model):
     __tablename__ = "quiz_results"
 

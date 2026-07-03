@@ -11,6 +11,10 @@ from auth import current_user, login_required
 persona_bp = Blueprint("persona_bp", __name__)
 
 
+# TODO(trust): this route lets the client self-report arbitrary scores that then
+# feed the averages in /me/report. reflection.html still POSTs its browser-computed
+# scores here, so it stays for now — the fix is to score reflection sessions
+# server-side (like /comm/evaluate does) and then delete this route.
 @persona_bp.route("/me/speaking", methods=["POST"])
 @login_required
 def save_speaking():
