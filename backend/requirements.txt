@@ -9,3 +9,5 @@ google-generativeai
 pypdf
 python-docx
 pytest
+gunicorn==22.0.0
+psycopg2-binary==2.9.9
