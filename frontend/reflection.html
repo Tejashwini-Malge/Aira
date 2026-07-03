@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Speaking Reflection | ReflectIQ</title>
+  <title>Speaking Reflection | Aira</title>
   <style>
     :root {
       --primary: #6366f1;
@@ -245,7 +245,7 @@
       margin: 8px 0 0;
       padding: 0;
       list-style: none;
-      max-height: 190px;
+      max-height: 220px;
       overflow-y: auto;
     }
 
@@ -265,6 +265,52 @@
       display: inline-block;
       margin-bottom: 2px;
     }
+
+    .answers-list .verdict {
+      float: right;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      color: var(--text-sub);
+    }
+
+    .answers-list .verdict.Strong { border-color: rgba(34,197,94,0.9); color: #bbf7d0; }
+    .answers-list .verdict.Weak { border-color: rgba(248,113,113,0.9); color: #fecaca; }
+
+    .tips-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      font-size: 0.83rem;
+      line-height: 1.55;
+      color: #e5e7eb;
+    }
+
+    .resource-group { margin-top: 8px; }
+    .resource-area { font-size: 0.8rem; font-weight: 600; color: #e5e7eb; margin-bottom: 3px; }
+    .resource-links a {
+      display: inline-block;
+      font-size: 0.78rem;
+      color: #c7d2fe;
+      text-decoration: none;
+      margin: 2px 10px 2px 0;
+    }
+    .resource-links a:hover { text-decoration: underline; }
+
+    .redo-box textarea {
+      width: 100%;
+      height: 80px;
+      margin-top: 8px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.95);
+      color: var(--text-main);
+      font-size: 0.83rem;
+      resize: vertical;
+    }
+    .redo-box textarea:focus { outline: none; border-color: var(--primary); }
+    .redo-verdict { font-size: 0.82rem; margin-top: 6px; color: #bbf7d0; }
 
     .actions-row {
       display: flex;
@@ -289,6 +335,8 @@
       gap: 6px;
     }
 
+    .btn-primary:disabled { opacity: 0.55; cursor: default; }
+
     .btn-secondary {
       border-radius: 999px;
       padding: 8px 14px;
@@ -299,14 +347,11 @@
       cursor: pointer;
     }
 
-    .mode-tag {
-      font-size: 0.78rem;
+    .loading-note {
+      font-size: 0.85rem;
       color: var(--text-sub);
-    }
-
-    .mode-tag span {
-      color: #e5e7eb;
-      font-weight: 500;
+      padding: 24px 0;
+      text-align: center;
     }
 
     .toast {
@@ -346,90 +391,108 @@
 <div class="layout">
   <div class="header-row">
     <div class="brand">
-      <div class="brand-badge">R</div>
+      <div class="brand-badge">A</div>
       <div class="brand-texts">
-        <span>ReflectIQ</span>
+        <span>Aira</span>
         <span>Speaking reflection report</span>
       </div>
     </div>
     <div class="header-right">
-      <div class="chip" id="modeChip">Mode: —</div>
-      <button class="nav-btn" onclick="window.location.href='practice.html'">
-        ‹ Back to practice
+      <div class="chip" id="modeChip">Track: —</div>
+      <button class="nav-btn" onclick="window.location.href='soft_skills.html'">
+        ‹ Back to tracks
       </button>
     </div>
   </div>
 
-  <h1>How did that round feel?</h1>
+  <h1>How did that round go?</h1>
   <p class="subtitle">
-    Quick snapshot of your fluency, clarity and confidence based on what you just said.
+    Aira reviewed the full session — what was asked, what you said, and how you delivered it.
   </p>
 
-  <div class="grid">
-    <!-- Metrics + tags -->
+  <div class="loading-note" id="loadingNote">Aira is reviewing your session…</div>
+
+  <div class="grid" id="resultGrid" style="display:none">
+    <!-- Metrics + weak areas -->
     <div class="card">
-      <div class="section-label">Speaking metrics</div>
-      <h2>Fluency, clarity & confidence</h2>
-      <small>These are rough, self-reported scores. Aim to nudge them up over multiple rounds.</small>
+      <div class="section-label">Speaking scores</div>
+      <h2>Fluency, clarity, confidence & structure</h2>
+      <small>Scored by Aira from your actual answers and measured pace — not self-reported.</small>
 
       <div class="metrics-row">
         <div class="metric">
           <div class="metric-label">Fluency</div>
-          <div class="metric-bar-bg">
-            <div class="metric-bar-fill" id="fluencyBar"></div>
-          </div>
+          <div class="metric-bar-bg"><div class="metric-bar-fill" id="fluencyBar"></div></div>
           <div class="metric-score" id="fluencyScore">–/10</div>
         </div>
         <div class="metric">
           <div class="metric-label">Clarity</div>
-          <div class="metric-bar-bg">
-            <div class="metric-bar-fill" id="clarityBar"></div>
-          </div>
+          <div class="metric-bar-bg"><div class="metric-bar-fill" id="clarityBar"></div></div>
           <div class="metric-score" id="clarityScore">–/10</div>
         </div>
         <div class="metric">
           <div class="metric-label">Confidence</div>
-          <div class="metric-bar-bg">
-            <div class="metric-bar-fill" id="confidenceBar"></div>
-          </div>
+          <div class="metric-bar-bg"><div class="metric-bar-fill" id="confidenceBar"></div></div>
           <div class="metric-score" id="confidenceScore">–/10</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Structure</div>
+          <div class="metric-bar-bg"><div class="metric-bar-fill" id="structureBar"></div></div>
+          <div class="metric-score" id="structureScore">–/10</div>
         </div>
       </div>
 
-      <div class="pill-row" id="highlightPills">
-        <!-- Generated tags -->
-      </div>
+      <div class="pill-row" id="weakAreaPills"></div>
     </div>
 
-    <!-- Summary + next steps -->
+    <!-- Coach verdict + suggestions -->
     <div class="card">
-      <div class="section-label">Quick reflection</div>
-      <h2>Your speaking snapshot</h2>
-      <p class="summary-text" id="summaryText">
-        Loading your answers…
-      </p>
+      <div class="section-label">Coach's verdict</div>
+      <h2>What Aira noticed</h2>
+      <p class="summary-text" id="summaryText"></p>
+
+      <div class="section-label" style="margin-top:10px;">Try next</div>
+      <ul class="tips-list" id="suggestionsList"></ul>
 
       <div class="actions-row">
-        <button class="btn-primary" id="saveBtn">
-          Save this round
+        <button class="btn-secondary" onclick="window.location.href='report.html'">
+          View overall report
         </button>
-        <button class="btn-secondary" onclick="window.location.href='dashboard.html'">
-          View overall dashboard
+        <button class="btn-secondary" onclick="window.location.href='soft_skills.html'">
+          Practice again
         </button>
       </div>
-
-      <p class="mode-tag" id="modeText" style="margin-top:6px;">
-        Mode: —
-      </p>
+      <p class="mode-tag" id="modeText" style="margin-top:6px; font-size:0.78rem; color:var(--text-sub);"></p>
     </div>
 
-    <!-- Raw answers -->
+    <!-- Redo the weakest beat -->
+    <div class="card full" id="redoCard" style="display:none">
+      <div class="section-label">One more try</div>
+      <h2 id="redoTitle">Retry your weakest moment</h2>
+      <small id="redoWhy"></small>
+      <p class="summary-text" id="redoPrompt" style="margin-top:8px;"></p>
+      <div class="redo-box">
+        <textarea id="redoAnswer" placeholder="Give it one more go — a few focused sentences."></textarea>
+      </div>
+      <div class="actions-row">
+        <button class="btn-primary" id="redoBtn">Check my retry</button>
+      </div>
+      <p class="redo-verdict" id="redoVerdict"></p>
+    </div>
+
+    <!-- Transcript with per-beat verdicts -->
     <div class="card full">
       <div class="section-label">What you actually said</div>
-      <h2>Transcript snippets</h2>
-      <small>Skim these once. Look for filler words, long pauses, or places you could add one more detail.</small>
-
+      <h2>Round by round</h2>
+      <small>Aira's read on each answer. Look for where the verdict dips.</small>
       <ul class="answers-list" id="answersList"></ul>
+    </div>
+
+    <!-- Resources -->
+    <div class="card full" id="resourcesCard" style="display:none">
+      <div class="section-label">Level up</div>
+      <h2>Resources picked for these habits</h2>
+      <div id="resourcesWrap"></div>
     </div>
   </div>
 </div>
@@ -437,129 +500,13 @@
 <div class="toast" id="toast">Saved</div>
 
 <script>
-  // Pull data from localStorage
-  const answers = JSON.parse(localStorage.getItem("answers") || "[]");
-  const mode = localStorage.getItem("mode") || "prompt";
+  // The graded transcript lives server-side (stored beat-by-beat during practice).
+  // This page only sends the browser-measured delivery metrics and renders the verdict.
+  const handoff = JSON.parse(sessionStorage.getItem("aira_comm_session") || "null");
 
-  const fluencyBar = document.getElementById("fluencyBar");
-  const clarityBar = document.getElementById("clarityBar");
-  const confidenceBar = document.getElementById("confidenceBar");
-  const fluencyScoreEl = document.getElementById("fluencyScore");
-  const clarityScoreEl = document.getElementById("clarityScore");
-  const confidenceScoreEl = document.getElementById("confidenceScore");
-  const summaryText = document.getElementById("summaryText");
-  const answersList = document.getElementById("answersList");
-  const modeChip = document.getElementById("modeChip");
-  const modeText = document.getElementById("modeText");
-  const highlightPills = document.getElementById("highlightPills");
+  const loadingNote = document.getElementById("loadingNote");
+  const resultGrid = document.getElementById("resultGrid");
   const toast = document.getElementById("toast");
-  const saveBtn = document.getElementById("saveBtn");
-
-  // Simple heuristic scoring (you can replace with backend later)
-  function scoreSpeaking(ansArray) {
-    if (!ansArray.length) {
-      return { fluency: 0, clarity: 0, confidence: 0 };
-    }
-    const joined = ansArray.join(" ");
-    const wordCount = joined.split(/\s+/).filter(Boolean).length;
-    const avgLength = wordCount / ansArray.length;
-
-    // crude estimates
-    let fluency = Math.min(10, Math.max(2, avgLength / 5));
-    let clarity = Math.min(10, 4 + (wordCount > 60 ? 2 : 0));
-    let confidence = Math.min(10, 4 + (ansArray.length >= 3 ? 3 : 1));
-
-    return {
-      fluency: Math.round(fluency),
-      clarity: Math.round(clarity),
-      confidence: Math.round(confidence)
-    };
-  }
-
-  function setBars(scores) {
-    const fPct = (scores.fluency / 10) * 100;
-    const cPct = (scores.clarity / 10) * 100;
-    const confPct = (scores.confidence / 10) * 100;
-    requestAnimationFrame(() => {
-      fluencyBar.style.width = fPct + "%";
-      clarityBar.style.width = cPct + "%";
-      confidenceBar.style.width = confPct + "%";
-    });
-    fluencyScoreEl.textContent = scores.fluency + "/10";
-    clarityScoreEl.textContent = scores.clarity + "/10";
-    confidenceScoreEl.textContent = scores.confidence + "/10";
-  }
-
-  function buildSummary(scores) {
-    const parts = [];
-    if (scores.fluency >= 8) {
-      parts.push("Your fluency was strong, with answers flowing without long pauses.");
-    } else if (scores.fluency >= 5) {
-      parts.push("Your fluency is decent, but you could reduce small pauses and fillers.");
-    } else {
-      parts.push("You may be pausing often. Try speaking a bit faster and avoiding fillers like “um”.");
-    }
-
-    if (scores.clarity >= 8) {
-      parts.push("Your ideas were clear and easy to follow.");
-    } else if (scores.clarity >= 5) {
-      parts.push("Your ideas are understandable, but you can add more structure (first, then, finally).");
-    } else {
-      parts.push("Work on organizing answers: state a main point, give one example, then end with a short conclusion.");
-    }
-
-    if (scores.confidence >= 8) {
-      parts.push("You sound confident. Keep this tone for real interviews.");
-    } else if (scores.confidence >= 5) {
-      parts.push("You sound somewhat confident; try maintaining steady volume and avoiding phrases like “I’m not sure”.");
-    } else {
-      parts.push("Focus on sounding more sure of yourself, even if the content is simple.");
-    }
-
-    return parts.join(" ");
-  }
-
-  function buildPills(scores) {
-    const items = [];
-
-    if (scores.fluency >= 8) items.push({ text: "Good pace & flow", type: "good" });
-    else if (scores.fluency <= 5) items.push({ text: "Work on reducing pauses", type: "warn" });
-
-    if (scores.clarity >= 8) items.push({ text: "Ideas easy to follow", type: "good" });
-    else if (scores.clarity <= 5) items.push({ text: "Add clearer structure", type: "warn" });
-
-    if (scores.confidence >= 8) items.push({ text: "Strong confident tone", type: "good" });
-    else if (scores.confidence <= 5) items.push({ text: "Practice sounding more sure", type: "bad" });
-
-    if (!items.length) items.push({ text: "Nice warm-up round", type: "good" });
-
-    highlightPills.innerHTML = items
-      .map(i => `<span class="pill ${i.type}">${i.text}</span>`)
-      .join("");
-  }
-
-  function renderAnswers(ansArray) {
-    if (!ansArray.length) {
-      answersList.innerHTML = `<li><span class="q-tag">No responses</span>You didn't record anything this round.</li>`;
-      return;
-    }
-    answersList.innerHTML = ansArray
-      .map((a, idx) => {
-        const label = mode === "prompt" ? "Prompt " + (idx + 1) : "Chunk " + (idx + 1);
-        return `<li><span class="q-tag">${label}</span>${a}</li>`;
-      })
-      .join("");
-  }
-
-  function updateModeUI() {
-    const modeLabel = mode === "free" ? "Free speaking" : "Prompt-based";
-    modeChip.textContent = "Mode: " + modeLabel;
-    modeText.innerHTML =
-      `Mode: <span>${modeLabel}</span> · ` +
-      (mode === "free"
-        ? "Next time, pick one topic and speak for a full minute."
-        : "Next time, try giving one example per question.");
-  }
 
   function showToast(msg) {
     toast.textContent = msg;
@@ -567,41 +514,129 @@
     setTimeout(() => toast.classList.remove("show"), 2200);
   }
 
-  // Initialize
-  const scores = scoreSpeaking(answers);
-  setBars(scores);
-  summaryText.textContent = buildSummary(scores);
-  buildPills(scores);
-  renderAnswers(answers);
-  updateModeUI();
-
-  saveBtn.addEventListener("click", async () => {
-    const history = JSON.parse(localStorage.getItem("speakingHistory") || "[]");
-    history.push({
-      timestamp: new Date().toISOString(),
-      mode,
-      scores,
-      answers
+  function setBar(name, value) {
+    const v = Math.max(0, Math.min(10, Number(value) || 0));
+    document.getElementById(name + "Score").textContent = v + "/10";
+    requestAnimationFrame(() => {
+      document.getElementById(name + "Bar").style.width = (v * 10) + "%";
     });
-    localStorage.setItem("speakingHistory", JSON.stringify(history));
-    localStorage.setItem("aira_skills_done", "true");
+  }
 
-    // Persist this round to the DB for the logged-in user.
-    try {
-      await fetch("/me/speaking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode,
-          fluency: scores.fluency,
-          clarity: scores.clarity,
-          confidence: scores.confidence,
-          summary: buildSummary(scores)
-        })
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = String(s == null ? "" : s);
+    return d.innerHTML;
+  }
+
+  function render(fb) {
+    const scores = fb.scores || {};
+    setBar("fluency", scores.fluency);
+    setBar("clarity", scores.clarity);
+    setBar("confidence", scores.confidence);
+    setBar("structure", scores.structure);
+
+    document.getElementById("summaryText").textContent = fb.feedback || "";
+
+    document.getElementById("weakAreaPills").innerHTML =
+      (fb.weak_areas || []).map(w => `<span class="pill warn">${esc(w)}</span>`).join("") ||
+      `<span class="pill good">No standout weak habits this round</span>`;
+
+    document.getElementById("suggestionsList").innerHTML =
+      (fb.suggestions || []).map(s => `<li>${esc(s)}</li>`).join("") || "<li>Keep practising.</li>";
+
+    // Transcript with per-beat verdicts (align beat_scores to the handoff transcript).
+    const beats = fb.beat_scores || [];
+    const transcript = (handoff && handoff.transcript) || [];
+    document.getElementById("answersList").innerHTML = transcript.length
+      ? transcript.map((t, i) => {
+          const b = beats[i] || {};
+          const verdict = b.verdict ? `<span class="verdict ${esc(b.verdict)}">${esc(b.verdict)}</span>` : "";
+          const note = b.note ? `<div style="font-size:0.76rem;color:var(--text-sub);margin-top:3px;">${esc(b.note)}</div>` : "";
+          return `<li>${verdict}<span class="q-tag">Q${i + 1} · ${esc(t.prompt || "")}</span>${esc(t.answer || "(blank)")}${note}</li>`;
+        }).join("")
+      : `<li><span class="q-tag">No transcript</span>This session's answers weren't handed over for display.</li>`;
+
+    // Weakest beat → redo flow.
+    const wb = fb.weakest_beat || {};
+    if (fb.redo_prompt) {
+      document.getElementById("redoCard").style.display = "block";
+      document.getElementById("redoTitle").textContent = "Retry: " + (wb.label || "your weakest answer");
+      document.getElementById("redoWhy").textContent = wb.why || "";
+      document.getElementById("redoPrompt").textContent = fb.redo_prompt;
+
+      const attempt1 = (transcript[(wb.id || 1) - 1] || {}).answer || "";
+      document.getElementById("redoBtn").addEventListener("click", async () => {
+        const a2 = document.getElementById("redoAnswer").value.trim();
+        if (!a2) { showToast("Write your retry first."); return; }
+        const btn = document.getElementById("redoBtn");
+        btn.disabled = true; btn.textContent = "Checking…";
+        try {
+          const res = await fetch("/comm/redo", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ beat: fb.redo_prompt, attempt1: attempt1, attempt2: a2 })
+          });
+          const data = await res.json();
+          document.getElementById("redoVerdict").textContent =
+            (data.verdict ? data.verdict + " — " : "") + (data.improved || "");
+        } catch (e) {
+          showToast("Couldn't check the retry. Try again.");
+        } finally {
+          btn.disabled = false; btn.textContent = "Check my retry";
+        }
       });
-    } catch (e) {}
-    showToast("Saved this speaking round.");
-  });
+    }
+
+    // Resources → safe search links built server-side.
+    const groups = fb.resources || [];
+    if (groups.length) {
+      document.getElementById("resourcesCard").style.display = "block";
+      document.getElementById("resourcesWrap").innerHTML = groups.map(g => `
+        <div class="resource-group">
+          <div class="resource-area">${esc(g.area)}</div>
+          <div class="resource-links">
+            ${(g.items || []).map(it =>
+              `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.icon || "")} ${esc(it.title)}</a>`
+            ).join("")}
+          </div>
+        </div>`).join("");
+    }
+
+    const trackLabel = (handoff && handoff.track) || "communication";
+    document.getElementById("modeChip").textContent = "Track: " + trackLabel;
+    document.getElementById("modeText").textContent =
+      "This round was saved to your report automatically.";
+
+    loadingNote.style.display = "none";
+    resultGrid.style.display = "grid";
+  }
+
+  async function evaluate() {
+    if (!handoff) {
+      loadingNote.innerHTML =
+        'No session to review. <a href="soft_skills.html" style="color:#c7d2fe">Start a practice round</a> first.';
+      return;
+    }
+    try {
+      const res = await fetch("/comm/evaluate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ metrics: handoff.metrics || {} })
+      });
+      if (res.status === 401) { window.location.replace("login.html"); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Evaluation failed.");
+      // The evaluation is one-shot server-side; drop the handoff so a refresh
+      // doesn't try (and fail) to grade the same spent session again.
+      sessionStorage.removeItem("aira_comm_session");
+      render(data.feedback || {});
+    } catch (err) {
+      loadingNote.innerHTML = esc(err.message || "Could not evaluate this session.") +
+        ' <a href="soft_skills.html" style="color:#c7d2fe">Practice again</a>';
+    }
+  }
+
+  evaluate();
 </script>
 
 </body>

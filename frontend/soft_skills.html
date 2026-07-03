@@ -52,16 +52,35 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
 .section-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
 .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-.skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 40px; }
+.skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
 .skill-card {
   padding: 20px 20px; border-radius: 14px; border: 1px solid var(--border);
-  background: var(--card); transition: all 0.25s;
+  background: var(--card); transition: all 0.25s; cursor: pointer;
 }
 .skill-card:hover { border-color: var(--border-bright); background: var(--card-hover); transform: translateY(-2px); }
+.skill-card.selected { border-color: var(--gold); background: rgba(201,164,110,0.07); box-shadow: 0 0 0 1px rgba(201,164,110,0.25); }
 .skill-icon { font-size: 1.3rem; margin-bottom: 10px; }
 .skill-name { font-family: var(--fd); font-size: 1rem; color: var(--cream); margin-bottom: 5px; }
 .skill-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
 .skill-tag { display: inline-block; margin-top: 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+
+/* Teach panel (framework + example from the server) */
+.teach-panel { margin-bottom: 40px; border: 1px solid var(--border-bright); border-radius: 16px; background: rgba(201,164,110,0.04); padding: 26px 26px; }
+.teach-loading { color: var(--muted); font-style: italic; font-size: 0.86rem; }
+.fw-name { font-family: var(--fd); font-size: 1.2rem; color: var(--gold-light); margin-bottom: 6px; }
+.fw-why { font-size: 0.86rem; color: var(--muted); line-height: 1.65; margin-bottom: 16px; }
+.fw-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.fw-step { font-size: 0.78rem; color: var(--cream); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; }
+.fw-step span { color: var(--muted); }
+.fw-example-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 6px; }
+.fw-example { font-size: 0.88rem; color: var(--cream); line-height: 1.7; font-style: italic; border-left: 2px solid var(--border-bright); padding-left: 14px; margin-bottom: 18px; }
+.project-pick { margin-bottom: 18px; }
+.project-pick label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; }
+.project-pick select {
+  width: 100%; max-width: 420px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: #14110B; color: var(--cream);
+  font-family: var(--fb); font-size: 0.86rem;
+}
 
 /* What to expect */
 .expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
@@ -124,33 +143,30 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
     </div>
   </div>
 
-  <div class="section-label">What you'll practice</div>
+  <div class="section-label">Pick your track</div>
   <div class="skills-grid">
-    <div class="skill-card">
-      <div class="skill-icon">&#127908;</div>
-      <div class="skill-name">Spoken delivery</div>
-      <p class="skill-desc">Answer prompts out loud. Practice structuring thoughts quickly, speaking clearly, and sounding confident without a script.</p>
-      <div class="skill-tag">Fluency · Pacing</div>
-    </div>
-    <div class="skill-card">
+    <div class="skill-card" data-track="communication" onclick="selectTrack('communication')">
       <div class="skill-icon">&#128172;</div>
-      <div class="skill-name">Communication clarity</div>
-      <p class="skill-desc">Learn to say exactly what you mean without filler words, rambling, or losing the thread mid-answer.</p>
-      <div class="skill-tag">Clarity · Precision</div>
+      <div class="skill-name">Communication practice</div>
+      <p class="skill-desc">Speak clearly and to the point on any prompt, using the PREP framework: Point, Reason, Example, Point.</p>
+      <div class="skill-tag">Clarity · Structure</div>
     </div>
-    <div class="skill-card">
+    <div class="skill-card" data-track="intro" onclick="selectTrack('intro')">
+      <div class="skill-icon">&#127908;</div>
+      <div class="skill-name">Self-introduction</div>
+      <p class="skill-desc">Nail "tell me about yourself" with a simple order: who you are now, the past that got you here, where you're headed.</p>
+      <div class="skill-tag">Present · Past · Future</div>
+    </div>
+    <div class="skill-card" data-track="project" onclick="selectTrack('project')">
       <div class="skill-icon">&#9650;</div>
-      <div class="skill-name">Confidence under pressure</div>
-      <p class="skill-desc">Simulate interview conditions. Build the muscle of responding calmly and authoritatively even when caught off guard.</p>
-      <div class="skill-tag">Composure · Confidence</div>
-    </div>
-    <div class="skill-card">
-      <div class="skill-icon">&#128270;</div>
-      <div class="skill-name">Self-reflection</div>
-      <p class="skill-desc">After every session, review what you said. Spotting your own patterns is how you close the gap between good and great.</p>
-      <div class="skill-tag">Awareness · Growth</div>
+      <div class="skill-name">Talk about your project</div>
+      <p class="skill-desc">Explain your own resume project without freezing: what, why, how, the impact, and your specific role in it.</p>
+      <div class="skill-tag">Ownership · Depth</div>
     </div>
   </div>
+
+  <!-- Teaching content arrives from the server (persona-personalised) -->
+  <div class="teach-panel" id="teachPanel" style="display:none"></div>
 
   <div class="section-label">What a session looks like</div>
   <div class="expect-grid">
@@ -171,22 +187,94 @@ body { font-family: var(--fb); background: var(--bg); color: var(--cream); min-h
   <div class="cta-block">
     <div class="cta-text">
       <div class="cta-title">Ready to practice?</div>
-      <div class="cta-sub">Sessions take 5–15 minutes. The more you do, the sharper your scores.</div>
+      <div class="cta-sub" id="ctaSub">Pick a track above — Aira will teach you the framework first.</div>
     </div>
-    <button class="btn-start" onclick="window.location.href='practice.html'">Start speaking practice &#8594;</button>
+    <button class="btn-start" id="startBtn" disabled style="opacity:0.45;cursor:not-allowed;">Start speaking practice &#8594;</button>
   </div>
 
 </div>
 
 <script>
+let selectedTrack = null;
+let selectedProject = null;
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function selectTrack(track) {
+  selectedTrack = track;
+  selectedProject = null;
+  document.querySelectorAll('.skill-card').forEach(c =>
+    c.classList.toggle('selected', c.dataset.track === track));
+
+  const panel = document.getElementById('teachPanel');
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="teach-loading">Aira is preparing your framework and a model example…</div>';
+  setStartEnabled(false);
+
+  try {
+    const res = await fetch('/comm/setup?track=' + encodeURIComponent(track), { credentials: 'include' });
+    if (res.status === 401) { window.location.replace('login.html'); return; }
+    const d = await res.json();
+    if (!res.ok || !d.framework) throw new Error(d.error || 'Could not load this track.');
+
+    let html = '<div class="fw-name">' + escHtml(d.framework.name) + '</div>' +
+      '<div class="fw-why">' + escHtml(d.framework.why) + '</div>' +
+      '<div class="fw-steps">' +
+      (d.framework.steps || []).map(s =>
+        '<span class="fw-step">' + escHtml(s.label) + ' <span>— ' + escHtml(s.hint) + '</span></span>').join('') +
+      '</div>' +
+      '<div class="fw-example-label">A model example, tuned to you</div>' +
+      '<div class="fw-example">' + escHtml(d.example) + '</div>';
+
+    if (track === 'project') {
+      const projects = d.projects || [];
+      if (!projects.length) {
+        html += '<div class="fw-why" style="margin-bottom:0;">No resume projects found — complete onboarding with a resume to use this track.</div>';
+        panel.innerHTML = html;
+        return;
+      }
+      html += '<div class="project-pick"><label for="projectSelect">Which project do you want to talk about?</label>' +
+        '<select id="projectSelect">' +
+        projects.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + '</option>').join('') +
+        '</select></div>';
+    }
+
+    panel.innerHTML = html;
+    if (track === 'project') {
+      selectedProject = document.getElementById('projectSelect').value;
+      document.getElementById('projectSelect').addEventListener('change', e => { selectedProject = e.target.value; });
+    }
+    setStartEnabled(true);
+    document.getElementById('ctaSub').textContent = 'Read the framework, then start — questions adapt to how you answer.';
+  } catch (err) {
+    panel.innerHTML = '<div class="teach-loading">' + escHtml(err.message || 'Could not load this track.') + '</div>';
+  }
+}
+
+function setStartEnabled(on) {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = !on;
+  btn.style.opacity = on ? '1' : '0.45';
+  btn.style.cursor = on ? 'pointer' : 'not-allowed';
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (!selectedTrack) return;
+  let url = 'practice.html?track=' + encodeURIComponent(selectedTrack);
+  if (selectedTrack === 'project' && selectedProject != null) url += '&project_id=' + encodeURIComponent(selectedProject);
+  window.location.href = url;
+});
+
 // Auth guard
 (function() {
   const raw = localStorage.getItem('aira_user');
   if (!raw) { window.location.replace('login.html'); return; }
   try {
-    const persona = JSON.parse(localStorage.getItem('aira_persona') || '{}');
-    if (persona.name) {
-      document.getElementById('personaNamePill').textContent = persona.name;
+    const user = JSON.parse(raw);
+    if (user.name) {
+      document.getElementById('personaNamePill').textContent = user.name.split(' ')[0];
       document.getElementById('personaPill').style.display = 'inline-flex';
     }
   } catch(e) {}

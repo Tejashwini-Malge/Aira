@@ -64,18 +64,14 @@ body::before {
 .calm-note { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic; }
 .calm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(201,164,110,0.2); flex-shrink: 0; }
 
-/* Mode toggle */
-.mode-toggle { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,244,224,0.02); align-self: flex-start; }
-.mode-pill {
-  font-size: 0.76rem; padding: 5px 12px; border-radius: 999px;
-  border: none; background: transparent; color: var(--muted);
-  cursor: pointer; font-family: var(--fb); transition: all 0.2s;
-}
-.mode-pill.active { background: linear-gradient(135deg, #C9A46E, #E8C97A); color: #0C0A07; font-weight: 600; }
+/* Coach reaction line */
+.reaction { font-size: 0.82rem; color: var(--gold-light); font-style: italic; display: none; }
+.reaction.show { display: block; }
 
 /* Question */
 .q-meta { display: flex; align-items: center; gap: 10px; }
 .q-pill { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.72rem; color: var(--gold); }
+.diff-pill { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
 .progress-track { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,244,224,0.07); overflow: hidden; }
 .progress-bar { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #C9A46E, #E8C97A); transition: width 0.35s ease-out; }
 .step-text { font-size: 0.72rem; color: var(--muted); }
@@ -145,24 +141,22 @@ textarea::placeholder { color: rgba(155,142,126,0.5); }
         <div class="brand-sub">Voice practice</div>
       </div>
     </div>
-    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Hub</div>
+    <div class="nav-back" onclick="window.location.href='soft_skills.html'">‹ Tracks</div>
   </div>
 
   <div class="practice-card">
     <div class="calm-note">
       <div class="calm-dot"></div>
-      There's no right or wrong answer. Just share what comes to mind.
+      Aira adapts each question to how you answer. Just share what comes to mind.
     </div>
 
-    <div class="mode-toggle">
-      <button class="mode-pill active" id="modePromptBtn">Prompt &amp; speak</button>
-      <button class="mode-pill" id="modeFreeBtn">Free speak</button>
-    </div>
+    <div class="reaction" id="reaction"></div>
 
     <div class="q-meta">
       <div class="q-pill" id="intentLabel">Practice session</div>
       <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
       <div class="step-text" id="stepLabel">0 / 0</div>
+      <div class="diff-pill" id="diffPill" style="display:none">Level 2</div>
     </div>
 
     <div class="question-text" id="question">Loading…</div>
@@ -181,7 +175,7 @@ textarea::placeholder { color: rgba(155,142,126,0.5); }
 
     <div class="btn-row">
       <button class="btn-skip" id="skipBtn">Skip</button>
-      <button class="btn-primary" id="continueBtn">Continue →</button>
+      <button class="btn-primary" id="continueBtn" disabled>Continue →</button>
     </div>
   </div>
 </div>
@@ -189,8 +183,17 @@ textarea::placeholder { color: rgba(155,142,126,0.5); }
 <div id="toast">Notification</div>
 
 <script>
-let questions = [], answers = [], index = 0, mode = "prompt";
-const intent = localStorage.getItem("intent") || "general communication practice";
+// ---- Session state: the server holds the real history; we only send answers. ----
+const params = new URLSearchParams(window.location.search);
+const track = params.get("track") || "communication";
+const projectId = params.get("project_id");
+
+let total = 0, answered = 0, busy = false, finished = false;
+// Client-measured delivery metrics (by design these are browser-side: pace,
+// filler words, word count). They ride along to /comm/evaluate as `metrics`.
+const metrics = { words: 0, fillers: 0, startedAt: null };
+const transcript = []; // {prompt, answer} — for display on the reflection page only
+
 const qEl = document.getElementById("question");
 const aEl = document.getElementById("answer");
 const micBtn = document.getElementById("mic-btn");
@@ -199,106 +202,126 @@ const micStatusEl = document.getElementById("micStatus");
 const intentEl = document.getElementById("intentLabel");
 const progressBar = document.getElementById("progressBar");
 const stepEl = document.getElementById("stepLabel");
+const diffPill = document.getElementById("diffPill");
+const reactionEl = document.getElementById("reaction");
 const continueBtn = document.getElementById("continueBtn");
 const skipBtn = document.getElementById("skipBtn");
 
-const intentMap = {
-  "speaking confidently as a fresher": "Speaking as a fresher",
-  "handling challenges calmly": "Handling challenges",
-  "responding to feedback clearly": "Responding to feedback",
-  "general communication practice": "Communication practice"
-};
-intentEl.textContent = intentMap[intent] || "Practice session";
-
-function fetchQuestions() {
-  return new Promise(resolve => setTimeout(() => resolve({ questions: [
-    "Tell me about a challenge you overcame recently.",
-    "What is your favourite way to recharge after a long day?",
-    "Describe a skill you would like to develop in the next six months."
-  ]}), 500));
+function countFillers(text) {
+  const m = String(text).toLowerCase().match(/\b(um+|uh+|erm+|like|you know|basically|actually|literally)\b/g);
+  return m ? m.length : 0;
+}
+function countWords(text) {
+  return String(text).split(/\s+/).filter(Boolean).length;
 }
 
-function updateProgress() {
-  if (mode === "free") { progressBar.style.width = "100%"; stepEl.textContent = "Free mode"; return; }
-  const t = questions.length || 1, c = Math.min(index + 1, t);
-  progressBar.style.width = (c / t * 100) + "%";
-  stepEl.textContent = c + " / " + t;
+function renderBeat(beat) {
+  qEl.textContent = beat.prompt;
+  helperEl.textContent = beat.hint || "A few honest sentences are enough.";
+  diffPill.textContent = "Level " + (beat.difficulty || "?") + " / 5";
+  diffPill.style.display = "inline-block";
+  const shown = Math.min(answered + 1, total || 1);
+  progressBar.style.width = ((shown / (total || 1)) * 100) + "%";
+  stepEl.textContent = shown + " / " + (total || "?");
+  continueBtn.textContent = (answered + 1 >= total) ? "Finish & review →" : "Continue →";
+  aEl.value = "";
+  aEl.focus();
 }
 
-function setHelper() {
-  if (mode === "free") { helperEl.textContent = "Speak for 45–90 seconds. Aira will listen and give feedback."; return; }
-  const q = (questions[index] || "").toLowerCase();
-  if (q.includes("challenge")) helperEl.textContent = "Describe what happened, what you did, and what you learned.";
-  else if (q.includes("recharge") || q.includes("relax")) helperEl.textContent = "Paint a small picture — where you are, what you do, how it feels.";
-  else helperEl.textContent = "A few honest sentences are enough. No perfect answer needed.";
+async function startSession() {
+  if (!metrics.startedAt) metrics.startedAt = Date.now();
+  try {
+    const res = await fetch("/comm/start", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ track: track, project_id: projectId })
+    });
+    if (res.status === 401) { window.location.replace("login.html"); return; }
+    const data = await res.json();
+    if (!res.ok || !data.beat) throw new Error(data.error || "Could not start the session.");
+    total = data.total || 5;
+    intentEl.textContent = data.label || "Practice session";
+    transcript.push({ prompt: data.beat.prompt, answer: null });
+    renderBeat(data.beat);
+    continueBtn.disabled = false;
+  } catch (err) {
+    qEl.textContent = "Could not start the session. Is the server running?";
+    helperEl.textContent = err.message || "";
+  }
 }
 
-function setModePrompt() {
-  mode = "prompt";
-  document.getElementById("modePromptBtn").classList.add("active");
-  document.getElementById("modeFreeBtn").classList.remove("active");
-  continueBtn.textContent = "Continue →";
-  skipBtn.style.display = "inline";
-  qEl.textContent = questions.length ? questions[index] : "Loading…";
-  updateProgress(); setHelper();
-}
-function setModeFree() {
-  mode = "free";
-  document.getElementById("modeFreeBtn").classList.add("active");
-  document.getElementById("modePromptBtn").classList.remove("active");
-  continueBtn.textContent = "Finish & review →";
-  skipBtn.style.display = "none";
-  qEl.textContent = "Just start speaking about your day, your week, or your current goal.";
-  updateProgress(); setHelper();
-}
-document.getElementById("modePromptBtn").addEventListener("click", setModePrompt);
-document.getElementById("modeFreeBtn").addEventListener("click", setModeFree);
+async function sendAnswer(answerText) {
+  if (busy || finished) return;
+  busy = true;
+  stopListening();
+  continueBtn.disabled = true;
+  continueBtn.textContent = "Thinking…";
 
-fetchQuestions().then(data => {
-  questions = data.questions; index = 0;
-  if (mode === "prompt") qEl.textContent = questions[index];
-  updateProgress(); setHelper();
-});
+  metrics.words += countWords(answerText);
+  metrics.fillers += countFillers(answerText);
+  transcript[transcript.length - 1].answer = answerText;
+
+  try {
+    const res = await fetch("/comm/next", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ answer: answerText })
+    });
+    if (res.status === 401) { window.location.replace("login.html"); return; }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+
+    answered++;
+    if (data.done) {
+      finished = true;
+      finishSession();
+      return;
+    }
+    if (data.reaction) {
+      reactionEl.textContent = data.reaction;
+      reactionEl.classList.add("show");
+    }
+    transcript.push({ prompt: data.beat.prompt, answer: null });
+    renderBeat(data.beat);
+  } catch (err) {
+    showToast(err.message || "Could not reach Aira. Try again.");
+    continueBtn.textContent = "Continue →";
+  } finally {
+    busy = false;
+    continueBtn.disabled = finished;
+  }
+}
+
+function finishSession() {
+  const minutes = Math.max((Date.now() - metrics.startedAt) / 60000, 0.25);
+  const payload = {
+    track: track,
+    metrics: {
+      words: metrics.words,
+      fillers: metrics.fillers,
+      wpm: Math.round(metrics.words / minutes)
+    },
+    transcript: transcript
+  };
+  // Display-only hand-off to the reflection page; the graded transcript lives server-side.
+  sessionStorage.setItem("aira_comm_session", JSON.stringify(payload));
+  showToast("Session complete. Aira is reviewing it…", true);
+  setTimeout(() => { window.location.href = "reflection.html"; }, 1200);
+}
 
 continueBtn.addEventListener("click", () => {
   const current = aEl.value.trim();
   if (!current) { showToast("Try at least one sentence first."); return; }
-  answers.push(current); aEl.value = ""; stopListening();
-  if (mode === "free") {
-    continueBtn.disabled = true; continueBtn.textContent = "Saving…";
-    localStorage.setItem("answers", JSON.stringify(answers));
-    localStorage.setItem("mode", "free");
-    localStorage.setItem("aira_skills_done", "true");
-    showToast("Good work. Taking you to reflection.", true);
-    setTimeout(() => { window.location.href = "reflection.html"; }, 1500);
-    return;
-  }
-  index++;
-  if (index < questions.length) {
-    qEl.textContent = questions[index]; updateProgress(); setHelper(); aEl.focus();
-  } else {
-    continueBtn.disabled = true; continueBtn.textContent = "Saving…";
-    localStorage.setItem("answers", JSON.stringify(answers));
-    localStorage.setItem("mode", "prompt");
-    localStorage.setItem("aira_skills_done", "true");
-    showToast("Practice complete. Taking you to reflection.", true);
-    setTimeout(() => { window.location.href = "reflection.html"; }, 1500);
-  }
+  sendAnswer(current);
 });
 
 skipBtn.addEventListener("click", () => {
-  if (mode === "free") return;
-  answers.push("[Skipped]"); index++;
-  if (index < questions.length) {
-    qEl.textContent = questions[index]; updateProgress(); setHelper();
-    aEl.value = ""; aEl.focus(); showToast("Skipped. Next prompt.");
-  } else {
-    localStorage.setItem("answers", JSON.stringify(answers));
-    localStorage.setItem("mode", "prompt");
-    showToast("End reached. Moving to reflection.", true);
-    setTimeout(() => { window.location.href = "reflection.html"; }, 1400);
-  }
+  if (busy || finished) return;
+  sendAnswer("");
+  showToast("Skipped — a blank answer counts as weak.");
 });
+
+startSession();
 
 // Speech recognition
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
