@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +17,33 @@ from ai_quiz_bp import quiz_bp
 from communication_bp import comm_bp
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-only-change-me")
+
+IS_PRODUCTION = os.getenv("FLASK_ENV") == "production"
+
+# Render (and most hosts) terminate TLS at a proxy and forward plain HTTP to the
+# app, with the real scheme in X-Forwarded-Proto. Without this, request.is_secure
+# is always False behind the proxy, which breaks any scheme-aware redirect and
+# makes the app think an HTTPS request arrived over HTTP. Trust one proxy hop.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# The session cookie is a *signed* cookie — its signature depends on SECRET_KEY.
+# If the key changes between the request that set the cookie and the one that
+# reads it (e.g. a key randomly generated at startup, so it differs on every
+# restart / across workers), the signature no longer verifies, Flask silently
+# discards the session, and the user looks logged out on their very next click.
+# So the key MUST come from a persistent env var and stay identical everywhere.
+# In production we refuse to boot on the shared dev default rather than sign real
+# sessions with a guessable key that also wouldn't survive a config change.
+SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
+if not SECRET_KEY:
+    if IS_PRODUCTION:
+        raise RuntimeError(
+            "FLASK_SECRET_KEY is not set. Configure a persistent secret (e.g. the "
+            "Render env var from render.yaml) so signed session cookies stay valid "
+            "across restarts and workers."
+        )
+    SECRET_KEY = "dev-only-change-me"  # local dev only — stable, never shipped
+app.config["SECRET_KEY"] = SECRET_KEY
 
 # DATABASE_URL is set by the host (Render/Railway) when a managed Postgres
 # instance is attached. Falls back to a local SQLite file for local dev.
@@ -28,14 +55,27 @@ if database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Same-origin session cookie (frontend is served by this app). In production
-# (behind HTTPS) the cookie is also marked Secure so it's never sent over plain http.
+# The frontend is served by THIS app, so the session cookie is same-origin.
+#   HTTPONLY : JS can't read it (XSS can't steal the session).
+#   SAMESITE : "Lax" is correct for a same-origin app. Only a cross-site frontend
+#              (different domain calling this API) would need "None" — and "None"
+#              REQUIRES Secure, so it can't be combined with plain HTTP.
+#   SECURE   : in production the cookie is only sent over HTTPS. Thanks to ProxyFix
+#              above, scheme detection is correct behind Render's proxy.
+# Overridable via env so a future cross-site split is a config change, not a code one.
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.getenv("FLASK_ENV") == "production"
+app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+app.config["SESSION_COOKIE_SECURE"] = IS_PRODUCTION or \
+    os.getenv("SESSION_COOKIE_SAMESITE", "Lax").lower() == "none"
 
-# Credentials must be allowed for the session cookie to round-trip.
-CORS(app, supports_credentials=True)
+# CORS is only needed if a DIFFERENT origin calls this API with credentials.
+# A wildcard origin ("*") is invalid with credentialed requests, so we never use
+# one: enable credentialed CORS only for an explicit allowlist (CORS_ORIGINS,
+# comma-separated). Same-origin requests don't trigger CORS at all, so by default
+# (allowlist empty) there is nothing to configure.
+_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if _cors_origins:
+    CORS(app, resources={r"/*": {"origins": _cors_origins}}, supports_credentials=True)
 
 db.init_app(app)
 with app.app_context():
