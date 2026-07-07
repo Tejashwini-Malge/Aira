@@ -168,11 +168,8 @@ const API_BASE = '';
 
 window.addEventListener('DOMContentLoaded', async () => {
   document.body.classList.add('loaded');
-  // Personalise greeting and skip onboarding if it's already done.
-  try {
-    const cached = JSON.parse(localStorage.getItem('aira_user') || '{}');
-    if (cached.name) document.getElementById('greeting').textContent = 'Hi ' + cached.name.split(' ')[0];
-  } catch (e) {}
+  // Skip onboarding if it's already done; personalise greeting from the server
+  // (localStorage mirrors of auth state are gone — the server is the source of truth).
   try {
     const r = await fetch(`${API_BASE}/onboarding/status`, { credentials: 'include' });
     if (r.ok) {
@@ -180,6 +177,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (d.complete) { window.location.href = 'questions.html'; return; }
     } else if (r.status === 401) {
       window.location.href = 'login.html'; return;
+    }
+  } catch (e) {}
+  try {
+    const me = await fetch(`${API_BASE}/me`, { credentials: 'include' });
+    if (me.ok) {
+      const d = await me.json();
+      const name = d && d.user && d.user.name;
+      if (name) document.getElementById('greeting').textContent = 'Hi ' + name.split(' ')[0];
     }
   } catch (e) {}
 });

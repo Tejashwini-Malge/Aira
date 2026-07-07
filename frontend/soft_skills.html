@@ -424,17 +424,19 @@ document.getElementById('startBtn').addEventListener('click', () => {
   window.location.href = url;
 });
 
-// Auth guard
-(function() {
-  const raw = localStorage.getItem('aira_user');
-  if (!raw) { window.location.replace('login.html'); return; }
+// Auth guard — server truth, not localStorage (nothing writes aira_user anymore;
+// gating on it bounced every logged-in user to login).
+(async function() {
   try {
-    const user = JSON.parse(raw);
+    const res = await fetch('/me', { credentials: 'include' });
+    if (res.status === 401) { window.location.replace('login.html'); return; }
+    const d = await res.json();
+    const user = (d && d.user) || {};
     if (user.name) {
       document.getElementById('personaNamePill').textContent = user.name.split(' ')[0];
       document.getElementById('personaPill').style.display = 'inline-flex';
     }
-  } catch(e) {}
+  } catch(e) { /* network hiccup — page still works, tracks re-check auth on use */ }
 })();
 </script>
 </body>

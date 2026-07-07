@@ -175,9 +175,8 @@ function updateNextState() {
 }
 
 window.addEventListener('load', async () => {
-  if (!localStorage.getItem('aira_user')) {
-    window.location.replace('login.html'); return;
-  }
+  // Auth is server-truth only (the 401 check below) — a localStorage guard here
+  // once bounced every logged-in user to login, because nothing writes that key anymore.
   // Persona questions are built from the resume — onboarding must come first.
   try {
     const r = await fetch(`${API_BASE}/onboarding/status`, { credentials: 'include' });
