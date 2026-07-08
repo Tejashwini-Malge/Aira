@@ -162,6 +162,11 @@ def parse_resume(resume_text, onboarding=None):
         data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False)
     except GroqError as e:
         print("Resume agent error:", e)
+        if e.rate_limited:
+            raise ResumeError(
+                "Aira is handling a lot of resumes right now — please try again "
+                "in a few minutes."
+            )
         raise ResumeError("Couldn't analyse the resume. Please try again.")
 
     if not isinstance(data, dict):
