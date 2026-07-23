@@ -61,9 +61,26 @@ def extract_text(file_storage):
 
 
 def _extract_pdf(raw):
+    """pypdf is fast but chokes on a real (non-scanned) chunk of PDFs — anything
+    with embedded/subset fonts that lack a proper ToUnicode map (common from
+    Canva, LinkedIn's "export as PDF", and some Word→PDF converters) comes back
+    empty or garbled even though the file is genuinely text-based, not scanned.
+    pdfminer.six uses a different extraction path and recovers text from most
+    of those, so it's a fallback rather than the primary parser: it's slower
+    and a bit heavier, not worth paying for the common case that already works.
+    """
     from pypdf import PdfReader
     reader = PdfReader(io.BytesIO(raw))
-    return "\n".join((page.extract_text() or "") for page in reader.pages)
+    text = "\n".join((page.extract_text() or "") for page in reader.pages)
+    if len((text or "").strip()) >= 50:
+        return text
+
+    from pdfminer.high_level import extract_text as _pdfminer_extract_text
+    try:
+        return _pdfminer_extract_text(io.BytesIO(raw))
+    except Exception as e:
+        print("pdfminer fallback also failed:", e)
+        return text
 
 
 def _extract_docx(raw):

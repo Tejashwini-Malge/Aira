@@ -10,6 +10,7 @@ requests==2.31.0
 pydantic==2.12.5
 google-generativeai
 pypdf
+pdfminer.six
 python-docx
 pytest
 gunicorn==22.0.0
