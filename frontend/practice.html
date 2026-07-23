@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Voice Practice</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -35,8 +36,8 @@ body.board {
   color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
 .brand-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
-.brand-sub { font-size: 0.72rem; color: var(--muted); }
-.nav-back { font-size: 0.78rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
+.brand-sub { font-size: 0.8rem; color: var(--muted); }
+.nav-back { font-size: 0.8rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
 .nav-back:hover { color: var(--chalk); border-color: var(--chalk); }
 
 /* Practice card — standing at the board */
@@ -54,11 +55,11 @@ body.board {
 
 /* Question */
 .q-meta { display: flex; align-items: center; gap: 10px; }
-.q-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.74rem; color: var(--chalk-yellow); }
-.diff-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.q-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.8rem; color: var(--chalk-yellow); }
+.diff-pill { padding: 3px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .progress-track { flex: 1; height: 5px; border-radius: 999px; background: rgba(244,241,228,0.08); overflow: hidden; border: 1px dashed var(--dash); }
 .progress-bar { height: 100%; width: 0%; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--chalk) 0 5px, transparent 5px 8px); transition: width 0.35s ease-out; }
-.step-text { font-size: 0.74rem; color: var(--muted); }
+.step-text { font-size: 0.8rem; color: var(--muted); }
 
 .question-text { font-family: var(--fd); font-size: 1.3rem; line-height: 1.5; color: var(--chalk); text-shadow: 0 0 1px rgba(255,255,255,0.4); }
 
@@ -86,7 +87,7 @@ textarea::placeholder { color: rgba(244,241,228,0.3); }
 #mic-btn.listening { color: var(--chalk-pink); border-color: rgba(234,172,184,0.6); border-style: solid; background: rgba(234,172,184,0.08); animation: micPulse 1.6s ease-out infinite; }
 @keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(234,172,184,0.3); } 70% { box-shadow: 0 0 0 12px rgba(234,172,184,0); } 100% { box-shadow: 0 0 0 0 rgba(234,172,184,0); } }
 
-.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
 
 /* Button row */
 .btn-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
@@ -111,7 +112,7 @@ textarea::placeholder { color: rgba(244,241,228,0.3); }
 <div class="layout">
   <div class="header">
     <div class="brand">
-      <div class="brand-badge">A</div>
+      <div class="brand-badge"></div>
       <div>
         <div class="brand-name">Aira</div>
         <div class="brand-sub">Stand and deliver</div>
@@ -269,7 +270,7 @@ async function sendAnswer(answerText) {
   }
 }
 
-function finishSession() {
+async function finishSession() {
   const minutes = Math.max((Date.now() - metrics.startedAt) / 60000, 0.25);
   const payload = {
     track: track,
@@ -280,12 +281,31 @@ function finishSession() {
     },
     transcript: transcript
   };
-  // Display-only hand-off to the reflection page; the graded transcript lives server-side.
-  sessionStorage.setItem("aira_comm_session", JSON.stringify(payload));
-  // The period is over — ring the school bell.
+
+  // The period is over — ring the school bell and grade the paper RIGHT HERE,
+  // while the student is still at the board. The reflection page then opens with
+  // the verdict already in hand instead of blocking on its own evaluate call.
   Aira.ringBell();
-  showToast("🔔 The bell has rung — session complete. Aira is reviewing it…", true);
-  setTimeout(() => { window.location.href = "reflection.html"; }, 1400);
+  qEl.textContent = "🔔 Pens down!";
+  helperEl.textContent = "Aira is going through your answer sheet…";
+  reactionEl.classList.remove("show");
+  continueBtn.textContent = "Correcting…";
+  showToast("The bell has rung — Aira is correcting your paper…", true);
+
+  try {
+    const res = await fetch("/comm/evaluate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ metrics: payload.metrics })
+    });
+    const data = await res.json();
+    if (res.ok && data.feedback) payload.feedback = data.feedback;
+    // On failure the hand-off simply has no feedback — the reflection page falls
+    // back to running the evaluation itself (the session is only spent on success).
+  } catch (e) { /* same fallback */ }
+
+  sessionStorage.setItem("aira_comm_session", JSON.stringify(payload));
+  window.location.href = "reflection.html";
 }
 
 continueBtn.addEventListener("click", () => {
@@ -302,28 +322,55 @@ skipBtn.addEventListener("click", () => {
 
 startSession();
 
-// Speech recognition
+// Speech recognition — stays on until YOU turn it off.
+// The browser ends recognition on its own after any silence, so `wantListening`
+// tracks the user's intent and onend auto-restarts while it's still true.
+// Transcription REPLACES the textarea from a base snapshot (base + finals + interim)
+// instead of appending — interim results are cumulative revisions of the same phrase,
+// and appending each revision duplicated words ("firstly firstly i came firstly…").
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recog, isListening = false;
+let recog, isListening = false, wantListening = false, baseText = "";
 if (SR) {
   recog = new SR();
-  recog.continuous = false; recog.interimResults = true; recog.lang = "en-US";
+  recog.continuous = true; recog.interimResults = true; recog.lang = "en-US";
   recog.onstart = () => { isListening = true; micBtn.classList.add("listening"); aEl.placeholder = "You're live. Speak as you would in an interview."; micStatusEl.textContent = "Listening…"; };
-  recog.onend = () => { isListening = false; micBtn.classList.remove("listening"); aEl.placeholder = "You can type, or click the mic and simply speak."; micStatusEl.textContent = "Mic off"; };
+  recog.onend = () => {
+    isListening = false;
+    if (wantListening) {
+      // Silence timeout, not a user stop — pick up where we left off.
+      baseText = aEl.value.trim() ? aEl.value.trim() + " " : "";
+      try { recog.start(); return; } catch { wantListening = false; }
+    }
+    micBtn.classList.remove("listening");
+    aEl.placeholder = "You can type, or click the mic and simply speak.";
+    micStatusEl.textContent = "Mic off";
+  };
   recog.onresult = e => {
     let fin = "", int = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript + " ";
       else int += e.results[i][0].transcript;
     }
-    if (int) aEl.value = (aEl.value || "").trim() + " " + int;
-    if (fin) aEl.value = aEl.value.trim() + (aEl.value.trim() ? " " : "") + fin;
+    if (fin) baseText += fin;
+    aEl.value = (baseText + int).trim();
   };
-  recog.onerror = e => { stopListening(); showToast(e.error === "not-allowed" ? "Mic blocked. Type your answer instead." : "Mic error: " + e.error); };
-  micBtn.addEventListener("click", () => { isListening ? stopListening() : recog.start(); });
+  recog.onerror = e => {
+    if (e.error === "no-speech" || e.error === "aborted") return; // harmless; onend handles restart
+    stopListening();
+    showToast(e.error === "not-allowed" ? "Mic blocked. Type your answer instead." : "Mic error: " + e.error);
+  };
+  micBtn.addEventListener("click", () => {
+    if (isListening || wantListening) { stopListening(); return; }
+    wantListening = true;
+    baseText = aEl.value.trim() ? aEl.value.trim() + " " : "";
+    recog.start();
+  });
 } else { micBtn.style.display = "none"; micStatusEl.textContent = "Mic not supported"; }
 
-function stopListening() { if (recog && isListening) recog.stop(); }
+function stopListening() {
+  wantListening = false;
+  if (recog && isListening) recog.stop();
+}
 
 function showToast(msg, success = false) {
   const t = document.getElementById("toast");
@@ -331,5 +378,6 @@ function showToast(msg, success = false) {
   setTimeout(() => { t.className = ""; }, 2600);
 }
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

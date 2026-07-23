@@ -62,6 +62,28 @@ window.Aira = (function () {
     };
   }
 
+  // Decode a quiz paper reference back into the real facts it encodes — this is
+  // the ONE place that decoding logic lives, so ai_quiz.html, report.html and
+  // analysis.html all read it the same way. Format (from ai_quiz_bp.py):
+  //   AIRA-MMDD-TD  (role interview: round Type + Difficulty)
+  //   REQ-MMDD-XX   (topic practice: first 2 letters of the topic)
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const REF_TYPE = { T: "Technical", A: "Aptitude", P: "Project-based" };
+  const REF_DIFF = { E: "Easy", M: "Medium", H: "Hard" };
+  function decodePaperRef(ref) {
+    const m = typeof ref === "string" && ref.match(/^(AIRA|REQ)-(\d{2})(\d{2})-([A-Z]{2})$/);
+    if (!m) return null;
+    const [, prefix, mm, dd, suffix] = m;
+    const month = MONTHS[parseInt(mm, 10) - 1];
+    const dateStr = month ? `${month} ${parseInt(dd, 10)}` : `${mm}/${dd}`;
+    if (prefix === "AIRA") {
+      const type = REF_TYPE[suffix[0]] || suffix[0];
+      const diff = REF_DIFF[suffix[1]] || suffix[1];
+      return `Issued ${dateStr} · ${type} · ${diff} difficulty`;
+    }
+    return `Issued ${dateStr} · topic: ${suffix}`;
+  }
+
   // Old-school school bell, synthesized (no audio file, works offline).
   // Two-tone brass ring with a slow decay, like a wall-mounted classroom bell.
   function ringBell() {
@@ -85,5 +107,5 @@ window.Aira = (function () {
     } catch (e) { /* audio unsupported — silently skip */ }
   }
 
-  return { api: api, requireAuth: requireAuth, progress: progress, ringBell: ringBell };
+  return { api: api, requireAuth: requireAuth, progress: progress, ringBell: ringBell, decodePaperRef: decodePaperRef };
 })();

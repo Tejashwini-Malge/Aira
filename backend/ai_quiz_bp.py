@@ -12,10 +12,12 @@ content back — it is read server-side from the database and only used to steer
 prompts. The user just experiences questions that happen to fit them.
 """
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 import urllib.parse
 
 from models import db, QuizResult, get_pending, set_pending, clear_pending
 from auth import current_user, login_required
+from rate_limiter import limiter
 from groq_client import groq_json, GroqError
 
 quiz_bp = Blueprint("quiz_bp", __name__)
@@ -98,6 +100,24 @@ def _persona_brief(for_eval=False):
 
 def _fallback_questions(label):
     return [{"id": i + 1, "question": f"Question {i + 1}: explain a core concept of {label}."} for i in range(5)]
+
+
+# "No two students get the same paper" made literal — and the code isn't a
+# random decoration, it DECODES to real facts about this exact attempt:
+# issue date, plus round type & difficulty (role) or topic initials (topic).
+# aira.js's Aira.decodePaperRef() turns it back into that sentence in the UI.
+_TYPE_CODE = {"technical": "T", "aptitude": "A", "project": "P"}
+_DIFF_CODE = {"easy": "E", "medium": "M", "hard": "H"}
+
+
+def _generate_paper_ref(mode, itype=None, difficulty=None, topic=None):
+    datecode = datetime.utcnow().strftime("%m%d")
+    if mode == "role":
+        t = _TYPE_CODE.get((itype or "").lower(), "T")
+        d = _DIFF_CODE.get((difficulty or "").lower(), "M")
+        return f"AIRA-{datecode}-{t}{d}"
+    letters = "".join(ch for ch in (topic or "").upper() if ch.isalpha())[:2] or "XX"
+    return f"REQ-{datecode}-{letters}"
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +226,7 @@ Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... {count} total]
 
 @quiz_bp.route("/quiz/generate", methods=["POST"])
 @login_required
+@limiter.limit("20 per hour")
 def generate_quiz():
     data = request.get_json() or {}
     mode = (data.get("mode") or "topic").lower()
@@ -246,11 +267,18 @@ Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... 5 total]}}"""
         print("Quiz fallback for", label)
         questions = _fallback_questions(label)[:count]
 
+    if mode == "role":
+        paper_ref = _generate_paper_ref(mode, itype=itype, difficulty=difficulty)
+    else:
+        paper_ref = _generate_paper_ref(mode, topic=label)
+
     # Hold the generated set server-side: /quiz/evaluate grades THESE questions, so
     # a client can't post back a forged transcript and have it scored into history.
-    set_pending(current_user().id, "quiz", {"questions": questions, "mode": mode, "topic": label, **meta})
+    set_pending(current_user().id, "quiz", {
+        "questions": questions, "mode": mode, "topic": label, "paper_ref": paper_ref, **meta
+    })
 
-    return jsonify({"questions": questions, "mode": mode, "topic": label, **meta}), 200
+    return jsonify({"questions": questions, "mode": mode, "topic": label, "paper_ref": paper_ref, **meta}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -259,6 +287,7 @@ Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... 5 total]}}"""
 
 @quiz_bp.route("/quiz/evaluate", methods=["POST"])
 @login_required
+@limiter.limit("20 per hour")
 def evaluate_quiz():
     data = request.get_json() or {}
     answers = data.get("answers")  # {"Q<id>": "..."} keyed by question id
@@ -273,6 +302,7 @@ def evaluate_quiz():
         return jsonify({"error": "No active interview to evaluate. Generate questions first."}), 400
 
     questions = stored["questions"]
+    paper_ref = stored.get("paper_ref")
     topic = (stored.get("topic") or "this interview").strip()
     itype = (stored.get("type") or "").strip()
     difficulty = (stored.get("difficulty") or "").strip()
@@ -356,6 +386,7 @@ Return ONLY JSON:
         study_plan=result.get("study_plan"),
         weak_areas=result.get("weak_areas") or [],
         suggestions=result.get("suggestions") or [],
+        paper_ref=paper_ref,
     )
     db.session.add(record)
     db.session.commit()
@@ -363,6 +394,7 @@ Return ONLY JSON:
     # This set is spent — a fresh /quiz/generate is needed for the next attempt.
     clear_pending(user_id, "quiz")
 
+    result["paper_ref"] = paper_ref
     return jsonify({"feedback": result}), 200
 
 

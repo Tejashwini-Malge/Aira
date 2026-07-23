@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Getting to know you</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -27,7 +28,7 @@ body.loaded { opacity: 1; }
   color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1.05rem;
 }
 .brand-name { font-family: var(--fd); font-size: 1.1rem; color: var(--chalk); }
-.brand-sub { font-size: 0.74rem; color: var(--muted); }
+.brand-sub { font-size: 0.8rem; color: var(--muted); }
 
 .container { max-width: 640px; width: 100%; position: relative; z-index: 1; }
 
@@ -40,7 +41,7 @@ body.loaded { opacity: 1; }
 
 .field { margin-bottom: 20px; }
 .field label { display: block; font-size: 0.86rem; color: var(--chalk); margin-bottom: 7px; }
-.field .hint { font-size: 0.76rem; color: var(--muted); font-style: italic; margin-top: 5px; }
+.field .hint { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-top: 5px; }
 .req { color: var(--chalk-yellow); }
 
 input[type="text"], select, textarea {
@@ -66,7 +67,7 @@ select option { background: #16311f; color: var(--chalk); }
 .file-field:hover { background: rgba(244,241,228,0.05); border-color: var(--chalk); }
 .file-field .fi-icon { font-size: 1.3rem; }
 .file-field .fi-main { font-size: 0.9rem; color: var(--chalk); margin: 6px 0 3px; }
-.file-field .fi-sub { font-size: 0.76rem; color: var(--muted); }
+.file-field .fi-sub { font-size: 0.8rem; color: var(--muted); }
 .file-field.has-file { border-style: solid; border-color: var(--chalk-yellow); }
 .file-field.has-file .fi-main { color: var(--chalk-yellow); }
 input[type="file"] { display: none; }
@@ -82,7 +83,7 @@ input[type="file"] { display: none; }
 </head>
 <body class="board">
   <div class="header">
-    <div class="brand-badge">A</div>
+    <div class="brand-badge"></div>
     <div>
       <div class="brand-name">Aira</div>
       <div class="brand-sub">Your own classroom</div>
@@ -241,5 +242,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
   }
 });
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

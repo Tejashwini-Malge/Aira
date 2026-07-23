@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Class Test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -21,8 +22,8 @@ body.loaded { opacity: 1; }
   color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
 .brand-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
-.brand-sub { font-size: 0.72rem; color: var(--muted); }
-.nav-back { font-size: 0.78rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
+.brand-sub { font-size: 0.8rem; color: var(--muted); }
+.nav-back { font-size: 0.8rem; color: var(--muted); cursor: pointer; padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); transition: all 0.2s; }
 .nav-back:hover { color: var(--chalk); border-color: var(--chalk); }
 
 .page-title { font-family: var(--fd); font-size: 1.8rem; color: var(--chalk); margin-bottom: 6px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
@@ -30,7 +31,7 @@ body.loaded { opacity: 1; }
 
 .card { padding: 22px 20px; margin-bottom: 20px; }
 .card-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 14px; }
-.card-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
+.card-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
 
 .topic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 input[type="text"] {
@@ -53,13 +54,35 @@ textarea {
 textarea::placeholder { color: rgba(244,241,228,0.3); }
 textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
 
-/* Result cards */
-.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-.result-card { padding: 18px 16px; }
-.result-card.full { grid-column: 1 / -1; }
-.result-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 8px; opacity: 0.85; }
-.result-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 10px; }
-.result-body { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.65; }
+/* Result cards — one section at a time, in reading order */
+.results-nav {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+  position: sticky; top: 10px; z-index: 3;
+  padding: 10px; border-radius: 10px;
+  background: rgba(18,38,28,0.85); backdrop-filter: blur(4px);
+  border: 1.5px dashed var(--dash);
+}
+.results-nav a {
+  font-family: var(--fb); font-size: 0.78rem; color: var(--muted);
+  text-decoration: none; padding: 6px 12px; border-radius: 999px;
+  border: 1.5px solid transparent; transition: all 0.18s;
+  display: flex; align-items: center; gap: 6px;
+}
+.results-nav a:hover { color: var(--chalk); border-color: var(--dash); }
+.results-nav a .nav-num {
+  width: 16px; height: 16px; border-radius: 50%; font-size: 0.68rem;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid currentColor; flex-shrink: 0;
+}
+
+.results-grid { display: flex; flex-direction: column; gap: 18px; }
+.result-card { padding: 20px 22px; scroll-margin-top: 70px; transform: none !important; }
+.result-label {
+  font-family: var(--fb); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 8px; opacity: 0.9;
+}
+.result-title { font-family: var(--fd); font-size: 1.3rem; color: var(--chalk); margin-bottom: 12px; line-height: 1.3; }
+.result-body { font-family: var(--fb); font-size: 0.94rem; color: var(--chalk-dim); line-height: 1.75; }
 .result-list { margin: 0; padding-left: 16px; }
 .result-list li { font-size: 0.85rem; color: var(--chalk-dim); margin-bottom: 5px; line-height: 1.5; }
 
@@ -73,64 +96,193 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 
 .loading-state { padding: 32px; text-align: center; color: var(--muted); font-style: italic; font-size: 0.95rem; }
 
+/* Voice input */
+.iv-answer-wrap { position: relative; }
+.iv-answer-wrap textarea { padding-right: 54px; }
+.mic-btn {
+  position: absolute; right: 10px; bottom: 10px;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px dashed var(--dash); background: rgba(244,241,228,0.05);
+  color: var(--muted); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1rem; transition: all 0.2s; padding: 0;
+}
+.mic-btn:hover { border-color: var(--chalk); color: var(--chalk); }
+.mic-btn.listening {
+  border-color: var(--chalk-pink); border-style: solid; color: var(--chalk-pink);
+  background: rgba(234,172,184,0.12);
+  animation: mic-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,172,184,0.35); }
+  50% { box-shadow: 0 0 0 7px rgba(234,172,184,0); }
+}
+.mic-hint { font-size: 0.76rem; color: var(--muted); margin-top: 8px; }
+.mic-hint.listening-hint { color: var(--chalk-pink); }
+
 @media (max-width: 600px) { .topic-row { flex-direction: column; align-items: stretch; } }
+
+/* ── Step 1 — two distinct paths, not a shared toggle ── */
+.path-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+.path-card {
+  padding: 22px 22px 20px; border-radius: 12px;
+  border: 1.5px solid rgba(244,241,228,0.16);
+  background: rgba(244,241,228,0.03);
+  cursor: pointer; transition: all 0.2s ease;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.path-card:hover { border-color: var(--chalk-yellow); background: rgba(242,226,160,0.05); transform: translateY(-2px); }
+.path-icon { font-size: 1.7rem; }
+.path-name { font-family: var(--fd); font-size: 1.25rem; color: var(--chalk); }
+.path-desc { font-size: 0.85rem; color: var(--chalk-dim); line-height: 1.55; flex: 1; }
+.path-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.path-tag {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--chalk-yellow);
+  background: rgba(242,226,160,0.1); border: 1px solid rgba(242,226,160,0.25);
+  border-radius: 999px; padding: 3px 9px;
+}
+.path-cta { font-family: var(--fd); font-size: 0.95rem; color: var(--chalk-yellow); margin-top: 6px; }
+@media (max-width: 640px) { .path-grid { grid-template-columns: 1fr; } }
+
+/* ── Step 2 — each path's own dedicated setup screen ── */
+.setup-back { font-size: 0.8rem; color: var(--muted); cursor: pointer; margin-bottom: 12px; display: inline-block; }
+.setup-back:hover { color: var(--chalk); }
+
+.topic-chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.topic-chip {
+  padding: 7px 15px; border-radius: 999px; border: 1.5px solid rgba(244,241,228,0.16);
+  font-size: 0.84rem; color: var(--muted); cursor: pointer; transition: all 0.16s ease; user-select: none;
+}
+.topic-chip:hover { border-color: var(--chalk); color: var(--chalk); }
+.topic-chip.active { border-color: var(--chalk-yellow); background: rgba(242,226,160,0.08); color: var(--chalk); }
+
+/* faint chalk dust across the page — sets the room without competing for attention */
+.quiz-atmosphere { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.quiz-atmosphere::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle 3px at 10% 18%, rgba(244,241,228,0.12), transparent 60%),
+    radial-gradient(circle 2px at 90% 14%, rgba(244,241,228,0.1), transparent 60%),
+    radial-gradient(circle 2px at 82% 68%, rgba(244,241,228,0.09), transparent 60%),
+    radial-gradient(circle 260px at 8% 75%, rgba(244,241,228,0.035), transparent 70%);
+}
+
+/* ── Hall Ticket — Role Interview's setup screen. "No two students get the
+   same paper" made literal: a stamp, a paper number, a torn perforation. ── */
+.ticket-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ticket-stamp {
+  font-family: var(--fb); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.55); border-radius: 6px;
+  padding: 5px 10px; transform: rotate(3deg); white-space: nowrap; flex-shrink: 0;
+}
+.ticket-paperno { font-size: 0.74rem; color: var(--muted); margin-top: 4px; font-family: var(--fb); letter-spacing: 0.04em; }
+.ticket-perf { position: relative; height: 0; margin: 20px -20px 22px; border-top: 2px dashed rgba(244,241,228,0.22); }
+.ticket-perf::before, .ticket-perf::after {
+  content: ''; position: absolute; top: -9px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--board); box-shadow: inset 0 0 0 1.5px rgba(244,241,228,0.18);
+}
+.ticket-perf::before { left: -9px; }
+.ticket-perf::after { right: -9px; }
+
+/* ── Library Slip — Topic Practice's setup screen. Lighter, casual,
+   like pulling a subject card from a catalog drawer. ── */
+#topicSetupCard { position: relative; overflow: hidden; }
+.slip-corner {
+  position: absolute; top: 0; right: 0; width: 0; height: 0;
+  border-style: solid; border-width: 0 36px 36px 0;
+  border-color: transparent rgba(244,241,228,0.09) transparent transparent;
+}
+.slip-tag {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; margin-bottom: 4px;
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chalk-yellow);
+  background: rgba(242,226,160,0.08); border: 1px solid rgba(242,226,160,0.25);
+  border-radius: 999px; padding: 4px 11px;
+}
 </style>
 </head>
 <body class="board">
+<div class="quiz-atmosphere" aria-hidden="true"></div>
 <div class="page">
-  <div class="header">
-    <div class="brand">
-      <div class="brand-badge">A</div>
-      <div>
-        <div class="brand-name">Aira</div>
-        <div class="brand-sub">Persona-aware class test</div>
-      </div>
-    </div>
-    <div class="nav-back" onclick="window.location.href='Welcome.html'">‹ Classroom</div>
-  </div>
-
   <h2 class="page-title chalk-title">Mock Interview</h2>
   <p class="page-sub chalk-sub">Aira interviews you using your private profile — like a teacher who's read your whole notebook. No two students get the same paper.</p>
 
-  <div class="card board-card pin-yellow" id="modeCard">
-    <div class="card-title">Step 1 · Choose your mode</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
-      <div class="mode-tab active" id="modeRole" onclick="selectMode('role')"
-           style="flex:1;min-width:220px;padding:14px 16px;border:1.5px dashed var(--dash);border-radius:10px;cursor:pointer;transition:all .18s;">
-        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--chalk);margin-bottom:4px;">🎤 Role interview</div>
-        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">Aira interviews you for your target role, using your resume. No topic needed.</div>
+  <!-- STEP 1 — the only decision on screen: which path, not what to configure -->
+  <div class="card board-card" id="pathCard">
+    <div class="card-title">Step 1 · Choose your path</div>
+    <div class="path-grid">
+      <div class="path-card" id="pathRole" onclick="choosePath('role')">
+        <div class="path-icon">🎤</div>
+        <div class="path-name">Role Interview</div>
+        <div class="path-desc">Aira interviews you for your target role, shaped by your resume — real questions, real pressure, timed like the actual thing.</div>
+        <div class="path-tags"><span class="path-tag">Personalized</span><span class="path-tag">Timed</span></div>
+        <div class="path-cta">Set up interview →</div>
       </div>
-      <div class="mode-tab" id="modeTopic" onclick="selectMode('topic')"
-           style="flex:1;min-width:220px;padding:14px 16px;border:1.5px dashed var(--dash);border-radius:10px;cursor:pointer;transition:all .18s;">
-        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--chalk);margin-bottom:4px;">📚 Topic quiz</div>
-        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">Pick any subject — questions are still tuned to you.</div>
-      </div>
-    </div>
-    <div id="roleOptions" style="margin-top:18px;">
-      <div class="opt-label">Round type</div>
-      <div class="opt-row" data-group="type">
-        <span class="opt-pill active" data-val="technical">Technical</span>
-        <span class="opt-pill" data-val="aptitude">Aptitude</span>
-        <span class="opt-pill" data-val="project">Project-based</span>
-      </div>
-      <div class="opt-label">Difficulty</div>
-      <div class="opt-row" data-group="difficulty">
-        <span class="opt-pill" data-val="easy">Easy</span>
-        <span class="opt-pill active" data-val="medium">Medium</span>
-        <span class="opt-pill" data-val="hard">Hard</span>
-      </div>
-      <div class="opt-label">Duration</div>
-      <div class="opt-row" data-group="duration">
-        <span class="opt-pill" data-val="10">10 min</span>
-        <span class="opt-pill active" data-val="20">20 min</span>
-        <span class="opt-pill" data-val="30">30 min</span>
+      <div class="path-card" id="pathTopic" onclick="choosePath('topic')">
+        <div class="path-icon">📚</div>
+        <div class="path-name">Topic Practice</div>
+        <div class="path-desc">Pick a subject — DSA, OS, DBMS, AI, anything — and go deep at your own pace. Still tuned to your profile.</div>
+        <div class="path-tags"><span class="path-tag">Flexible</span><span class="path-tag">Self-paced</span></div>
+        <div class="path-cta">Pick a topic →</div>
       </div>
     </div>
-    <div id="topicRow" class="topic-row" style="display:none;margin-top:14px;">
+  </div>
+
+  <!-- STEP 2A — Role Interview's own setup screen, styled like a hall ticket:
+       "no two students get the same paper" made literal. -->
+  <div class="card board-card pin-yellow" id="roleSetupCard" style="display:none;">
+    <div class="setup-back" onclick="history.back()">‹ Back to path choice</div>
+    <div class="ticket-head">
+      <div>
+        <div class="card-title">Step 2 · Set up your mock interview</div>
+        <div class="ticket-paperno" id="ticketPaperNo">Paper No. —</div>
+      </div>
+      <div class="ticket-stamp">🎓 Hall Ticket</div>
+    </div>
+    <p class="card-note">A timed, resume-shaped interview — Aira reads your notebook before it asks the first question.</p>
+    <div class="ticket-perf"></div>
+    <div class="opt-label">Round type</div>
+    <div class="opt-row" data-group="type">
+      <span class="opt-pill active" data-val="technical">Technical</span>
+      <span class="opt-pill" data-val="aptitude">Aptitude</span>
+      <span class="opt-pill" data-val="project">Project-based</span>
+    </div>
+    <div class="opt-label">Difficulty</div>
+    <div class="opt-row" data-group="difficulty">
+      <span class="opt-pill" data-val="easy">Easy</span>
+      <span class="opt-pill active" data-val="medium">Medium</span>
+      <span class="opt-pill" data-val="hard">Hard</span>
+    </div>
+    <div class="opt-label">Duration</div>
+    <div class="opt-row" data-group="duration">
+      <span class="opt-pill" data-val="10">10 min</span>
+      <span class="opt-pill active" data-val="20">20 min</span>
+      <span class="opt-pill" data-val="30">30 min</span>
+    </div>
+    <div style="margin-top:18px;">
+      <button class="btn-chalk primary" id="startRoleBtn" onclick="startQuiz()">Start interview →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2B — Topic Practice's own setup screen, styled like a library
+       request slip: casual, self-paced, no exam-room pressure. -->
+  <div class="card board-card pin-yellow" id="topicSetupCard" style="display:none;">
+    <div class="slip-corner"></div>
+    <div class="setup-back" onclick="history.back()">‹ Back to path choice</div>
+    <div class="card-title">Step 2 · Pick your topic</div>
+    <div class="slip-tag" id="slipRequestNo">📖 Request slip · —</div>
+    <p class="card-note">Choose a common subject or type your own — no timer, no pressure, just practice.</p>
+    <div class="topic-chip-row" id="topicChipRow">
+      <span class="topic-chip" data-topic="DSA">DSA</span>
+      <span class="topic-chip" data-topic="Operating Systems">Operating Systems</span>
+      <span class="topic-chip" data-topic="DBMS">DBMS</span>
+      <span class="topic-chip" data-topic="AI / Machine Learning">AI / ML</span>
+      <span class="topic-chip" data-topic="System Design">System Design</span>
+      <span class="topic-chip" data-topic="Python">Python</span>
+    </div>
+    <div class="topic-row" style="margin-top:14px;">
       <input type="text" id="topicInput" placeholder="e.g. DBMS, Operating Systems, Python, System Design…">
     </div>
     <div style="margin-top:18px;">
-      <button class="btn-chalk primary" id="startBtn" onclick="startQuiz()">Start interview →</button>
+      <button class="btn-chalk primary" id="startTopicBtn" onclick="startQuiz()">Start quiz →</button>
     </div>
   </div>
 
@@ -139,11 +291,8 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 </div>
 
 <style>
-.mode-tab.active { border-color: var(--chalk-yellow) !important; border-style: solid !important; background: rgba(242,226,160,0.06); }
-.mode-tab:hover { border-color: var(--chalk); }
-
 /* Option pills (type / difficulty / duration) */
-.opt-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--chalk-yellow); margin:14px 0 8px; opacity:0.85; }
+.opt-label { font-size: 0.8rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--chalk-yellow); margin:14px 0 8px; opacity:0.85; }
 .opt-row { display:flex; gap:8px; flex-wrap:wrap; }
 .opt-pill {
   padding:7px 15px; border-radius:999px; border:1.5px dashed var(--dash);
@@ -154,7 +303,7 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 
 /* Interview (one-at-a-time) */
 .iv-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
-.iv-step { font-size:0.76rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+.iv-step { font-size: 0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
 .iv-timer {
   display:flex; align-items:center; gap:7px; font-family:var(--fd); font-size:1.1rem; color:var(--chalk-yellow);
   padding:5px 14px; border-radius:999px; border:1.5px dashed rgba(242,226,160,0.5);
@@ -180,7 +329,7 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 .plan-steps li:before {
   counter-increment:step; content:counter(step);
   position:absolute; left:0; top:8px; width:20px; height:20px; border-radius:50%;
-  border:1.5px dashed var(--chalk-yellow); color:var(--chalk-yellow); font-size:0.72rem; font-weight:700;
+  border:1.5px dashed var(--chalk-yellow); color:var(--chalk-yellow); font-size: 0.8rem; font-weight:700;
   display:flex; align-items:center; justify-content:center;
 }
 
@@ -201,7 +350,7 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 .res-paper { background:rgba(183,217,168,0.15); color:var(--chalk-green); }
 .res-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .res-title { font-size:0.86rem; color:var(--chalk); line-height:1.4; }
-.res-type { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+.res-type { font-size: 0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
 .res-open { color:var(--muted); font-size:0.9rem; flex-shrink:0; }
 .res-item:hover .res-open { color:var(--chalk-yellow); }
 </style>
@@ -213,21 +362,56 @@ const API_BASE = ""; // same-origin: lets the session cookie flow
 
 // The persona is PRIVATE — it lives only on the server. The client never holds it
 // and never sends it. The backend reads it to shape questions and feedback.
-let selectedMode = "role";   // "role" | "topic"
+let selectedMode = null;     // "role" | "topic" — chosen explicitly in Step 1, no default
 let activeLabel = "";        // role or topic label returned by the server
+let activePaperRef = "";     // real server-issued reference for THIS attempt (not a client guess)
 const opts = { type: "technical", difficulty: "medium", duration: "20" };
 
 // Interview runtime state
 let ivQuestions = [], ivAnswers = {}, ivIndex = 0, ivTimerId = null, ivRemaining = 0, ivSubmitting = false;
 
-function selectMode(mode) {
+// Step 1 → Step 2 — each path gets its own dedicated setup screen, not a
+// shared form with swapped fields, so the first choice actually leads somewhere.
+// A history entry is pushed so the browser's back button returns to Step 1
+// instead of leaving straight to Welcome.html.
+function choosePath(mode) {
   selectedMode = mode;
-  document.getElementById("modeRole").classList.toggle("active", mode === "role");
-  document.getElementById("modeTopic").classList.toggle("active", mode === "topic");
-  document.getElementById("roleOptions").style.display = mode === "role" ? "block" : "none";
-  document.getElementById("topicRow").style.display = mode === "topic" ? "flex" : "none";
-  document.getElementById("startBtn").textContent = mode === "topic" ? "Start quiz →" : "Start interview →";
+  document.getElementById("pathCard").style.display = "none";
+  document.getElementById("roleSetupCard").style.display = mode === "role" ? "block" : "none";
+  document.getElementById("topicSetupCard").style.display = mode === "topic" ? "block" : "none";
+  // The real paper number is only issued once the session actually starts
+  // (/quiz/generate) — showing a fake one earlier would be exactly the kind
+  // of dummy flourish this was flagged for.
+  if (mode === "role") {
+    document.getElementById("ticketPaperNo").textContent = "Paper No. — issued the moment you start";
+  } else {
+    document.getElementById("slipRequestNo").textContent = "📖 Request slip · issued when you start";
+    document.getElementById("topicInput").focus();
+  }
+  history.pushState({ step: "setup" }, "", location.pathname + location.search);
 }
+
+function backToPath() {
+  selectedMode = null;
+  document.getElementById("pathCard").style.display = "block";
+  document.getElementById("roleSetupCard").style.display = "none";
+  document.getElementById("topicSetupCard").style.display = "none";
+}
+
+// One back-press from Step 2 lands on Step 1; a second back-press then leaves
+// the page normally (e.g. to Welcome.html) — standard wizard back behavior.
+window.addEventListener("popstate", (e) => {
+  if (!e.state || e.state.step !== "setup") backToPath();
+});
+
+// Quick topic chips — fill the input, still freely editable
+document.querySelectorAll(".topic-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".topic-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    document.getElementById("topicInput").value = chip.dataset.topic;
+  });
+});
 
 // Wire option pills (round type / difficulty / duration)
 document.querySelectorAll(".opt-row").forEach(row => {
@@ -249,7 +433,9 @@ async function startQuiz() {
   }
   const qc = document.getElementById("quizContainer");
   document.getElementById("resultContainer").innerHTML = "";
-  document.getElementById("modeCard").style.display = "none";
+  document.getElementById("pathCard").style.display = "none";
+  document.getElementById("roleSetupCard").style.display = "none";
+  document.getElementById("topicSetupCard").style.display = "none";
   qc.innerHTML = `<div class="card board-card"><div class="loading-state">${
     selectedMode === "role" ? "Aira is writing your question paper…" : `Setting questions for <em>${topic}</em>…`
   }</div></div>`;
@@ -265,6 +451,7 @@ async function startQuiz() {
     const data = await res.json();
     ivQuestions = Array.isArray(data.questions) ? data.questions : [];
     activeLabel = data.topic || topic || "your interview";
+    activePaperRef = data.paper_ref || "";
     if (!ivQuestions.length) { qc.innerHTML = `<div class="card board-card"><p style="color:var(--muted);">No questions generated.</p></div>`; return; }
     beginInterview();
   } catch (err) {
@@ -321,14 +508,23 @@ function renderQuestion() {
   qc.innerHTML = `
     <div class="card board-card pin-yellow">
       <div class="iv-top">
-        <div class="iv-step">${selectedMode === "role"
-            ? `${opts.type} · ${opts.difficulty} · Question ${ivIndex + 1} of ${total}`
-            : `Question ${ivIndex + 1} of ${total}`}</div>
+        <div>
+          <div class="iv-step">${selectedMode === "role"
+              ? `${opts.type} · ${opts.difficulty} · Question ${ivIndex + 1} of ${total}`
+              : `Question ${ivIndex + 1} of ${total}`}</div>
+          ${activePaperRef ? `<div class="ticket-paperno" style="margin-top:2px;">${
+              (selectedMode === "role" ? "Paper No. " : "Request slip · ") + escAttr(activePaperRef)
+            }${Aira.decodePaperRef(activePaperRef) ? " — " + escAttr(Aira.decodePaperRef(activePaperRef)) : ""}</div>` : ""}
+        </div>
         ${timed ? `<div class="iv-timer" id="ivTimer">⏱ ${fmtTime(ivRemaining)}</div>` : ""}
       </div>
       <div class="iv-bar-bg"><div class="iv-bar-fill" style="width:${pct}%"></div></div>
       <div class="iv-question">${escAttr(q.question)}</div>
-      <textarea id="ivAnswer" placeholder="Answer out loud or in writing — explain your thinking.">${escAttr(saved)}</textarea>
+      <div class="iv-answer-wrap">
+        <textarea id="ivAnswer" placeholder="Answer out loud or in writing — explain your thinking.">${escAttr(saved)}</textarea>
+        ${speechSupported ? `<button type="button" class="mic-btn" id="ivMic" title="Speak your answer">🎙</button>` : ""}
+      </div>
+      ${speechSupported ? `<div class="mic-hint" id="ivMicHint">🎙 Click the mic to speak your answer instead of typing.</div>` : ""}
       <div class="iv-actions">
         <button class="btn-chalk" id="ivPrev" ${ivIndex === 0 ? "disabled" : ""}>‹ Previous</button>
         <button class="btn-chalk primary" id="ivNext">${isLast ? "Finish & get feedback →" : "Next question ›"}</button>
@@ -336,18 +532,80 @@ function renderQuestion() {
     </div>`;
   updateTimerDisplay();
 
-  document.getElementById("ivPrev").onclick = () => { if (ivIndex > 0) { saveCurrent(); ivIndex--; renderQuestion(); } };
+  document.getElementById("ivPrev").onclick = () => { stopMic(); if (ivIndex > 0) { saveCurrent(); ivIndex--; renderQuestion(); } };
   document.getElementById("ivNext").onclick = () => {
+    stopMic();
     saveCurrent();
     if (isLast) { finishInterview(false); }
     else { ivIndex++; renderQuestion(); }
   };
+  if (speechSupported) document.getElementById("ivMic").onclick = toggleMic;
   document.getElementById("ivAnswer").focus();
+}
+
+// ---- Voice input (Web Speech API) ----
+const speechSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+let recognition = null;
+let recognizing = false;
+
+function toggleMic() {
+  if (recognizing) { recognition && recognition.stop(); return; }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const ta = document.getElementById("ivAnswer");
+  const btn = document.getElementById("ivMic");
+  const hint = document.getElementById("ivMicHint");
+  if (!ta || !btn) return;
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+
+  let baseText = ta.value.trim() ? ta.value.trim() + " " : "";
+
+  recognition.onstart = () => {
+    recognizing = true;
+    btn.classList.add("listening");
+    btn.textContent = "⏹";
+    btn.title = "Stop listening";
+    if (hint) { hint.textContent = "🎙 Listening… speak naturally, click the mic to stop."; hint.classList.add("listening-hint"); }
+  };
+  recognition.onresult = (e) => {
+    let interim = "", final = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t + " ";
+      else interim += t;
+    }
+    if (final) baseText += final;
+    ta.value = (baseText + interim).trim();
+    ta.scrollTop = ta.scrollHeight;
+  };
+  recognition.onerror = (e) => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      alert("Microphone access was blocked. Allow it in your browser's site settings to use voice input.");
+    }
+  };
+  recognition.onend = () => {
+    recognizing = false;
+    btn.classList.remove("listening");
+    btn.textContent = "🎙";
+    btn.title = "Speak your answer";
+    if (hint) { hint.textContent = "🎙 Click the mic to speak your answer instead of typing."; hint.classList.remove("listening-hint"); }
+  };
+
+  try { recognition.start(); } catch { /* already started */ }
+}
+
+function stopMic() {
+  if (recognizing && recognition) recognition.stop();
 }
 
 async function finishInterview(timedOut) {
   if (ivSubmitting) return;
   ivSubmitting = true;
+  stopMic();
   saveCurrent();
   clearInterval(ivTimerId);
 
@@ -395,7 +653,7 @@ function renderResults(fb, topic) {
   const resources = fb.resources || [];
 
   const resourcesHtml = resources.length ? `
-    <div class="result-card board-card full">
+    <div class="result-card board-card" id="res-resources">
       <div class="result-label">Resources to help</div>
       <div class="result-title">Where to get stronger</div>
       <div class="result-body" style="margin-bottom:14px;">Hand-picked starting points for the areas you slipped on. Each opens a live search — pick what fits you.</div>
@@ -416,25 +674,41 @@ function renderResults(fb, topic) {
         </div>`).join("")}
     </div>` : "";
 
+  const sections = [
+    { id: "res-overview", label: "Overview" },
+    { id: "res-weak", label: "Weak areas" },
+    { id: "res-plan", label: "Study plan" },
+  ];
+  if (resources.length) sections.push({ id: "res-resources", label: "Resources" });
+  sections.push({ id: "res-next", label: "Next steps" });
+
+  const nav = document.createElement("div");
+  nav.className = "results-nav";
+  nav.innerHTML = sections.map((s, i) =>
+    `<a href="#${s.id}"><span class="nav-num">${i + 1}</span>${esc(s.label)}</a>`
+  ).join("");
+  rc.appendChild(nav);
+
   const grid = document.createElement("div");
   grid.className = "results-grid";
   grid.innerHTML = `
-    <div class="result-card board-card pin-yellow full">
+    <div class="result-card board-card pin-yellow" id="res-overview">
       <div class="result-label">🔔 The bell has rung · Feedback</div>
-      <div class="score-line">
-        ${fb.score ? `<span class="score-badge">${esc(fb.score)}</span>` : ""}
-        <span class="result-title" style="margin:0;">What Aira observed</span>
-      </div>
+      ${fb.paper_ref ? `<div class="ticket-paperno" style="margin-bottom:6px;">${
+          (fb.paper_ref.startsWith("AIRA") ? "Paper No. " : "Request slip · ") + esc(fb.paper_ref)
+        }${Aira.decodePaperRef(fb.paper_ref) ? " — " + esc(Aira.decodePaperRef(fb.paper_ref)) : ""}</div>` : ""}
+      ${fb.score ? `<div style="margin-bottom:10px;"><span class="score-badge">${esc(fb.score)}</span></div>` : ""}
+      <div class="result-title">What Aira observed</div>
       <div class="result-body">${esc(fb.feedback) || "No feedback available."}</div>
     </div>
 
-    <div class="result-card board-card">
+    <div class="result-card board-card" id="res-weak">
       <div class="result-label">Weak areas</div>
       <div class="result-title">Focus here next</div>
       <div class="weak-chips">${weak.map(w => `<span class="weak-chip">${esc(w)}</span>`).join("")}</div>
     </div>
 
-    <div class="result-card board-card">
+    <div class="result-card board-card" id="res-plan">
       <div class="result-label">Study plan</div>
       <div class="result-title">Your homework</div>
       <div class="result-body">${esc(fb.study_plan) || "—"}</div>
@@ -443,7 +717,7 @@ function renderResults(fb, topic) {
 
     ${resourcesHtml}
 
-    <div class="result-card board-card pin-green full">
+    <div class="result-card board-card pin-green" id="res-next">
       <div class="result-label">Up next</div>
       <div class="result-title">Ready to apply this plan?</div>
       <div class="result-body" style="margin-bottom:14px;">Save this plan and come back after 1–2 focused sessions. Consistency is what moves the needle.</div>

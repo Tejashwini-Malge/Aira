@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Profile ready</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -73,39 +74,71 @@ function renderDone(name) {
   `;
 }
 
-function renderError(msg) {
+function renderError(msg, name) {
   const noAnswers = (msg || '').includes('No onboarding responses') || (msg || '').includes('questions answered');
+  const notEligible = (msg || '').includes('enough new session evidence');
   document.getElementById('root').innerHTML = `
     <div class="chalk-tag">One moment</div>
-    <h1>${noAnswers ? 'Let’s finish your questions first' : 'That didn’t go through'}</h1>
-    <p class="lead">${noAnswers
-      ? 'Your answers weren’t saved yet — complete the questions and Aira will build your profile.'
-      : escHtml(msg)}</p>
+    <h1>${notEligible ? 'Not quite yet' : noAnswers ? 'Let’s finish your questions first' : 'That didn’t go through'}</h1>
+    <p class="lead">${notEligible
+      ? 'Your current profile is still Aira’s best read of you — it updates once there’s enough new practice evidence to act on.'
+      : noAnswers
+        ? 'Your answers weren’t saved yet — complete the questions and Aira will build your profile.'
+        : escHtml(msg)}</p>
     <div style="margin-top:24px;">
-      ${noAnswers
-        ? `<button class="btn-chalk primary" onclick="window.location.href='questions.html'">Go to questions →</button>`
-        : `<button class="btn-chalk primary" onclick="build()">Try again</button>`}
+      ${notEligible
+        ? `<button class="btn-chalk primary" onclick="window.location.href='Welcome.html'">Back to the classroom →</button>`
+        : noAnswers
+          ? `<button class="btn-chalk primary" onclick="window.location.href='questions.html'">Go to questions →</button>`
+          : `<button class="btn-chalk primary" onclick="build('${escHtml(name || '')}', true)">Try again</button>`}
     </div>
     <div class="err"></div>
   `;
 }
 
-async function build(name) {
+async function build(name, force) {
   renderBuilding();
   try {
-    // Trigger one-time generation. We deliberately DO NOT display what comes back —
-    // the persona is private and lives only on the server.
-    await Aira.api(`${API_BASE}/session/generate-persona`, { method: 'POST', body: {} });
+    // Trigger generation. We deliberately DO NOT display what comes back — the
+    // persona is private and lives only on the server.
+    await Aira.api(`${API_BASE}/session/generate-persona`, { method: 'POST', body: { force: !!force } });
     renderDone(name);
   } catch (err) {
-    renderError(err.message || 'Please try again.');
+    renderError(err.message || 'Please try again.', name);
   }
 }
 
 window.addEventListener('load', async () => {
   const user = await Aira.requireAuth();
   document.body.classList.add('loaded');
-  build(user.name || '');
+  const first = user.name || '';
+
+  // Landing here via questions.html always carries ?refresh=1 — the user just
+  // submitted answers (first build, or a deliberate refresh) and expects Aira to
+  // actually act on them, so this always calls generate-persona with force:true
+  // (harmless on a first build; gated server-side on a refresh).
+  const justSubmitted = new URLSearchParams(location.search).get('refresh') === '1';
+  if (justSubmitted) {
+    build(first, true);
+    return;
+  }
+
+  // Otherwise (direct nav, bookmark, back button): a persona is generated once and
+  // cached server-side. This page used to always play the "reading your answers /
+  // building" narrative regardless — so a returning visit LOOKED like it was
+  // regenerating even though it was just fetching the same cached result in
+  // milliseconds. Check readiness first so an already-built profile goes straight
+  // to the done state.
+  try {
+    const check = await Aira.api(`${API_BASE}/me/persona`);
+    if (check.persona && check.persona.ready) {
+      renderDone(first);
+      return;
+    }
+  } catch (e) {
+    // Fall through — worst case we just run the normal build flow below.
+  }
+  build(first, false);
 });
 </script>
 </body>

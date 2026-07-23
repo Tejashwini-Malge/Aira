@@ -1,65 +1,56 @@
 """Communication practice module — Teach → Try → Adapt → Refine.
 
-Three tracks students fail at (communication / self-introduction / talking about their
-own projects). Each teaches a short framework, then practices it one beat at a time with
-ADAPTIVE difficulty: after each answer Aira judges it and the next question gets harder
-(strong) or easier (weak), on a 1-5 ladder. The hidden persona steers everything and is
-never sent by the client nor returned raw — same discipline as the mock interview.
+Six tracks students fail at (communication / self-introduction / talking about their
+own projects / vocal delivery / leadership stories / technical communication). Each
+teaches a short framework — DESIGNED PER USER from their résumé by softskill_agent,
+not drawn from a fixed bank — then practices it one beat at a time with ADAPTIVE
+difficulty: after each answer Aira judges it and the next question gets harder
+(strong) or easier (weak), on a 1-5 ladder. The hidden persona steers everything and
+is never sent by the client nor returned raw — same discipline as the mock interview.
+
+The framework a student practices against is generated once at /comm/start and then
+persisted in their server-side session, so /comm/next and /comm/evaluate grade the
+EXACT framework they were taught — the client never sends it.
 
 Reuses the quiz module's Groq helper, private persona context, and resource builder.
 """
+from datetime import datetime, timezone
+
 from flask import Blueprint, request, jsonify
 
 from models import db, SpeakingSession, get_pending, set_pending, clear_pending
 from auth import current_user, login_required
+from rate_limiter import limiter
 from ai_quiz_bp import _call_groq, _persona_brief, _build_resources
+from softskill_agent import (
+    is_track, track_label, all_tracks, generate_lesson, generate_opening,
+    fallback_framework, SoftSkillGenerationError,
+)
 
 comm_bp = Blueprint("comm_bp", __name__)
 
 # Difficulty ladder
 MIN_LEVEL, MAX_LEVEL, START_LEVEL = 1, 5, 2
 
-FRAMEWORKS = {
-    "communication": {
-        "label": "Communication practice",
-        "name": "PREP",
-        "why": "It keeps you clear and short: make your Point, give a Reason, an Example, then restate the Point.",
-        "steps": [
-            {"label": "Point", "hint": "say your main message in one line"},
-            {"label": "Reason", "hint": "why is it true?"},
-            {"label": "Example", "hint": "one concrete example"},
-            {"label": "Point", "hint": "restate it cleanly"},
-        ],
-        "total": 5,
-        "focus": "speaking clearly and to the point on any prompt",
-    },
-    "intro": {
-        "label": "Self-introduction",
-        "name": "Present · Past · Future",
-        "why": "A simple order for 'tell me about yourself': who you are now, the background that got you here, and where you're headed.",
-        "steps": [
-            {"label": "Present", "hint": "who you are right now"},
-            {"label": "Past", "hint": "the background that's relevant"},
-            {"label": "Future", "hint": "what you're aiming for"},
-        ],
-        "total": 4,
-        "focus": "introducing yourself the way an interviewer wants to hear it",
-    },
-    "project": {
-        "label": "Talk about your project",
-        "name": "What · Why · How · Impact · Your role",
-        "why": "Break a project into answerable parts so you never freeze: what it does, why you built it that way, how, the impact, and your own part in it.",
-        "steps": [
-            {"label": "What", "hint": "what does it do, in one sentence"},
-            {"label": "Why", "hint": "why this approach"},
-            {"label": "How", "hint": "how you built it"},
-            {"label": "Impact", "hint": "the result or what you learned"},
-            {"label": "Your role", "hint": "your specific contribution"},
-        ],
-        "total": 5,
-        "focus": "explaining your own project clearly and owning your contribution",
-    },
-}
+# Free-plan gate: NOT which tracks you can open — all 6 are always open, so
+# picking one never feels like a bet you might regret. The constraint is how
+# many real practice REPS you get per day, like Duolingo hearts, decided fresh
+# each day and never held against you for picking "wrong" tracks yesterday.
+MAX_FREE_SESSIONS_PER_DAY = 2
+
+
+def _sessions_today(user):
+    """Completed practice sessions (real reps, not abandoned attempts) so far today."""
+    today = datetime.now(timezone.utc).date()
+    return sum(1 for s in user.speaking_sessions if s.created_at and s.created_at.date() == today)
+
+
+def _resume_data():
+    """Structured résumé facts (experience_level, skills, projects) the agent uses
+    to adjust the framework — the persona brief carries the same facts as prose, but
+    the agent wants experience_level explicitly."""
+    persona = current_user().persona
+    return (persona.resume_data or {}) if persona else {}
 
 
 def _projects():
@@ -72,7 +63,7 @@ def _projects():
 def _project_ctx(track, project_id):
     """Returns (label, context_line) for the chosen project, or defaults."""
     if track != "project":
-        return FRAMEWORKS[track]["label"], ""
+        return track_label(track), ""
     projects = _projects()
     try:
         p = projects[int(project_id)]
@@ -89,39 +80,37 @@ def _clamp(n):
         return START_LEVEL
 
 
-def _diff_word(level):
-    return {1: "very easy", 2: "easy", 3: "moderate", 4: "hard", 5: "very hard"}.get(level, "moderate")
-
-
 # ---------------------------------------------------------------------------
 # Setup — teach the framework + a persona-personalised example
 # ---------------------------------------------------------------------------
 
 @comm_bp.route("/comm/setup", methods=["GET"])
 @login_required
+@limiter.limit("30 per hour")
 def comm_setup():
+    # Browsing a framework is always free — every track is always open. Only
+    # actually starting a practice attempt (/comm/start) spends a day's rep.
     track = (request.args.get("track") or "communication").lower()
-    if track not in FRAMEWORKS:
+    if not is_track(track):
         return jsonify({"error": "Unknown track."}), 400
-    fw = FRAMEWORKS[track]
-    brief, _, target_role = _persona_brief()
+    user = current_user()
 
-    prompt = f"""You are a friendly speaking coach. Write ONE short model example a student
-could use, for the "{fw['label']}" exercise using the {fw['name']} framework
-({', '.join(s['label'] for s in fw['steps'])}). Make it fit THIS person without mentioning
-their private profile. Keep it 2-3 short sentences, simple plain English.
-
-PRIVATE PROFILE (for your eyes only, do not quote):
-{brief}
-
-Return ONLY JSON: {{"example": "..."}}"""
-    data = _call_groq(prompt, max_tokens=300, temperature=0.5)
-    example = (data or {}).get("example") if isinstance(data, dict) else None
+    # The agent designs the framework AND a model example from their résumé in one call.
+    brief, _, _ = _persona_brief()
+    try:
+        lesson = generate_lesson(track, brief, _resume_data())
+        fw, example = lesson["framework"], lesson["example"]
+    except SoftSkillGenerationError:
+        # Groq unreachable — degrade to the skeleton so the teach screen still renders.
+        fw = fallback_framework(track)
+        example = "Open with your single main point, keep it specific with one real example, and close on why it matters."
 
     resp = {
         "track": track,
         "framework": {"name": fw["name"], "why": fw["why"], "steps": fw["steps"]},
-        "example": example or "Lead with what you do today, keep it specific, and end on where you're headed.",
+        "example": example,
+        "sessionsUsedToday": _sessions_today(user),
+        "maxFreeSessionsPerDay": MAX_FREE_SESSIONS_PER_DAY,
     }
     if track == "project":
         resp["projects"] = [
@@ -132,39 +121,66 @@ Return ONLY JSON: {{"example": "..."}}"""
 
 
 # ---------------------------------------------------------------------------
+# Quota — how many of today's free reps are left, before committing to a track
+# ---------------------------------------------------------------------------
+
+@comm_bp.route("/comm/quota", methods=["GET"])
+@login_required
+def comm_quota():
+    used = _sessions_today(current_user())
+    return jsonify({
+        "sessionsUsedToday": used,
+        "maxFreeSessionsPerDay": MAX_FREE_SESSIONS_PER_DAY,
+        "remainingToday": max(0, MAX_FREE_SESSIONS_PER_DAY - used),
+    }), 200
+
+
+# ---------------------------------------------------------------------------
 # Start — the first question (difficulty 2)
 # ---------------------------------------------------------------------------
 
 @comm_bp.route("/comm/start", methods=["POST"])
 @login_required
+@limiter.limit("15 per hour")
 def comm_start():
     data = request.get_json() or {}
     track = (data.get("track") or "communication").lower()
-    if track not in FRAMEWORKS:
+    if not is_track(track):
         return jsonify({"error": "Unknown track."}), 400
-    fw = FRAMEWORKS[track]
+
+    user = current_user()
+    used_today = _sessions_today(user)
+    if used_today >= MAX_FREE_SESSIONS_PER_DAY:
+        return jsonify({
+            "error": f"You've used today's {MAX_FREE_SESSIONS_PER_DAY} free practice sessions — come back tomorrow for more.",
+            "sessionsUsedToday": used_today,
+            "maxFreeSessionsPerDay": MAX_FREE_SESSIONS_PER_DAY,
+        }), 403
+
     label, proj_ctx = _project_ctx(track, data.get("project_id"))
     brief, _, _ = _persona_brief()
 
-    prompt = f"""You are an interactive speaking coach running a "{fw['label']}" exercise with
-a student, using the {fw['name']} framework. Ask the FIRST question only. It should match
-difficulty level {START_LEVEL} of 5 ({_diff_word(START_LEVEL)}). Goal of the exercise:
-{fw['focus']}. Phrase it naturally; do not mention any private profile.
+    # The agent designs the résumé-fit framework AND the opening question in one call.
+    # Its framework becomes the session's source of truth — persisted below so every
+    # later beat and the final evaluation grade the same structure the student was given.
+    try:
+        opening = generate_opening(track, brief, _resume_data(), proj_ctx)
+        fw = opening["framework"]
+        beat = _beat_from(
+            {"prompt": opening["first_question"], "hint": opening["hint"]},
+            1, START_LEVEL, fw,
+        )
+    except SoftSkillGenerationError:
+        fw = fallback_framework(track)
+        beat = _beat_from({}, 1, START_LEVEL, fw)
 
-PRIVATE PROFILE (for your eyes only, do not quote):
-{brief}
-{proj_ctx}
-
-Return ONLY JSON: {{"prompt": "the question", "hint": "one short tip"}}"""
-    gen = _call_groq(prompt, max_tokens=300, temperature=0.5)
-    beat = _beat_from(gen, 1, START_LEVEL, fw)
-
-    # The session's prompts live server-side from here: /comm/next and /comm/evaluate
-    # extend and grade THIS stored history — the client only ever sends answers.
+    # The session's framework AND prompts live server-side from here: /comm/next and
+    # /comm/evaluate extend and grade THIS stored state — the client only sends answers.
     set_pending(current_user().id, "comm", {
         "track": track,
         "label": label,
         "project_id": data.get("project_id"),
+        "framework": fw,
         "level": START_LEVEL,
         "history": [dict(beat, answer=None)],
     })
@@ -187,6 +203,7 @@ def _beat_from(gen, beat_id, level, fw):
 
 @comm_bp.route("/comm/next", methods=["POST"])
 @login_required
+@limiter.limit("60 per hour")
 def comm_next():
     data = request.get_json() or {}
     answer = (data.get("answer") or "").strip()
@@ -199,7 +216,7 @@ def comm_next():
         return jsonify({"error": "No active session. Start one with /comm/start first."}), 400
 
     track = state["track"]
-    fw = FRAMEWORKS[track]
+    fw = state.get("framework") or fallback_framework(track)
     history = state["history"]
     cur_level = _clamp(state.get("level") or START_LEVEL)
     label, proj_ctx = _project_ctx(track, state.get("project_id"))
@@ -219,7 +236,7 @@ def comm_next():
     )
     next_step = fw["steps"][min(answered, len(fw["steps"]) - 1)]
 
-    prompt = f"""You are an interactive speaking coach running a "{fw['label']}" exercise
+    prompt = f"""You are an interactive speaking coach running a "{label}" exercise
 (framework: {fw['name']}). Goal: {fw['focus']}.
 
 PRIVATE PROFILE (for your eyes only, do not quote):
@@ -268,6 +285,7 @@ Return ONLY JSON:
 
 @comm_bp.route("/comm/evaluate", methods=["POST"])
 @login_required
+@limiter.limit("15 per hour")
 def comm_evaluate():
     data = request.get_json() or {}
     # Delivery signals (pace/fillers/words) are measured in the browser, so they stay
@@ -287,8 +305,8 @@ def comm_evaluate():
         history[-1]["answer"] = final_answer
 
     track = state["track"]
-    fw = FRAMEWORKS.get(track, FRAMEWORKS["communication"])
-    label = (state.get("label") or fw["label"]).strip()
+    fw = state.get("framework") or fallback_framework(track)
+    label = (state.get("label") or track_label(track)).strip()
     qa = [{"prompt": h.get("prompt"), "answer": h.get("answer"), "difficulty": h.get("difficulty")} for h in history]
     brief, _, _ = _persona_brief(for_eval=True)
 
@@ -388,6 +406,7 @@ Return ONLY JSON:
 
 @comm_bp.route("/comm/redo", methods=["POST"])
 @login_required
+@limiter.limit("10 per hour")
 def comm_redo():
     data = request.get_json() or {}
     beat = (data.get("beat") or "your answer").strip()

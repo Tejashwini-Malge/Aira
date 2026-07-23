@@ -5,80 +5,109 @@ import random
 
 from models import db, Persona
 from auth import current_user, login_required
+from rate_limiter import limiter
+from llm_schemas import PERSONA_DIMENSIONS
+from persona_eligibility import (
+    SESSIONS_REQUIRED_TO_REFRESH,
+    total_sessions as _total_sessions,
+    refresh_eligible as _refresh_eligible,
+)
 from resume_agent import extract_text, parse_resume, build_resume_questions, ResumeError
-from groq_client import groq_json
+from question_agent import generate_dimension_questions, QuestionGenerationError
+from persona_agent import generate_core_persona, format_session_evidence, PersonaGenerationError
+from persona_bp import _build_report_payload
 
 session_bp = Blueprint("session_bp", __name__)
 
+
+def _reject_if_locked(total_sessions, persona):
+    """A Core Persona is locked once built; only an eligible refresh may touch
+    it again. Enforced here — not just at generate-persona's final call — so a
+    non-eligible user can't overwrite raw_responses or burn a Groq call on
+    get-questions/save-answers by reaching them directly. The frontend's entry
+    guard on questions.html is a UX nicety, not the actual gate; this is."""
+    if persona is not None and persona.summary and not _refresh_eligible(total_sessions, persona):
+        return jsonify({
+            "error": "Your Core Persona is locked until Aira has enough new session evidence to refresh it.",
+        }), 403
+    return None
+
+
 _BANK_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "question_bank.json")
-with open(_BANK_PATH) as _f:
+with open(_BANK_PATH, encoding="utf-8") as _f:
     _QUESTION_BANK = json.load(_f)
 
 # Fixed order so dimension levels always appear in this sequence.
-DIMENSION_ORDER = [
-    "work_culture_preferences",
-    "teamwork_style",
-    "leadership_tendencies",
-    "decision_making_approach",
-    "problem_solving_behavior",
-    "professional_values",
-    "career_goals",
-    "communication_style",
-]
+DIMENSION_ORDER = list(PERSONA_DIMENSIONS)
 
 
-def _fixed_by_dimension():
-    """{dimension: [variants]} and the list of reflection questions."""
-    by_dim = {}
-    reflections = []
-    for q in _QUESTION_BANK:
-        if q["type"] == "reflection":
-            reflections.append(q)
-        else:
-            by_dim.setdefault(q["dimension"], []).append(q)
-    return by_dim, reflections
+def _reflections():
+    """The 2 generic, dimension-less closing questions — these stay hardcoded on
+    purpose: they're deliberately open ("what's a good day look like for you")
+    and don't target a specific trait, so personalizing them buys nothing."""
+    return [q for q in _QUESTION_BANK if q["type"] == "reflection"]
 
 
-# How many fixed dimension scenarios go into the blended quiz. The resume agent
+# How many dimension questions go into the blended quiz. The resume agent
 # contributes 4 more (2 technical + 2 HR) and we close with 1 open-ended reflection,
 # for a 10-question quiz the user experiences as one seamless set.
-FIXED_COUNT = 5
+DIMENSION_COUNT = 5
 
 
-def _assemble_questions(persona):
-    """The hidden blend: 5 fixed + 4 resume-grounded + 1 open-ended reflection.
+def _assemble_questions(persona, user=None, question_generator=generate_dimension_questions):
+    """The hidden blend: 5 dynamically generated dimension questions + 4 resume-
+    grounded + 1 open-ended reflection.
 
-    The 5 fixed scenarios are chosen to cover dimensions the resume questions DON'T,
-    so all 8 dimensions get signal between the two sources. Falls back to the plain
-    fixed-bank sample if no resume analysis exists yet.
+    The dimension questions are LLM-generated per user (not drawn from a static
+    bank — see question_agent.py) and cover whichever dimensions the resume
+    questions DON'T, so all 8 dimensions get signal between the two sources.
+    They're cached on the persona so reloading mid-quiz doesn't reshuffle the set
+    or cost another LLM call. generate_persona() clears this cache the moment a
+    persona is (re)built, so the NEXT attempt (a future eligible refresh) starts
+    fresh exactly once, then stays cached for the rest of that attempt.
     """
-    by_dim, reflections = _fixed_by_dimension()
+    reflections = _reflections()
 
     resume_questions = []
     if persona is not None and persona.resume_data:
         resume_questions = build_resume_questions(persona.resume_data)
 
-    # Without resume data we can't build the intended blend — fall back to one
-    # scenario per dimension plus the reflections (legacy behaviour).
+    covered = {q["dimension"] for q in resume_questions}
+    # Prefer dimensions the resume didn't already probe, but ALWAYS keep
+    # communication_style in the generated batch: it's the one dimension question_agent
+    # asks as a free-text "tell me about a time..." recall, and the resume can only ever
+    # cover it with a fixed-option question. Without this pin it silently drops out of the
+    # top-N whenever a resume HR question happens to be tagged to it, leaving the quiz with
+    # no open recall probe for communication. Priority: comm_style, then uncovered, then covered.
+    ordered_dims = sorted(
+        DIMENSION_ORDER,
+        key=lambda d: 0 if d == "communication_style" else (1 if d not in covered else 2),
+    )
+    # Without resume data there's no coverage to fill around — cover every dimension.
+    target_dims = ordered_dims[:DIMENSION_COUNT] if resume_questions else DIMENSION_ORDER
+
+    need_fresh = persona is None or not persona.dimension_questions
+    if need_fresh:
+        onboarding = user.onboarding if user else None
+        # A persona that already has a summary is being re-assessed after real
+        # practice sessions, not built for the first time — raise the bar.
+        is_refresh = persona is not None and bool(persona.summary)
+        dim_questions = question_generator(target_dims, onboarding, harder=is_refresh)
+        if persona is not None:
+            # Caching is the caller's DB transaction to commit — this function
+            # stays testable without a Flask app/DB context.
+            persona.dimension_questions = dim_questions
+    else:
+        dim_questions = persona.dimension_questions
+
     if not resume_questions:
-        selected = [random.choice(by_dim[d]) for d in DIMENSION_ORDER if by_dim.get(d)]
+        selected = list(dim_questions)
         selected.extend(reflections[:1] or reflections)
         return selected
 
-    covered = {q["dimension"] for q in resume_questions}
-    # Prefer fixed questions for dimensions the resume didn't already probe.
-    ordered_dims = [d for d in DIMENSION_ORDER if d not in covered] + \
-                   [d for d in DIMENSION_ORDER if d in covered]
-    fixed = []
-    for dim in ordered_dims:
-        if len(fixed) >= FIXED_COUNT:
-            break
-        if by_dim.get(dim):
-            fixed.append(random.choice(by_dim[dim]))
-
-    # Blend fixed + resume so the resume questions aren't visibly clustered, then
-    # close with a single open-ended reflection.
-    blended = fixed + resume_questions
+    # Blend so the resume questions aren't visibly clustered, then close with a
+    # single open-ended reflection.
+    blended = dim_questions + resume_questions
     random.shuffle(blended)
     if reflections:
         blended.append(random.choice(reflections))
@@ -91,163 +120,6 @@ def _get_or_create_persona(user):
         db.session.add(persona)
         return persona
     return user.persona
-
-
-class PersonaGenerationError(Exception):
-    """Raised on a genuine LLM/network failure so the caller can return a retryable
-    error instead of caching a generic fallback persona."""
-
-
-def _format_context(onboarding, resume_data):
-    """Concrete facts the assessment must be grounded in: who they are, what they
-    want, and what their resume actually shows."""
-    lines = ["WHAT THEY TOLD US ABOUT THEMSELVES:"]
-    onboarding = onboarding or {}
-    if onboarding:
-        for k, v in onboarding.items():
-            if v:
-                lines.append(f"  - {k.replace('_', ' ')}: {v}")
-    else:
-        lines.append("  - (none provided)")
-
-    resume_data = resume_data or {}
-    lines.append("\nWHAT THEIR RESUME SHOWS:")
-    if resume_data:
-        skills = ", ".join(resume_data.get("skills", [])[:10]) or "none listed"
-        lines.append(f"  - experience level: {resume_data.get('experience_level', 'unknown')}")
-        lines.append(f"  - skills: {skills}")
-        for p in (resume_data.get("projects") or [])[:4]:
-            lines.append(f"  - project: {p.get('name', '')} — {p.get('what_they_did', '')}")
-        gaps = ", ".join(resume_data.get("likely_gaps", [])[:5])
-        if gaps:
-            lines.append(f"  - possible gaps: {gaps}")
-    else:
-        lines.append("  - (no resume on file)")
-    return "\n".join(lines)
-
-
-def _answer_quality_hint(r):
-    """A neutral observation about how much substance an answer carries, so the model
-    can't mistake an empty/lazy answer for a strong one."""
-    qtype = r.get("type", "")
-    if qtype in ("situational", "tradeoff"):
-        return None  # choice questions carry their own signal
-    answer = (r.get("answer") or "").strip()
-    if not answer:
-        return "NOTE: left blank — this is evidence of avoidance or low engagement, not a strong trait."
-    words = len(answer.split())
-    if words < 8:
-        return "NOTE: very short/vague answer — weak evidence, lean toward Developing unless it's clearly substantive."
-    if words < 20:
-        return "NOTE: brief answer — judge how specific it actually is."
-    return None
-
-
-def _build_llm_prompt(responses, onboarding=None, resume_data=None):
-    lines = [
-        "You are an experienced career coach. You have just finished a real assessment of "
-        "this person and you are writing your honest verdict. You are warm but you do NOT "
-        "flatter — your job is to tell them the truth so they can grow.\n",
-        "HOW TO SCORE — read each answer and JUDGE ITS QUALITY, do not just note the topic:\n"
-        "  Strong     = the answer is specific, thoughtful and shows real depth or self-awareness.\n"
-        "  Moderate   = some substance but generic, mixed, or plays it safe.\n"
-        "  Developing = vague, very short, avoidant, blank, or (for technical questions) shows\n"
-        "               they don't really understand their own project/skill.\n"
-        "BE STRICT AND HONEST. A weak, empty, or evasive answer MUST score Developing — never "
-        "reward effortless or generic answers. Most people are a genuine MIX across the eight "
-        "areas; if everything comes out Strong you are not judging hard enough. The score must "
-        "clearly change depending on how well they actually answered.\n",
-        "For the technical questions: compare their answer to what their resume claims. If they "
-        "cannot explain their own listed project or skill clearly and correctly, that is a red "
-        "flag — score the related area lower and say so plainly.\n",
-        "WRITE IN SIMPLE, PLAIN ENGLISH, speaking directly to them as 'you'. Short everyday "
-        "words, as if the reader is not fluent in English. Never use jargon or personality "
-        "labels like 'Analytical Thinker' or 'Strategic'. Sound like a coach who actually paid "
-        "attention to what they said.\n",
-        _format_context(onboarding, resume_data) + "\n",
-        "THEIR ASSESSMENT ANSWERS:\n",
-    ]
-
-    for r in responses:
-        dim = r.get("dimension") or "none"
-        qtype = r.get("type", "")
-        qtext = r.get("text", "")
-
-        if qtype in ("situational", "tradeoff"):
-            lines.append(f"[area: {dim}] (multiple-choice)")
-            lines.append(f"  Q: {qtext}")
-            lines.append(f"  They chose: {r.get('selected_text', '(no choice)')}")
-            lines.append(f"  What that choice reveals: {r.get('signal', '')}\n")
-        elif qtype == "recall":
-            answer = (r.get("answer") or "").strip() or "(left blank)"
-            lines.append(f"[area: {dim}] (free answer — judge depth and correctness)")
-            lines.append(f"  Q: {qtext}")
-            lines.append(f"  Their answer: {answer}")
-            hint = _answer_quality_hint(r)
-            if hint:
-                lines.append(f"  {hint}")
-            lines.append("")
-        elif qtype == "reflection":
-            answer = (r.get("answer") or "").strip() or "(left blank)"
-            lines.append("[reflection — informs your overall verdict only, not a single area score]")
-            lines.append(f"  Q: {qtext}")
-            lines.append(f"  Their answer: {answer}\n")
-
-    lines.append(
-        "Now write your coach's verdict. Return ONLY this JSON object — no markdown, no extra text.\n"
-        "Rules:\n"
-        "  - \"summary\": 3-4 short sentences spoken to them ('you ...'). Honest coach read — name "
-        "what they genuinely did well AND what was weak, citing real things from their answers, "
-        "projects and goal. Simple words.\n"
-        "  - each \"note\": ONE short sentence pointing to what THIS person's actual answer showed "
-        "for that area — specific to them, not a generic description. This is the proof of your "
-        "score, so a Developing note must say what was missing.\n"
-        "{\n"
-        '  "summary": "...",\n'
-        '  "dimensions": {\n'
-        '    "work_culture_preferences": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "teamwork_style": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "leadership_tendencies": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "decision_making_approach": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "problem_solving_behavior": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "professional_values": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "career_goals": {"level": "Strong|Moderate|Developing", "note": "..."},\n'
-        '    "communication_style": {"level": "Strong|Moderate|Developing", "note": "..."}\n'
-        "  }\n"
-        "}"
-    )
-    return "\n".join(lines)
-
-
-def _run_generation(responses, onboarding=None, resume_data=None):
-    """Single LLM call → persona dict with source_id tracking merged in.
-
-    The assessment is grounded in the user's onboarding details and resume so it
-    speaks about the actual person, not a generic label.
-    """
-    source_map = {r["dimension"]: r["id"] for r in responses if r.get("dimension")}
-
-    prompt = _build_llm_prompt(responses, onboarding, resume_data)
-
-    try:
-        # Low temperature so the same answers score consistently and the rubric is
-        # followed rather than improvised. json_mode forces valid JSON output.
-        data = groq_json(prompt, max_tokens=1100, temperature=0.2)
-        if not isinstance(data, dict) or not data.get("summary") or not data.get("dimensions"):
-            raise ValueError("Incomplete persona JSON from LLM")
-    except Exception as e:
-        # A genuine LLM/network failure. Completeness is enforced before we get here,
-        # so this is never just sparse answers. Surface it as retryable rather than
-        # silently persisting a generic persona that would then be cached forever.
-        print("Persona generation error:", e)
-        raise PersonaGenerationError("Aira couldn't build your persona right now. Please try again.")
-
-    # Attach the question variant ID that informed each dimension, for future traceability.
-    for dim, source_id in source_map.items():
-        if dim in data.get("dimensions", {}):
-            data["dimensions"][dim]["source_id"] = source_id
-
-    return data
 
 
 # A free-text answer needs real substance, not a single word, to be worth interpreting.
@@ -281,6 +153,7 @@ def onboarding_status():
 
 @session_bp.route("/onboarding/save", methods=["POST"])
 @login_required
+@limiter.limit("5 per hour")
 def save_onboarding():
     """Collect career details + a compulsory resume, then run the resume agent.
 
@@ -288,6 +161,12 @@ def save_onboarding():
     questions, stored on the Persona for the quiz to blend in later.
     """
     user = current_user()
+
+    # Resume analysis is a real Groq call and onboarding is meant to happen once —
+    # without this, a logged-in user could resubmit the form in a loop and burn a
+    # full resume-parsing call every time.
+    if user.onboarding_complete:
+        return jsonify({"success": False, "message": "Onboarding is already complete."}), 400
 
     # Career-development detail fields (everything except the file). Stored as a
     # flexible blob so the field set can evolve without a migration.
@@ -316,14 +195,28 @@ def save_onboarding():
 
 @session_bp.route("/session/get-questions", methods=["GET"])
 @login_required
+@limiter.limit("15 per hour")
 def get_questions():
-    persona = current_user().persona
-    return jsonify({"questions": _assemble_questions(persona)}), 200
+    user = current_user()
+    locked = _reject_if_locked(_total_sessions(user), user.persona)
+    if locked:
+        return locked
+    try:
+        questions = _assemble_questions(user.persona, user)
+    except QuestionGenerationError as e:
+        return jsonify({"error": str(e)}), 503
+    db.session.commit()
+    return jsonify({"questions": questions}), 200
 
 
 @session_bp.route("/session/save-answers", methods=["POST"])
 @login_required
 def save_answers():
+    user = current_user()
+    locked = _reject_if_locked(_total_sessions(user), user.persona)
+    if locked:
+        return locked
+
     data = request.get_json() or {}
     responses = data.get("responses")
     if not responses or not isinstance(responses, list):
@@ -339,7 +232,7 @@ def save_answers():
             "unanswered": unanswered,
         }), 400
 
-    persona = _get_or_create_persona(current_user())
+    persona = _get_or_create_persona(user)
     persona.raw_responses = responses
     db.session.commit()
     return jsonify({"success": True}), 200
@@ -347,9 +240,11 @@ def save_answers():
 
 @session_bp.route("/session/generate-persona", methods=["POST"])
 @login_required
+@limiter.limit("10 per hour")
 def generate_persona():
     user = current_user()
     persona = _get_or_create_persona(user)
+    total_sessions = _total_sessions(user)
 
     # `force` re-runs the assessment from the saved answers even if one already exists.
     # Useful while iterating on the logic, and the basis for re-assessing after sessions.
@@ -360,6 +255,16 @@ def generate_persona():
     # (summary is the sentinel now that we no longer produce an abstract title.)
     if persona.summary and not force:
         return jsonify({"persona": persona.to_dict()}), 200
+
+    # A Core Persona already exists and the caller wants to replace it — only allowed
+    # once enough new practice sessions have happened since it was built. Defense in
+    # depth: the frontend hides the refresh action until eligible, but this is the
+    # rule that actually holds regardless of what the client sends.
+    if persona.summary and force and not _refresh_eligible(total_sessions, persona):
+        return jsonify({
+            "error": "Aira doesn't have enough new session evidence yet to refresh your profile.",
+            "canRefresh": False,
+        }), 403
 
     if not persona.raw_responses:
         return jsonify({"error": "No onboarding responses found. Complete the questions first."}), 400
@@ -373,8 +278,12 @@ def generate_persona():
             "unanswered": unanswered,
         }), 400
 
+    # A refresh (not a first build) weighs real practice-session performance alongside
+    # the questionnaire answers, not just a repeat of the same quiz.
+    session_evidence = format_session_evidence(_build_report_payload(user)) if persona.summary else None
+
     try:
-        result = _run_generation(persona.raw_responses, user.onboarding, persona.resume_data)
+        result = generate_core_persona(persona.raw_responses, user.onboarding, persona.resume_data, session_evidence)
     except PersonaGenerationError as e:
         # Don't set persona.summary — leaving it unset means the next call retries
         # cleanly instead of returning a permanently-cached fallback.
@@ -382,6 +291,12 @@ def generate_persona():
 
     persona.summary = result["summary"]
     persona.dimensions = result["dimensions"]
+    # Reset the eligibility baseline — the NEXT refresh needs its own fresh evidence.
+    persona.session_count_at_generation = total_sessions
+    # Clear the dimension-question cache: it belonged to THIS attempt (already
+    # spent). The next attempt (a future eligible refresh) generates its own
+    # fresh set exactly once via _assemble_questions' need_fresh check.
+    persona.dimension_questions = None
     db.session.commit()
 
     # The persona is private — never return its content to the client. Confirm only
@@ -392,7 +307,20 @@ def generate_persona():
 @session_bp.route("/me/persona", methods=["GET"])
 @login_required
 def get_my_persona():
-    """Existence check only (used for gating). Does not expose the assessment."""
-    persona = current_user().persona
+    """Existence + refresh-eligibility check only (used for gating). Never exposes
+    the assessment content, and never exposes the raw session-count rule — only
+    whether Aira currently has enough new evidence to offer a refresh."""
+    user = current_user()
+    persona = user.persona
     ready = bool(persona and persona.summary)
-    return jsonify({"persona": {"ready": True} if ready else None}), 200
+    if not ready:
+        return jsonify({"persona": None}), 200
+
+    total_sessions = _total_sessions(user)
+    return jsonify({
+        "persona": {
+            "ready": True,
+            "totalSessions": total_sessions,
+            "canRefresh": _refresh_eligible(total_sessions, persona),
+        }
+    }), 200

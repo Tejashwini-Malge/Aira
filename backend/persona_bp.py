@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 
 from models import db, ReportSnapshot
 from auth import current_user, login_required
+from persona_eligibility import total_sessions as _total_sessions, refresh_eligible as _refresh_eligible
 
 persona_bp = Blueprint("persona_bp", __name__)
 
@@ -67,7 +68,16 @@ def _build_report_payload(user):
 @persona_bp.route("/me/report", methods=["GET"])
 @login_required
 def report():
-    return jsonify(_build_report_payload(current_user())), 200
+    user = current_user()
+    payload = _build_report_payload(user)
+    # Live-only fields (not baked into _build_report_payload, since that's also
+    # used to persist historical snapshots — a frozen "can refresh" flag inside
+    # an old report card wouldn't mean anything once time has passed).
+    if payload["persona"] is not None:
+        total = _total_sessions(user)
+        payload["persona"]["totalSessions"] = total
+        payload["persona"]["canRefresh"] = _refresh_eligible(total, user.persona)
+    return jsonify(payload), 200
 
 
 # ── Report-card grading — mirrors the mark-sheet math in report.html so a
@@ -152,20 +162,42 @@ def _summarize(payload):
     return overall_pct, overall_grade, result_text
 
 
+def _activity_signature(payload):
+    """A fingerprint of the ACTIVITY behind a report — what actually changes only
+    when the user does something new: takes/retakes a quiz, completes a speaking
+    round, or (re)builds their persona. Merely viewing the report doesn't move it.
+    """
+    persona = payload.get("persona") or {}
+    return (
+        len(payload.get("quizzes") or []),
+        len(payload.get("speaking") or []),
+        (persona.get("summary") or "").strip(),
+    )
+
+
 @persona_bp.route("/me/report/snapshot", methods=["POST"])
 @login_required
 def save_report_snapshot():
     user = current_user()
     payload = _build_report_payload(user)
-    overall_pct, overall_grade, result_text = _summarize(payload)
 
+    # Archive a snapshot ONLY when the underlying activity has actually changed since
+    # the last one — a new quiz, a new speaking round, or a rebuilt persona. Reloading
+    # or revisiting the report changes nothing, so it must not create a new row (this is
+    # what filled the history with dozens of identical "All periods complete" entries).
+    latest = ReportSnapshot.query.filter_by(user_id=user.id) \
+        .order_by(ReportSnapshot.created_at.desc()).first()
+    if latest and _activity_signature(latest.payload) == _activity_signature(payload):
+        return jsonify({"success": True, "created": False, "snapshot": latest.to_summary()}), 200
+
+    overall_pct, overall_grade, result_text = _summarize(payload)
     snap = ReportSnapshot(
         user_id=user.id, payload=payload,
         overall_pct=overall_pct, overall_grade=overall_grade, result_text=result_text,
     )
     db.session.add(snap)
     db.session.commit()
-    return jsonify({"success": True, "snapshot": snap.to_summary()}), 201
+    return jsonify({"success": True, "created": True, "snapshot": snap.to_summary()}), 201
 
 
 @persona_bp.route("/me/report/snapshots", methods=["GET"])

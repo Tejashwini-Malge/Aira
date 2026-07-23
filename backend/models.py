@@ -26,6 +26,10 @@ class User(db.Model):
     onboarding = db.Column(db.JSON)
     onboarding_complete = db.Column(db.Boolean, default=False, nullable=False)
 
+    # Free plan: the student picks the 2 speaking tracks they care about most;
+    # everything else on the Soft Skills page stays locked until they change it.
+    unlocked_tracks = db.Column(db.JSON)
+
     persona = db.relationship(
         "Persona", backref="user", uselist=False,
         cascade="all, delete-orphan",
@@ -51,6 +55,9 @@ class User(db.Model):
             "name": self.name,
             "email": self.email,
             "onboarding_complete": self.onboarding_complete,
+            "unlocked_tracks": self.unlocked_tracks or [],
+            "onboarding": self.onboarding or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -67,6 +74,17 @@ class Persona(db.Model):
     dimensions = db.Column(db.JSON)         # {dim_name: {level, source_id}}
     raw_responses = db.Column(db.JSON)      # the 10 structured onboarding responses
 
+    # Total (quiz + speaking) session count at the moment this persona was last
+    # generated. A deliberate re-generation is only allowed once 3 MORE sessions
+    # have happened since then — see persona_eligibility.SESSIONS_REQUIRED_TO_REFRESH.
+    session_count_at_generation = db.Column(db.Integer, default=0, nullable=False)
+
+    # The dynamically generated (not hardcoded) dimension questions for the
+    # CURRENT in-progress attempt — cached so reloading questions.html mid-quiz
+    # doesn't reshuffle the set or burn another LLM call. Cleared/regenerated at
+    # the start of each fresh attempt (first build, or an eligible refresh).
+    dimension_questions = db.Column(db.JSON)
+
     # Resume artifacts produced by the resume agent at onboarding.
     resume_text = db.Column(db.Text)        # raw extracted text from the uploaded file
     resume_data = db.Column(db.JSON)        # {skills, projects, experience_level,
@@ -82,6 +100,8 @@ class Persona(db.Model):
         return {
             "summary": self.summary,
             "dimensions": self.dimensions or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
@@ -142,6 +162,10 @@ class QuizResult(db.Model):
     study_plan = db.Column(db.Text)
     weak_areas = db.Column(db.JSON, default=list)
     suggestions = db.Column(db.JSON, default=list)
+    # Issued once, server-side, the moment /quiz/generate actually starts this
+    # attempt (AIRA-#### for a role interview, REQ-#### for a topic round) —
+    # a real per-session reference, not a decorative client-side random string.
+    paper_ref = db.Column(db.String(40))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
@@ -153,6 +177,7 @@ class QuizResult(db.Model):
             "study_plan": self.study_plan,
             "weak_areas": self.weak_areas or [],
             "suggestions": self.suggestions or [],
+            "paper_ref": self.paper_ref,
             "created_at": self.created_at.isoformat(),
         }
 
@@ -191,7 +216,7 @@ class SpeakingSession(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
 
     mode = db.Column(db.String(40))
-    track = db.Column(db.String(40))        # communication | intro | project
+    track = db.Column(db.String(40))        # communication | intro | project | voice
     fluency = db.Column(db.Integer)
     clarity = db.Column(db.Integer)
     confidence = db.Column(db.Integer)
@@ -216,3 +241,89 @@ class SpeakingSession(db.Model):
             "suggestions": self.suggestions or [],
             "created_at": self.created_at.isoformat(),
         }
+
+
+class Feedback(db.Model):
+    """TEMPORARY — a market-validation instrument, not a permanent feature.
+
+    Captured right before the report card, at every path that leads there
+    (reflection, full analysis, dashboard), so real signal gets collected in
+    the moment instead of relying on users to volunteer it after they've
+    already left. This table exists to answer "is this actually working for
+    people" while we validate the product — expect it to be revisited,
+    reshaped, or torn out once that question is answered, not maintained
+    indefinitely as a review/UGC system. Export via ../export_feedback.py.
+    """
+    __tablename__ = "feedback"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+
+    rating = db.Column(db.Integer, nullable=False)     # 1-5 stars, required
+    recommend_score = db.Column(db.Integer)            # 0-10 NPS-style, optional
+    liked = db.Column(db.Text)                         # "what's working"
+    improve = db.Column(db.Text)                        # "what to fix/add"
+    # Indirect, single-select MCQs (see feedback_bp.MCQ_QUESTIONS) — phrased
+    # around a moment or feeling rather than "did you like it", so the answer
+    # says something about which specific mechanic to invest in next, not just
+    # sentiment. {question_key: chosen_option}.
+    mcq_responses = db.Column(db.JSON)
+    context = db.Column(db.String(40))                  # which flow it followed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "rating": self.rating,
+            "recommend_score": self.recommend_score,
+            "liked": self.liked,
+            "improve": self.improve,
+            "mcq_responses": self.mcq_responses or {},
+            "context": self.context,
+            "created_at": self.created_at.isoformat(),
+        }
+
+
+def migrate_new_columns(engine):
+    """db.create_all() only creates TABLES that don't exist yet — it never
+    ALTERs a table that's already there. Any database created before the
+    Persona.session_count_at_generation/dimension_questions columns existed
+    (including production's persistent Postgres DB) would 500 on the first
+    request that touches a Persona row. This is a one-time, idempotent check
+    run at startup right after db.create_all() so an existing DB gets the
+    missing columns instead of erroring. Works for both SQLite (local) and
+    Postgres (production) since the ALTER SQL used is plain standard SQL.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    table_names = inspector.get_table_names()
+
+    if "personas" in table_names:
+        existing = {c["name"] for c in inspector.get_columns("personas")}
+        with engine.begin() as conn:
+            if "session_count_at_generation" not in existing:
+                conn.execute(text(
+                    "ALTER TABLE personas ADD COLUMN session_count_at_generation "
+                    "INTEGER NOT NULL DEFAULT 0"
+                ))
+            if "dimension_questions" not in existing:
+                conn.execute(text("ALTER TABLE personas ADD COLUMN dimension_questions JSON"))
+
+    if "users" in table_names:
+        existing = {c["name"] for c in inspector.get_columns("users")}
+        with engine.begin() as conn:
+            if "unlocked_tracks" not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN unlocked_tracks JSON"))
+
+    if "feedback" in table_names:
+        existing = {c["name"] for c in inspector.get_columns("feedback")}
+        with engine.begin() as conn:
+            if "mcq_responses" not in existing:
+                conn.execute(text("ALTER TABLE feedback ADD COLUMN mcq_responses JSON"))
+
+    if "quiz_results" in table_names:
+        existing = {c["name"] for c in inspector.get_columns("quiz_results")}
+        with engine.begin() as conn:
+            if "paper_ref" not in existing:
+                conn.execute(text("ALTER TABLE quiz_results ADD COLUMN paper_ref VARCHAR(40)"))

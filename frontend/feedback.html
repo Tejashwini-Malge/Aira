@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aira · Quick Feedback</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/chalkboard.css">
+  <style>
+    * { margin: 0; padding: 0; }
+    body.board { display: flex; align-items: center; justify-content: center; }
+
+    .layout { width: 100%; max-width: 620px; padding: 20px 16px; position: relative; z-index: 1; }
+
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-badge {
+      width: 32px; height: 32px; border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
+    }
+    .brand-texts { display: flex; flex-direction: column; }
+    .brand-texts span:first-child { font-family: var(--fd); font-size: 1rem; color: var(--chalk); }
+    .brand-texts span:last-child { font-size: 0.8rem; color: var(--muted); }
+
+    h1 { font-family: var(--fd); font-size: 1.7rem; color: var(--chalk); margin: 0 0 4px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+
+    .card { padding: 20px 20px 18px; }
+
+    .field { margin-bottom: 18px; }
+    .field-label { font-size: 0.88rem; color: var(--chalk); margin-bottom: 8px; display: block; }
+    .field-hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+    .stars { display: flex; gap: 6px; }
+    .star {
+      font-size: 1.7rem; cursor: pointer; color: var(--muted); opacity: 0.5;
+      transition: transform 0.15s, opacity 0.15s, color 0.15s; background: none; border: none;
+      font-family: inherit; line-height: 1;
+    }
+    .star:hover { transform: scale(1.15); }
+    .star.filled { color: var(--chalk-yellow); opacity: 1; }
+
+    .nps-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nps-btn {
+      width: 34px; height: 34px; border-radius: 8px; border: 1.5px dashed var(--dash);
+      background: none; color: var(--muted); font-family: var(--fb); font-size: 0.85rem;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .nps-btn:hover { border-color: var(--chalk); color: var(--chalk); }
+    .nps-btn.picked { border-color: var(--chalk-yellow); color: var(--chalk-yellow); border-style: solid; }
+    .nps-scale-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .mcq-options { display: flex; flex-direction: column; gap: 6px; }
+    .mcq-option {
+      text-align: left; padding: 8px 12px; border-radius: 8px;
+      border: 1.5px dashed var(--dash); background: none; color: var(--muted);
+      font-family: var(--fb); font-size: 0.84rem; cursor: pointer; transition: all 0.15s;
+    }
+    .mcq-option:hover { border-color: var(--chalk); color: var(--chalk); }
+    .mcq-option.picked { border-color: var(--chalk-yellow); color: var(--chalk-yellow); border-style: solid; }
+
+    textarea {
+      width: 100%; min-height: 66px; padding: 9px 10px;
+      border-radius: 8px; border: 1.5px dashed var(--dash);
+      background: rgba(244,241,228,0.04); color: var(--chalk);
+      font-size: 0.86rem; font-family: var(--fb); resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; }
+
+    .actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 10px; flex-wrap: wrap; }
+    .rating-required-note { font-size: 0.78rem; color: var(--muted); }
+
+    .toast {
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
+      background: rgba(18,38,28,0.97); color: var(--chalk); border: 1.5px dashed var(--dash);
+      padding: 9px 15px; border-radius: 999px; font-size: 0.8rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s, bottom 0.25s;
+    }
+    .toast.show { opacity: 1; bottom: 40px; pointer-events: all; }
+
+    #sheet { display: none; }
+  </style>
+</head>
+<body class="board">
+
+<div class="layout">
+  <div class="header-row">
+    <div class="brand">
+      <div class="brand-badge"></div>
+      <div class="brand-texts">
+        <span>Aira</span>
+        <span>Before your report card</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="sheet">
+    <h1>🔔 One quick thing before the bell.</h1>
+    <p class="subtitle chalk-sub">
+      Every question below is required — your report card unlocks right after.
+      Real, complete answers are what tell us if Aira is actually helping.
+    </p>
+
+    <div class="card board-card pin-yellow">
+      <div class="field">
+        <label class="field-label">How was this session, overall? <span style="color:var(--chalk-pink)">*</span></label>
+        <div class="stars" id="stars">
+          <button class="star" data-v="1">★</button>
+          <button class="star" data-v="2">★</button>
+          <button class="star" data-v="3">★</button>
+          <button class="star" data-v="4">★</button>
+          <button class="star" data-v="5">★</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">How likely are you to recommend Aira to a friend or classmate? <span style="color:var(--chalk-pink)">*</span></label>
+        <div class="nps-row" id="npsRow"></div>
+        <div class="nps-scale-labels"><span>0 · Not likely</span><span>10 · Very likely</span></div>
+      </div>
+
+      <div id="mcqBlock"></div>
+
+      <div class="field">
+        <label class="field-label">What's working well for you? <span style="color:var(--chalk-pink)">*</span></label>
+        <textarea id="likedText" placeholder="One real thing you found useful."></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">What should we fix or add? <span style="color:var(--chalk-pink)">*</span></label>
+        <textarea id="improveText" placeholder="Be as blunt as you like."></textarea>
+      </div>
+
+      <div class="actions-row">
+        <span class="rating-required-note" id="reqNote"></span>
+        <button class="btn-chalk primary" id="submitBtn">Submit &amp; view my report →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-note" id="loadingNote" style="text-align:center;color:var(--muted);padding:24px 0;font-style:italic;">
+    Checking your session…
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const ctx = params.get("ctx") || "general";
+
+  const sheet = document.getElementById("sheet");
+  const loadingNote = document.getElementById("loadingNote");
+  const toast = document.getElementById("toast");
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function goToReport() {
+    window.location.replace("report.html");
+  }
+
+  let rating = 0;
+  let npsScore = null;
+  const mcqAnswers = {};
+  let mcqKeys = [];
+
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = String(s == null ? "" : s);
+    return d.innerHTML;
+  }
+
+  function renderMcq(questions) {
+    mcqKeys = Object.keys(questions);
+    const block = document.getElementById("mcqBlock");
+    block.innerHTML = Object.entries(questions).map(([key, q]) => `
+      <div class="field">
+        <label class="field-label">${esc(q.prompt)}</label>
+        <div class="mcq-options" data-key="${esc(key)}">
+          ${q.options.map(opt => `<button type="button" class="mcq-option" data-opt="${esc(opt)}">${esc(opt)}</button>`).join("")}
+        </div>
+      </div>`).join("");
+
+    block.querySelectorAll(".mcq-options").forEach(group => {
+      const key = group.dataset.key;
+      group.querySelectorAll(".mcq-option").forEach(btn => {
+        btn.addEventListener("click", () => {
+          mcqAnswers[key] = btn.dataset.opt;
+          group.querySelectorAll(".mcq-option").forEach(b => b.classList.remove("picked"));
+          btn.classList.add("picked");
+        });
+      });
+    });
+  }
+
+  function renderNps() {
+    const row = document.getElementById("npsRow");
+    row.innerHTML = "";
+    for (let i = 0; i <= 10; i++) {
+      const b = document.createElement("button");
+      b.className = "nps-btn";
+      b.type = "button";
+      b.textContent = i;
+      b.dataset.v = i;
+      b.addEventListener("click", () => {
+        npsScore = i;
+        row.querySelectorAll(".nps-btn").forEach(el => el.classList.remove("picked"));
+        b.classList.add("picked");
+      });
+      row.appendChild(b);
+    }
+  }
+
+  function renderStars() {
+    document.querySelectorAll(".star").forEach(star => {
+      star.addEventListener("click", () => {
+        rating = Number(star.dataset.v);
+        document.querySelectorAll(".star").forEach(s => {
+          s.classList.toggle("filled", Number(s.dataset.v) <= rating);
+        });
+        document.getElementById("reqNote").textContent = "";
+      });
+    });
+  }
+
+  // Every field is required — this sheet is the one guaranteed touch point
+  // before the report, and a partial answer is much weaker market-validation
+  // signal than a complete one. Checked here for a clear inline message, and
+  // re-checked server-side since client "required" is only a UX nicety.
+  function findMissing() {
+    if (!rating) return "Pick a star rating.";
+    if (npsScore === null) return "Pick a recommend score (0-10).";
+    if (mcqKeys.some(k => !mcqAnswers[k])) return "Answer all three quick questions.";
+    if (!document.getElementById("likedText").value.trim()) return "Tell us what's working.";
+    if (!document.getElementById("improveText").value.trim()) return "Tell us what to fix or add.";
+    return null;
+  }
+
+  async function submit() {
+    const missing = findMissing();
+    if (missing) {
+      document.getElementById("reqNote").textContent = missing;
+      return;
+    }
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      const res = await fetch("/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          rating: rating,
+          recommend_score: npsScore,
+          liked: document.getElementById("likedText").value,
+          improve: document.getElementById("improveText").value,
+          mcq_responses: mcqAnswers,
+          context: ctx,
+        }),
+      });
+      if (res.status === 401) { window.location.replace("login.html"); return; }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Could not save feedback.");
+      }
+      showToast("Thanks — that helps a lot.");
+      setTimeout(goToReport, 700);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Submit & view my report →";
+      document.getElementById("reqNote").textContent = e.message || "Couldn't save that — try once more.";
+    }
+  }
+
+  document.getElementById("submitBtn").addEventListener("click", submit);
+
+  // A repeat visit the same day skips straight to the report — one honest ask
+  // per day is plenty; asking on every single round would just train users to
+  // click past it (or bounce) instead of answering for real.
+  (async function init() {
+    try {
+      const res = await fetch("/feedback/status", { credentials: "include" });
+      if (res.status === 401) { window.location.replace("login.html"); return; }
+      const data = await res.json();
+      if (data.given_today) { goToReport(); return; }
+    } catch (e) {
+      // If the status check fails, fail open to showing the sheet rather than
+      // silently skipping feedback collection.
+    }
+
+    loadingNote.style.display = "none";
+
+    // The MCQs are required, so if they fail to load there's nothing valid
+    // to submit — show a retry instead of a sheet that can never be completed.
+    try {
+      const qres = await fetch("/feedback/questions", { credentials: "include" });
+      if (!qres.ok) throw new Error();
+      const qdata = await qres.json();
+      renderMcq(qdata.questions || {});
+    } catch (e) {
+      loadingNote.innerHTML = "Couldn't load the review questions. " +
+        '<a href="javascript:location.reload()">Try again</a>.';
+      loadingNote.style.display = "block";
+      return;
+    }
+
+    sheet.style.display = "block";
+    renderStars();
+    renderNps();
+  })();
+</script>
+
+<script src="assets/brand.js"></script>
+</body>
+</html>

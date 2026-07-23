@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira · Coming Soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
+<style>
+* { margin: 0; padding: 0; }
+body.board { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+
+.stub-card {
+  max-width: 520px; width: 100%; padding: 40px 36px; text-align: center;
+  position: relative; z-index: 1;
+}
+.stub-badge {
+  display: inline-block; font-size: 0.72rem; font-family: var(--fb); font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--board-dark);
+  background: linear-gradient(180deg, #f4e6a8, var(--chalk-yellow));
+  padding: 4px 14px; border-radius: 999px; margin-bottom: 16px;
+}
+.stub-title { font-size: 1.9rem; line-height: 1.3; margin-bottom: 10px; }
+.stub-sub { font-size: 0.92rem; color: var(--muted); line-height: 1.65; margin-bottom: 26px; }
+</style>
+</head>
+<body class="board">
+
+<div class="stub-card board-card pin-yellow">
+  <span class="stub-badge">✦ Premium · Coming soon</span>
+  <h1 class="chalk-title stub-title" id="featureTitle">This feature is on its way.</h1>
+  <p class="stub-sub chalk-sub" id="featureSub">We're building this next — check back soon.</p>
+  <button class="btn-chalk primary" style="font-size:1.05rem" onclick="window.location.href='Welcome.html'">Back to the classroom →</button>
+</div>
+
+<script>
+const feature = new URLSearchParams(window.location.search).get('feature');
+if (feature) {
+  document.getElementById('featureTitle').textContent = decodeURIComponent(feature) + ' is on its way.';
+  document.title = 'Aira · ' + decodeURIComponent(feature);
+}
+</script>
+</body>
+</html>

@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Soft Skills</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -22,14 +23,14 @@
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand-badge { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%); display: flex; align-items: center; justify-content: center; color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 0.9rem; }
 .brand-name { font-family: var(--fd); font-size: 0.95rem; color: var(--chalk); }
-.module-badge { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.4); padding: 3px 10px; border-radius: 999px; }
+.module-badge { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.4); padding: 3px 10px; border-radius: 999px; }
 
-.main { max-width: 900px; margin: 0 auto; padding: 44px 40px 80px; position: relative; z-index: 1; }
+.main { max-width: 860px; margin: 0 auto; padding: 44px 40px 80px; position: relative; z-index: 1; }
 
 /* Hero */
-.hero { margin-bottom: 40px; }
-.hero-title { font-size: 2.2rem; line-height: 1.25; margin: 10px 0; }
-.hero-sub { font-size: 0.95rem; color: var(--muted); line-height: 1.7; max-width: 560px; }
+.hero { margin-bottom: 36px; }
+.hero-title { font-size: 2rem; line-height: 1.25; margin: 10px 0; }
+.hero-sub { font-size: 0.92rem; color: var(--muted); line-height: 1.7; max-width: 560px; }
 
 /* Persona pill */
 .persona-pill {
@@ -40,122 +41,59 @@
 }
 .persona-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-yellow); }
 
-/* ══════════════════════════════════════════════════
-   THE JOURNEY — from the green board to AI.
-   A horizontal timeline of eras; the viewer scrolls
-   through school memories and lands on "today".
-   ══════════════════════════════════════════════════ */
-.journey-wrap { margin: 30px 0 60px; }
-.journey-heading { text-align: center; margin-bottom: 8px; }
-.journey-heading .jh-title { font-size: 1.8rem; }
-.journey-heading .jh-sub { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
-
-.era-track { position: relative; margin-top: 40px; }
-/* the chalk line running down the middle */
-.era-track::before {
-  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px;
-  background: repeating-linear-gradient(180deg, var(--chalk-faint) 0 10px, transparent 10px 18px);
-  transform: translateX(-50%);
-}
-.era {
-  display: flex; align-items: center; gap: 30px; margin-bottom: 46px;
-  opacity: 0; transform: translateY(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.era.visible { opacity: 1; transform: translateY(0); }
-.era:nth-child(even) { flex-direction: row-reverse; }
-.era-half { flex: 1; }
-.era-art {
-  display: flex; justify-content: flex-end;
-}
-.era:nth-child(even) .era-art { justify-content: flex-start; }
-.era-dot {
-  position: relative; z-index: 2; flex-shrink: 0;
-  width: 46px; height: 46px; border-radius: 50%;
-  border: 2.5px dashed var(--chalk-faint);
-  background: var(--board);
-  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-}
-.era.now .era-dot { border-style: solid; border-color: var(--chalk-yellow); box-shadow: 0 0 22px rgba(242,226,160,0.25); }
-.era-year { font-family: var(--fd); font-size: 1rem; color: var(--chalk-yellow); margin-bottom: 4px; }
-.era-name { font-family: var(--fd); font-size: 1.3rem; color: var(--chalk); margin-bottom: 6px; }
-.era-desc { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.6; max-width: 340px; }
-.era:nth-child(odd) .era-half.text { text-align: right; }
-.era:nth-child(odd) .era-half.text .era-desc { margin-left: auto; }
-
-/* Era illustrations — little inline SVG scenes */
-.era-scene {
-  width: 200px; height: 130px; border-radius: 10px;
-  border: 2px dashed var(--dash); padding: 8px;
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 0.4s ease, border-color 0.4s ease;
-}
-.era:hover .era-scene { transform: scale(1.05) rotate(-0.5deg); border-color: rgba(244,241,228,0.5); }
-.era.now .era-scene { border-style: solid; border-color: rgba(242,226,160,0.55); }
-.era-scene svg { width: 100%; height: 100%; }
-
-/* Skills grid */
-.section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; font-family: var(--fb); }
+.section-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; font-family: var(--fb); }
 .section-label::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 8px, transparent 8px 13px); }
 
-.skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
-.skill-card { padding: 22px 20px; cursor: pointer; }
-.skill-card:hover { transform: translateY(-3px); }
-.skill-card.selected { border-color: var(--chalk-yellow); border-style: solid; background: rgba(242,226,160,0.05); }
-.skill-icon { font-size: 1.3rem; margin-bottom: 10px; }
-.skill-name { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 5px; }
-.skill-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
-.skill-tag { display: inline-block; margin-top: 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.35); padding: 2px 8px; border-radius: 999px; }
+/* Track picker — all 6 always open. Nothing is ever locked; the constraint
+   is a daily rep quota shown once, up top, not per-card. */
+.track-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 8px; }
+.track-card { padding: 22px 20px; cursor: pointer; position: relative; }
+.track-card:hover { transform: translateY(-3px); }
+.track-card.selected { border-color: var(--chalk-yellow); border-style: solid; background: rgba(242,226,160,0.06); }
+.track-icon { font-size: 1.3rem; margin-bottom: 10px; }
+.track-name { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 5px; }
+.track-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.track-tag { display: inline-block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.35); padding: 2px 8px; border-radius: 999px; margin-bottom: 12px; }
+.track-fw-link {
+  display: block; font-size: 0.8rem; color: var(--muted); text-decoration: none;
+  border-top: 1px dashed var(--dash); padding-top: 10px; margin-top: 2px; transition: color 0.2s;
+}
+.track-fw-link:hover { color: var(--chalk-yellow); }
 
-/* Teach panel (framework + example from the server) */
-.teach-panel { margin-bottom: 40px; border: 2px solid rgba(242,226,160,0.4); border-radius: 12px; padding: 26px 26px; background: rgba(242,226,160,0.03); }
-.teach-loading { color: var(--muted); font-style: italic; font-size: 0.88rem; }
-.fw-name { font-family: var(--fd); font-size: 1.35rem; color: var(--chalk-yellow); margin-bottom: 6px; }
-.fw-why { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.65; margin-bottom: 16px; }
-.fw-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.fw-step { font-size: 0.8rem; color: var(--chalk); border: 1.5px dashed var(--dash); border-radius: 999px; padding: 5px 12px; }
-.fw-step span { color: var(--muted); }
-.fw-example-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 6px; opacity: 0.85; }
-.fw-example { font-size: 0.9rem; color: var(--chalk); line-height: 1.7; font-style: italic; border-left: 3px solid rgba(242,226,160,0.5); padding-left: 14px; margin-bottom: 18px; }
-.project-pick { margin-bottom: 18px; }
-.project-pick label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
-.project-pick select {
+/* Quota pill — "how many reps today", not "which tracks are yours" */
+.quota-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  border: 1.5px solid rgba(244,241,228,0.18); background: rgba(244,241,228,0.04);
+  font-size: 0.82rem; color: var(--chalk-dim); margin-top: 14px;
+}
+.quota-pill .quota-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-green); flex-shrink: 0; }
+.quota-pill.exhausted .quota-dot { background: #d5675f; }
+.quota-pill.exhausted { color: var(--chalk-dim); border-color: rgba(213,103,95,0.3); }
+
+/* Practice panel — appears once a track is chosen; this page's one job */
+.practice-panel { padding: 26px 26px; margin-top: 26px; scroll-margin-top: 90px; }
+.pp-title { font-family: var(--fd); font-size: 1.3rem; color: var(--chalk); margin-bottom: 14px; }
+.pp-message { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.65; margin-bottom: 4px; }
+.pp-project-pick { margin-bottom: 18px; }
+.pp-project-pick label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+.pp-project-pick select {
   width: 100%; max-width: 420px; padding: 10px 12px; border-radius: 8px;
   border: 1.5px dashed var(--dash); background: #16311f; color: var(--chalk);
   font-family: var(--fb); font-size: 0.88rem;
 }
+.pp-loading { font-size: 0.86rem; color: var(--muted); font-style: italic; }
+.pp-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+.pp-fw-link { font-size: 0.82rem; color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--dash); }
+.pp-fw-link:hover { color: var(--chalk-yellow); }
 
-/* What to expect */
-.expect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
-.expect-card { padding: 18px; text-align: center; }
-.expect-num { font-family: var(--fd); font-size: 1.7rem; color: rgba(244,241,228,0.2); line-height: 1; margin-bottom: 8px; }
-.expect-text { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
-.expect-text strong { color: var(--chalk); display: block; margin-bottom: 3px; font-size: 0.88rem; font-family: var(--fd); }
-
-/* CTA block */
-.cta-block {
-  padding: 28px 28px; border-radius: 12px;
-  border: 2px solid rgba(242,226,160,0.4);
-  background: rgba(242,226,160,0.03);
-  display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  flex-wrap: wrap;
+@media (max-width: 860px) and (min-width: 721px) {
+  .track-grid { grid-template-columns: repeat(2, 1fr); }
 }
-.cta-text .cta-title { font-family: var(--fd); font-size: 1.25rem; color: var(--chalk); margin-bottom: 4px; }
-.cta-text .cta-sub { font-size: 0.84rem; color: var(--muted); }
-
 @media (max-width: 720px) {
   .main { padding: 28px 16px 60px; }
   .header { padding: 12px 16px; }
-  .skills-grid { grid-template-columns: 1fr; }
-  .expect-grid { grid-template-columns: 1fr; }
-  .cta-block { flex-direction: column; }
-  /* timeline collapses to single column */
-  .era-track::before { left: 22px; }
-  .era, .era:nth-child(even) { flex-direction: column; align-items: flex-start; gap: 12px; padding-left: 54px; position: relative; }
-  .era-dot { position: absolute; left: 0; top: 0; }
-  .era:nth-child(odd) .era-half.text { text-align: left; }
-  .era:nth-child(odd) .era-half.text .era-desc { margin-left: 0; }
-  .era-art, .era:nth-child(even) .era-art { justify-content: flex-start; }
+  .track-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -165,7 +103,7 @@
   <div class="header-left">
     <button class="back-btn" onclick="window.location.href='Welcome.html'">&#8592; Classroom</button>
     <div class="brand">
-      <div class="brand-badge">A</div>
+      <div class="brand-badge"></div>
       <div class="brand-name">Aira</div>
     </div>
   </div>
@@ -176,252 +114,176 @@
 
   <div class="hero">
     <div class="chalk-tag">Period 02 of 03 · Elocution &amp; expression</div>
-    <h1 class="chalk-title hero-title">The skills that get you<br><em>hired and help you thrive.</em></h1>
-    <p class="hero-sub chalk-sub">Technical knowledge opens the door. How you communicate, carry yourself, and think under pressure is what keeps you in the room. This period trains exactly that.</p>
+    <h1 class="chalk-title hero-title">Pick a skill.<br><em>Practice it out loud.</em></h1>
+    <p class="hero-sub chalk-sub">Six conversations decide most interviews. Choose one below to start practicing right away — or read the framework first if you want the structure before you speak.</p>
     <div class="persona-pill" id="personaPill" style="display:none">
       <div class="persona-dot"></div>
       <span>Personalised for <strong id="personaNamePill">you</strong></span>
     </div>
-  </div>
-
-  <!-- ═══ THE JOURNEY: from the green board to AI ═══ -->
-  <div class="journey-wrap">
-    <div class="journey-heading">
-      <div class="chalk-tag">How far we've come</div>
-      <h2 class="chalk-title jh-title">From the green board<br>to <em>a coach that knows you.</em></h2>
-      <p class="jh-sub chalk-sub">Speaking practice has always been part of school. Only the tools changed.</p>
-    </div>
-
-    <div class="era-track">
-
-      <!-- Era 1: the green board -->
-      <div class="era">
-        <div class="era-half text">
-          <div class="era-year">The early 2000s</div>
-          <div class="era-name">The green board era</div>
-          <p class="era-desc">Chalk squeaking, duster clouds, and "stand up and read your essay aloud." One teacher, forty students, and thirty seconds of feedback if you were lucky.</p>
-        </div>
-        <div class="era-dot">🖍️</div>
-        <div class="era-half era-art">
-          <div class="era-scene">
-            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
-              <rect x="20" y="12" width="160" height="86" rx="4" fill="#16311f" stroke="rgba(244,241,228,0.4)" stroke-width="2"/>
-              <rect x="14" y="98" width="172" height="8" rx="2" fill="#7a5230"/>
-              <text x="36" y="42" font-family="Schoolbell, cursive" font-size="15" fill="rgba(244,241,228,0.8)">a b c d…</text>
-              <path d="M36 58 Q 70 52 104 58 T 164 56" stroke="rgba(244,241,228,0.45)" stroke-width="2" fill="none"/>
-              <path d="M36 74 Q 66 70 96 74 T 148 73" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
-              <rect x="30" y="99" width="18" height="5" rx="2" fill="#f4f1e4"/>
-              <rect x="54" y="99" width="22" height="6" rx="2" fill="#5a3a20" stroke="rgba(0,0,0,0.3)"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Era 2: whiteboard -->
-      <div class="era">
-        <div class="era-half text">
-          <div class="era-year">The 2010s</div>
-          <div class="era-name">Whiteboards &amp; projectors</div>
-          <p class="era-desc">Markers replaced chalk, slides replaced handwriting. Group discussions and PowerPoint presentations — but feedback was still one-size-fits-all.</p>
-        </div>
-        <div class="era-dot">📽️</div>
-        <div class="era-half era-art">
-          <div class="era-scene">
-            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
-              <rect x="24" y="14" width="152" height="84" rx="4" fill="rgba(244,241,228,0.85)" stroke="rgba(244,241,228,0.5)" stroke-width="2"/>
-              <line x1="40" y1="36" x2="120" y2="36" stroke="#2266aa" stroke-width="3" stroke-linecap="round"/>
-              <line x1="40" y1="52" x2="150" y2="52" stroke="#cc3344" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="40" y1="66" x2="132" y2="66" stroke="#117744" stroke-width="2.5" stroke-linecap="round"/>
-              <circle cx="150" cy="82" r="9" fill="none" stroke="#2266aa" stroke-width="2.5"/>
-              <rect x="86" y="102" width="28" height="6" rx="3" fill="rgba(244,241,228,0.35)"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Era 3: online -->
-      <div class="era">
-        <div class="era-half text">
-          <div class="era-year">The 2020s</div>
-          <div class="era-name">Screens &amp; video calls</div>
-          <p class="era-desc">Classrooms moved into laptops. Recorded lectures, video interviews, online tests — practice anywhere, but still nobody listening to <em>how you speak</em>.</p>
-        </div>
-        <div class="era-dot">💻</div>
-        <div class="era-half era-art">
-          <div class="era-scene">
-            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
-              <rect x="46" y="18" width="108" height="70" rx="6" fill="#16311f" stroke="rgba(244,241,228,0.5)" stroke-width="2"/>
-              <rect x="58" y="30" width="38" height="28" rx="3" fill="none" stroke="rgba(244,241,228,0.4)" stroke-width="1.5"/>
-              <circle cx="77" cy="41" r="6" fill="none" stroke="rgba(244,241,228,0.5)" stroke-width="1.5"/>
-              <path d="M68 56 Q 77 48 86 56" stroke="rgba(244,241,228,0.5)" stroke-width="1.5" fill="none"/>
-              <rect x="104" y="30" width="38" height="28" rx="3" fill="none" stroke="rgba(242,226,160,0.5)" stroke-width="1.5"/>
-              <circle cx="123" cy="41" r="6" fill="none" stroke="rgba(242,226,160,0.6)" stroke-width="1.5"/>
-              <path d="M114 56 Q 123 48 132 56" stroke="rgba(242,226,160,0.6)" stroke-width="1.5" fill="none"/>
-              <rect x="58" y="66" width="84" height="12" rx="3" fill="rgba(244,241,228,0.12)"/>
-              <path d="M38 92 L162 92 L172 104 L28 104 Z" fill="rgba(244,241,228,0.25)"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Era 4: NOW — Aira -->
-      <div class="era now">
-        <div class="era-half text">
-          <div class="era-year">Today · you are here</div>
-          <div class="era-name">An AI that actually listens</div>
-          <p class="era-desc">Aira hears every word, scores your fluency, clarity and confidence, and coaches you one-on-one — the personal attention the green board era never had time for. Same classroom soul. A teacher for every single student.</p>
-        </div>
-        <div class="era-dot">✨</div>
-        <div class="era-half era-art">
-          <div class="era-scene">
-            <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="56" r="30" fill="none" stroke="rgba(242,226,160,0.7)" stroke-width="2.5" stroke-dasharray="6 5"/>
-              <text x="100" y="66" font-family="Schoolbell, cursive" font-size="26" fill="#f2e2a0" text-anchor="middle">A</text>
-              <path d="M42 56 Q 55 40 68 56" stroke="rgba(244,241,228,0.5)" stroke-width="2" fill="none"/>
-              <path d="M34 56 Q 52 30 72 56" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
-              <path d="M132 56 Q 145 40 158 56" stroke="rgba(244,241,228,0.5)" stroke-width="2" fill="none"/>
-              <path d="M128 56 Q 148 30 166 56" stroke="rgba(244,241,228,0.3)" stroke-width="2" fill="none"/>
-              <line x1="70" y1="102" x2="74" y2="90" stroke="rgba(183,217,168,0.8)" stroke-width="3" stroke-linecap="round"/>
-              <line x1="84" y1="102" x2="88" y2="84" stroke="rgba(183,217,168,0.8)" stroke-width="3" stroke-linecap="round"/>
-              <line x1="98" y1="102" x2="102" y2="78" stroke="rgba(242,226,160,0.9)" stroke-width="3" stroke-linecap="round"/>
-              <line x1="112" y1="102" x2="116" y2="88" stroke="rgba(169,201,224,0.8)" stroke-width="3" stroke-linecap="round"/>
-              <line x1="126" y1="102" x2="130" y2="82" stroke="rgba(169,201,224,0.8)" stroke-width="3" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
+    <div class="quota-pill" id="quotaPill" style="display:none">
+      <div class="quota-dot"></div>
+      <span id="quotaText"></span>
     </div>
   </div>
 
-  <div class="section-label">Pick your track</div>
-  <div class="skills-grid">
-    <div class="skill-card board-card" data-track="communication" onclick="selectTrack('communication')">
-      <div class="skill-icon">&#128172;</div>
-      <div class="skill-name">Communication practice</div>
-      <p class="skill-desc">Speak clearly and to the point on any prompt, using the PREP framework: Point, Reason, Example, Point.</p>
-      <div class="skill-tag">Clarity · Structure</div>
-    </div>
-    <div class="skill-card board-card" data-track="intro" onclick="selectTrack('intro')">
-      <div class="skill-icon">&#127908;</div>
-      <div class="skill-name">Self-introduction</div>
-      <p class="skill-desc">Nail "tell me about yourself" with a simple order: who you are now, the past that got you here, where you're headed.</p>
-      <div class="skill-tag">Present · Past · Future</div>
-    </div>
-    <div class="skill-card board-card" data-track="project" onclick="selectTrack('project')">
-      <div class="skill-icon">&#9650;</div>
-      <div class="skill-name">Talk about your project</div>
-      <p class="skill-desc">Explain your own resume project without freezing: what, why, how, the impact, and your specific role in it.</p>
-      <div class="skill-tag">Ownership · Depth</div>
-    </div>
-  </div>
+  <div class="section-label">Choose what to practice</div>
+  <div class="track-grid" id="trackGrid"></div>
 
-  <!-- Teaching content arrives from the server (persona-personalised) -->
-  <div class="teach-panel" id="teachPanel" style="display:none"></div>
-
-  <div class="section-label">What a session looks like</div>
-  <div class="expect-grid">
-    <div class="expect-card board-card">
-      <div class="expect-num">01</div>
-      <div class="expect-text"><strong>Get a prompt</strong>Receive a speaking prompt (guided or free talk mode)</div>
+  <div class="practice-panel board-card pin-yellow" id="practicePanel" style="display:none;">
+    <div class="pp-title" id="ppTitle"></div>
+    <div class="pp-message" id="ppMessage"></div>
+    <div class="pp-project-pick" id="ppProjectPick" style="display:none;"></div>
+    <div class="pp-actions">
+      <button class="btn-chalk primary" style="font-size:1.1rem" id="startBtn" disabled>Start speaking practice &#8594;</button>
+      <a class="pp-fw-link" id="ppFwLink" href="#" target="_blank">Read the framework first &#8594;</a>
     </div>
-    <div class="expect-card board-card">
-      <div class="expect-num">02</div>
-      <div class="expect-text"><strong>Speak your answer</strong>Use your mic or type your response in real time</div>
-    </div>
-    <div class="expect-card board-card">
-      <div class="expect-num">03</div>
-      <div class="expect-text"><strong>Get scored &amp; hear the bell</strong>Fluency, clarity and confidence rated after every session</div>
-    </div>
-  </div>
-
-  <div class="cta-block">
-    <div class="cta-text">
-      <div class="cta-title">Ready to practice?</div>
-      <div class="cta-sub" id="ctaSub">Pick a track above — Aira will teach you the framework first.</div>
-    </div>
-    <button class="btn-chalk primary" style="font-size:1.15rem" id="startBtn" disabled>Start speaking practice &#8594;</button>
   </div>
 
 </div>
 
+<script src="assets/aira.js"></script>
 <script>
+
+// Card copy is a navigation teaser only — the actual framework (name, steps, hints,
+// example) is designed per user from their résumé by the backend agent, so tags here
+// describe the SKILL, not a fixed framework name.
+const TRACKS = [
+  { id: "communication", icon: "&#128172;", label: "Communication practice", desc: "Make one clear point and back it up so a listener follows you easily.", tag: "Clarity · Structure" },
+  { id: "intro", icon: "&#127908;", label: "Self-introduction", desc: "Nail “tell me about yourself”: who you are now, what got you here, where you’re headed.", tag: "Relevance · Flow" },
+  { id: "project", icon: "&#9650;", label: "Talk about your project", desc: "Explain your own resume project without freezing — with real depth and ownership.", tag: "Ownership · Depth" },
+  { id: "voice", icon: "&#127925;", label: "Voice module", desc: "Work on how you sound: pace, pauses instead of filler words, pitch, and emphasis.", tag: "Pace · Pitch · Punch" },
+  { id: "leadership", icon: "&#129517;", label: "Leadership stories", desc: "Turn an ordinary moment into proof of initiative and ownership.", tag: "Initiative · Impact" },
+  { id: "technical", icon: "&#128295;", label: "Technical communication", desc: "Explain complex ideas simply enough for a non-technical interviewer.", tag: "Simplify · Connect" },
+];
+
 let selectedTrack = null;
 let selectedProject = null;
+// All 6 tracks are always open — nothing to lock, so nothing to regret picking.
+// The only constraint is today's rep quota, fetched once from /comm/quota.
+let quota = null; // { sessionsUsedToday, maxFreeSessionsPerDay, remainingToday }
 
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// Reveal the eras as they scroll into view.
-const eraObserver = new IntersectionObserver(function(entries) {
-  entries.forEach(function(e) {
-    if (e.isIntersecting) { e.target.classList.add('visible'); eraObserver.unobserve(e.target); }
-  });
-}, { threshold: 0.25 });
-document.querySelectorAll('.era').forEach(function(el) { eraObserver.observe(el); });
+// Render the track grid once. Every card looks and behaves identically —
+// there is no locked/unlocked state to reflect anymore.
+document.getElementById('trackGrid').innerHTML = TRACKS.map(t =>
+  '<div class="track-card board-card" data-track="' + t.id + '" onclick="pickTrack(\'' + t.id + '\')">' +
+    '<div class="track-icon">' + t.icon + '</div>' +
+    '<div class="track-name">' + escHtml(t.label) + '</div>' +
+    '<p class="track-desc">' + escHtml(t.desc) + '</p>' +
+    '<div class="track-tag">' + escHtml(t.tag) + '</div>' +
+    '<a class="track-fw-link" href="framework.html?track=' + t.id + '" target="_blank" onclick="event.stopPropagation()">Read the framework &#8594;</a>' +
+  '</div>'
+).join('');
 
-async function selectTrack(track) {
+function trackLabel(id) {
+  const t = TRACKS.find(x => x.id === id);
+  return t ? t.label : id;
+}
+
+function renderQuota() {
+  if (!quota) return;
+  const pill = document.getElementById('quotaPill');
+  const text = document.getElementById('quotaText');
+  const exhausted = quota.remainingToday <= 0;
+  pill.style.display = 'inline-flex';
+  pill.classList.toggle('exhausted', exhausted);
+  text.textContent = exhausted
+    ? 'Today’s 2 free sessions used — more tomorrow'
+    : quota.sessionsUsedToday + ' of ' + quota.maxFreeSessionsPerDay + ' free sessions used today';
+}
+
+async function fetchQuota() {
+  try {
+    const res = await fetch('/comm/quota', { credentials: 'include' });
+    if (!res.ok) return;
+    quota = await res.json();
+    renderQuota();
+  } catch (e) { /* quota is informational only — page still works without it */ }
+}
+
+function pickTrack(track) {
   selectedTrack = track;
   selectedProject = null;
-  document.querySelectorAll('.skill-card').forEach(c =>
-    c.classList.toggle('selected', c.dataset.track === track));
+  document.querySelectorAll('.track-card').forEach(c => c.classList.toggle('selected', c.dataset.track === track));
 
-  const panel = document.getElementById('teachPanel');
+  const panel = document.getElementById('practicePanel');
   panel.style.display = 'block';
-  panel.innerHTML = '<div class="teach-loading">Aira is preparing your framework and a model example…</div>';
+  document.getElementById('ppTitle').textContent = 'Ready to practice: ' + trackLabel(track);
+  document.getElementById('ppMessage').textContent = '';
+  document.getElementById('ppFwLink').href = 'framework.html?track=' + encodeURIComponent(track);
+  document.getElementById('ppFwLink').style.display = 'inline';
+
+  preparePractice(track);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Shown only when they actually try to START a session with no reps left —
+// browsing/picking a track and reading its framework always stays free.
+function showQuotaExhausted() {
+  const panel = document.getElementById('practicePanel');
+  panel.style.display = 'block';
+  document.getElementById('ppMessage').textContent =
+    'You’ve used today’s ' + (quota ? quota.maxFreeSessionsPerDay : 2) + ' free practice sessions — come back tomorrow for more, or read the framework in the meantime.';
+  setStartEnabled(false);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Only the "project" track needs anything more from the server before it can
+// start — which of the student's real resume projects they want to talk about.
+async function preparePractice(track) {
+  const pick = document.getElementById('ppProjectPick');
+  pick.style.display = 'none';
+  pick.innerHTML = '';
   setStartEnabled(false);
 
+  if (track !== 'project') { setStartEnabled(true); return; }
+
+  pick.style.display = 'block';
+  pick.innerHTML = '<div class="pp-loading">Loading your projects…</div>';
   try {
-    const res = await fetch('/comm/setup?track=' + encodeURIComponent(track), { credentials: 'include' });
+    const res = await fetch('/comm/setup?track=project', { credentials: 'include' });
     if (res.status === 401) { window.location.replace('login.html'); return; }
     const d = await res.json();
-    if (!res.ok || !d.framework) throw new Error(d.error || 'Could not load this track.');
-
-    let html = '<div class="fw-name">' + escHtml(d.framework.name) + '</div>' +
-      '<div class="fw-why">' + escHtml(d.framework.why) + '</div>' +
-      '<div class="fw-steps">' +
-      (d.framework.steps || []).map(s =>
-        '<span class="fw-step">' + escHtml(s.label) + ' <span>— ' + escHtml(s.hint) + '</span></span>').join('') +
-      '</div>' +
-      '<div class="fw-example-label">A model example, tuned to you</div>' +
-      '<div class="fw-example">' + escHtml(d.example) + '</div>';
-
-    if (track === 'project') {
-      const projects = d.projects || [];
-      if (!projects.length) {
-        html += '<div class="fw-why" style="margin-bottom:0;">No resume projects found — complete onboarding with a resume to use this track.</div>';
-        panel.innerHTML = html;
-        return;
-      }
-      html += '<div class="project-pick"><label for="projectSelect">Which project do you want to talk about?</label>' +
-        '<select id="projectSelect">' +
-        projects.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + '</option>').join('') +
-        '</select></div>';
+    if (typeof d.sessionsUsedToday === 'number') {
+      quota = { sessionsUsedToday: d.sessionsUsedToday, maxFreeSessionsPerDay: d.maxFreeSessionsPerDay,
+                remainingToday: d.maxFreeSessionsPerDay - d.sessionsUsedToday };
+      renderQuota();
     }
+    if (!res.ok) throw new Error(d.error || 'Could not load your projects.');
 
-    panel.innerHTML = html;
-    if (track === 'project') {
-      selectedProject = document.getElementById('projectSelect').value;
-      document.getElementById('projectSelect').addEventListener('change', e => { selectedProject = e.target.value; });
+    const projects = d.projects || [];
+    if (!projects.length) {
+      pick.innerHTML = '<div class="pp-loading">No resume projects found — complete onboarding with a resume to use this track.</div>';
+      return;
     }
+    pick.innerHTML = '<label for="projectSelect">Which project do you want to talk about?</label>' +
+      '<select id="projectSelect">' +
+      projects.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + '</option>').join('') +
+      '</select>';
+    selectedProject = document.getElementById('projectSelect').value;
+    document.getElementById('projectSelect').addEventListener('change', e => { selectedProject = e.target.value; });
     setStartEnabled(true);
-    document.getElementById('ctaSub').textContent = 'Read the framework, then start — questions adapt to how you answer.';
   } catch (err) {
-    panel.innerHTML = '<div class="teach-loading">' + escHtml(err.message || 'Could not load this track.') + '</div>';
+    pick.innerHTML = '<div class="pp-loading">' + escHtml(err.message || 'Could not load your projects.') + '</div>';
   }
 }
 
 function setStartEnabled(on) {
-  const btn = document.getElementById('startBtn');
-  btn.disabled = !on;
+  document.getElementById('startBtn').disabled = !on;
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {
   if (!selectedTrack) return;
+  // Check the quota we already have client-side first, so exhausting it doesn't
+  // pop an empty tab that just shows an error — the backend still enforces this
+  // for real on /comm/start regardless.
+  if (quota && quota.remainingToday <= 0) { showQuotaExhausted(); return; }
   let url = 'practice.html?track=' + encodeURIComponent(selectedTrack);
   if (selectedTrack === 'project' && selectedProject != null) url += '&project_id=' + encodeURIComponent(selectedProject);
-  window.location.href = url;
+  window.open(url, '_blank');
 });
 
 // Auth guard — server truth, not localStorage (nothing writes aira_user anymore;
@@ -436,8 +298,15 @@ document.getElementById('startBtn').addEventListener('click', () => {
       document.getElementById('personaNamePill').textContent = user.name.split(' ')[0];
       document.getElementById('personaPill').style.display = 'inline-flex';
     }
+    await fetchQuota();
+
+    // Deep-link support: Welcome.html's "continue where you left off" nudge links
+    // here with ?track=<id> — reuses pickTrack() exactly as a card click would.
+    const preselect = new URLSearchParams(window.location.search).get('track');
+    if (preselect && TRACKS.some(t => t.id === preselect)) pickTrack(preselect);
   } catch(e) { /* network hiccup — page still works, tracks re-check auth on use */ }
 })();
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

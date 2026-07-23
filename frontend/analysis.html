@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aira · Full Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/chalkboard.css">
+<style>
+* { margin: 0; padding: 0; }
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 40px; border-bottom: 2px dashed var(--dash);
+  background: rgba(18,38,28,0.95); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.back-btn {
+  display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); cursor: pointer;
+  border: 1.5px dashed var(--dash); background: none; font-family: var(--fb); padding: 5px 12px; border-radius: 8px; transition: all 0.2s;
+}
+.back-btn:hover { color: var(--chalk); border-color: var(--chalk); }
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-badge { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%); display: flex; align-items: center; justify-content: center; color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 0.9rem; }
+.brand-name { font-family: var(--fd); font-size: 0.95rem; color: var(--chalk); }
+.premium-badge {
+  font-size: 0.72rem; font-family: var(--fb); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--board-dark); background: linear-gradient(180deg, #f4e6a8, var(--chalk-yellow));
+  padding: 4px 12px; border-radius: 999px;
+}
+
+.main { max-width: 780px; margin: 0 auto; padding: 40px 40px 90px; position: relative; z-index: 1; }
+
+.hero { margin-bottom: 26px; }
+.hero-title { font-size: 2rem; line-height: 1.25; margin: 10px 0 8px; }
+.hero-sub { font-size: 0.92rem; color: var(--muted); line-height: 1.7; max-width: 640px; }
+.free-note { margin-top: 14px; font-size: 0.82rem; color: var(--chalk-green); border: 1.5px dashed rgba(183,217,168,0.4); border-radius: 999px; padding: 5px 13px; display: inline-block; }
+
+.loading-note { padding: 40px 0; text-align: center; color: var(--muted); font-style: italic; }
+
+.section { margin-bottom: 34px; }
+.section-heading {
+  font-family: var(--fd); font-size: 1.35rem; color: var(--chalk);
+  margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+}
+.section-heading::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 8px, transparent 8px 13px); }
+.section-num { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--chalk-yellow); font-family: var(--fb); }
+.section-sub { font-size: 0.86rem; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+
+.content-block { padding: 18px 20px; margin-bottom: 16px; }
+.block-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--chalk-yellow); margin-bottom: 8px; opacity: 0.85; }
+.block-text { font-size: 0.92rem; color: var(--chalk); line-height: 1.7; }
+.block-muted { font-size: 0.86rem; color: var(--muted); font-style: italic; }
+
+.tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.tag { font-size: 0.8rem; padding: 4px 12px; border-radius: 999px; border: 1.5px dashed var(--dash); color: var(--chalk); }
+.tag.strength { border-color: rgba(183,217,168,0.55); color: var(--chalk-green); }
+.tag.weakness { border-color: rgba(234,172,184,0.55); color: var(--chalk-pink); }
+
+/* Per-dimension analysis card */
+.dim-card { padding: 20px 22px; margin-bottom: 16px; }
+.dim-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.dim-card-name { font-family: var(--fd); font-size: 1.25rem; color: var(--chalk); }
+.dim-level { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 11px; border-radius: 999px; border: 1.5px dashed var(--dash); }
+.dim-level.Strong { color: var(--chalk-green); border-color: rgba(183,217,168,0.5); }
+.dim-level.Moderate { color: var(--chalk-yellow); border-color: rgba(242,226,160,0.5); }
+.dim-level.Developing { color: var(--chalk-pink); border-color: rgba(234,172,184,0.5); }
+.dim-part { margin-bottom: 12px; }
+.dim-part:last-child { margin-bottom: 0; }
+.dim-part .p-label { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 3px; }
+.dim-part .p-text { font-size: 0.9rem; color: var(--chalk-dim); line-height: 1.65; }
+.dim-part.guidance { border-left: 3px solid rgba(242,226,160,0.5); padding-left: 12px; }
+.dim-part.guidance .p-label { color: var(--chalk-yellow); }
+.dim-part.guidance .p-text { color: var(--chalk); }
+
+.group-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 20px 0 10px; }
+.group-label.focus { color: var(--chalk-pink); }
+.group-label.building { color: var(--chalk-yellow); }
+.group-label.strength { color: var(--chalk-green); }
+
+.score-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.score-card { padding: 16px 18px; text-align: center; }
+.score-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+.score-val { font-family: var(--fd); font-size: 2rem; color: var(--chalk-yellow); }
+.score-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+.next-step {
+  padding: 24px 26px; border-radius: 12px;
+  border: 2px solid rgba(242,226,160,0.45); background: rgba(242,226,160,0.03);
+}
+.next-step .ns-title { font-family: var(--fd); font-size: 1.25rem; color: var(--chalk); margin-bottom: 8px; }
+.next-step .ns-text { font-size: 0.92rem; color: var(--chalk-dim); line-height: 1.7; margin-bottom: 14px; }
+.next-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* The CTAs are anchors — render them as proper, pill-rounded buttons. */
+.next-actions a.btn-chalk { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; }
+
+.empty-block { padding: 24px; border-radius: 10px; text-align: center; border: 2px dashed var(--dash); color: var(--muted); font-size: 0.86rem; font-style: italic; line-height: 1.6; }
+
+/* Footer — finish reviewing / keep a copy */
+.footer-actions {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  margin-top: 30px; padding-top: 24px; border-top: 2px dashed var(--dash);
+}
+.footer-actions .btn-chalk { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; }
+.footer-hint { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
+  background: rgba(18,38,28,0.97); color: var(--chalk); border: 1.5px dashed var(--dash);
+  padding: 9px 15px; border-radius: 999px; font-size: 0.8rem; font-family: var(--fb);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s, bottom 0.25s; z-index: 100;
+}
+.toast.show { opacity: 1; bottom: 40px; }
+.toast.success { border-color: rgba(242,226,160,0.6); color: var(--chalk-yellow); }
+
+@media (max-width: 700px) {
+  .main { padding: 24px 16px 70px; }
+  .header { padding: 12px 16px; }
+  .score-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body class="board">
+
+<header class="header">
+  <div class="header-left">
+    <button class="back-btn" onclick="window.location.href='report.html'">&#8592; Report</button>
+    <div class="brand">
+      <div class="brand-badge"></div>
+      <div class="brand-name">Aira</div>
+    </div>
+  </div>
+  <div class="premium-badge">✦ Premium</div>
+</header>
+
+<div class="main">
+  <div class="hero">
+    <div class="chalk-tag">The deep read</div>
+    <h1 class="chalk-title hero-title" id="heroTitle">Your full analysis.</h1>
+    <p class="hero-sub chalk-sub">Every score, explained the way a coach would sit down and walk you through it — what Aira saw, why it matters, and the exact next step for each area.</p>
+    <div class="free-note">✨ Premium — free for everyone while we're in early access.</div>
+  </div>
+
+  <div class="loading-note" id="loadingNote">Opening your full analysis…</div>
+  <div id="analysisBody" style="display:none"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/aira.js"></script>
+<script>
+
+const DIM_LABELS = {
+  communication_style: 'Communication',
+  teamwork_style: 'Teamwork',
+  leadership_tendencies: 'Leadership',
+  decision_making_approach: 'Decisions',
+  problem_solving_behavior: 'Problem-solving',
+  professional_values: 'Values',
+  career_goals: 'Goals',
+  work_culture_preferences: 'Work culture',
+};
+const RADAR_ORDER = [
+  'communication_style', 'teamwork_style', 'leadership_tendencies', 'decision_making_approach',
+  'problem_solving_behavior', 'professional_values', 'career_goals', 'work_culture_preferences',
+];
+const DIM_INFO = {
+  communication_style:      'How clearly you get your ideas across so people follow you easily.',
+  teamwork_style:           'How you work alongside others — sharing, listening, and pulling your weight.',
+  leadership_tendencies:    'How you step up and move things forward — with or without a title.',
+  decision_making_approach: 'How you make choices — weighing options and trade-offs, even when unsure.',
+  problem_solving_behavior: 'How you break a hard problem down and work your way to an answer.',
+  professional_values:      'What matters to you at work — the principles behind how you act.',
+  career_goals:             'How clear and focused you are about where you want to go.',
+  work_culture_preferences: 'The kind of environment and pace where you do your best work.',
+};
+const LEVEL_MEANING = {
+  Strong:     'You\'re already confident here. Lean on it — it\'s a real asset in interviews.',
+  Moderate:   'A solid base. A little focused practice tips this into a genuine strength.',
+  Developing: 'Your biggest opportunity right now. Small, steady work here pays off the fastest.',
+};
+// Concrete, action-oriented nudge per level — the "guidance" layer.
+const LEVEL_ACTION = {
+  Strong:     'Keep leaning on it — and use it to help pull a weaker area up to match.',
+  Moderate:   'One or two focused practice rounds will tip this into a clear strength.',
+  Developing: 'Make this one of your next Soft Skills rounds — it\'s where practice moves the needle most.',
+};
+const LEVEL_RANK = { Developing: 0, Moderate: 1, Strong: 2 };
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function planText(plan) {
+  if (Array.isArray(plan)) return plan.join(' ');
+  if (plan && typeof plan === 'object') return Object.values(plan).join(' ');
+  return String(plan);
+}
+function block(label, text) {
+  return '<div class="content-block board-card"><div class="block-label">' + esc(label) + '</div><div class="block-text">' + esc(String(text)) + '</div></div>';
+}
+function tagsBlock(label, arr, cls) {
+  const tags = arr.map(function(t) { return '<span class="tag ' + cls + '">' + esc(t) + '</span>'; }).join('');
+  return '<div class="content-block board-card"><div class="block-label">' + esc(label) + '</div><div class="tags-row">' + tags + '</div></div>';
+}
+function scoreCard(label, val, suffix) {
+  return '<div class="score-card board-card"><div class="score-label">' + label + '</div><div class="score-val">' + val + '</div><div class="score-sub">' + suffix + '</div></div>';
+}
+function avgScores(list) {
+  let f = 0, c = 0, conf = 0, n = 0;
+  (list || []).forEach(function(s) {
+    if (s && s.fluency != null) { f += s.fluency; c += (s.clarity || 0); conf += (s.confidence || 0); n++; }
+  });
+  return n ? { fluency: Math.round(f/n), clarity: Math.round(c/n), confidence: Math.round(conf/n), count: n } : { count: 0 };
+}
+function sparklineBlock(speaking) {
+  const rows = speaking.slice().reverse();
+  if (rows.length < 2) return '';
+  const W = 260, H = 48, PAD = 4;
+  function line(key, color) {
+    const pts = rows.map(function(s, i) {
+      const v = Math.max(0, Math.min(10, s[key] == null ? 0 : s[key]));
+      const x = PAD + (i * (W - 2 * PAD)) / (rows.length - 1);
+      const y = H - PAD - (v * (H - 2 * PAD)) / 10;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    return '<polyline fill="none" stroke="' + color + '" stroke-width="1.5" points="' + pts + '"/>';
+  }
+  return '<div class="content-block board-card"><div class="block-label">Trend across rounds</div>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" style="margin-top:6px;max-width:100%">' +
+    line('fluency', '#f2e2a0') + line('clarity', '#b7d9a8') + line('confidence', '#a9c9e0') +
+    '</svg><div class="block-text" style="font-size:0.78rem;color:var(--muted)">' +
+    '<span style="color:#f2e2a0">— fluency</span> &nbsp;<span style="color:#b7d9a8">— clarity</span> &nbsp;<span style="color:#a9c9e0">— confidence</span>' +
+    '</div></div>';
+}
+
+// One dimension → a full analysis card: what it measures, what Aira saw (reasoning),
+// and what to do next (guidance).
+function dimCard(key, d) {
+  const level = d.level || 'Moderate';
+  return '<div class="dim-card board-card">' +
+    '<div class="dim-card-head"><span class="dim-card-name">' + esc(DIM_LABELS[key] || key) + '</span>' +
+      '<span class="dim-level ' + esc(level) + '">' + esc(level) + '</span></div>' +
+    '<div class="dim-part"><div class="p-label">What this measures</div><div class="p-text">' + esc(DIM_INFO[key] || '') + '</div></div>' +
+    '<div class="dim-part"><div class="p-label">What Aira observed</div><div class="p-text">' + esc(d.note || 'No specific note was recorded for this area yet.') + '</div></div>' +
+    '<div class="dim-part guidance"><div class="p-label">Your next step</div><div class="p-text">' + esc(LEVEL_MEANING[level] || '') + ' ' + esc(LEVEL_ACTION[level] || '') + '</div></div>' +
+    '</div>';
+}
+
+(async function() {
+  let p;
+  try {
+    p = await Aira.progress();
+  } catch (e) {
+    window.location.replace('login.html');
+    return;
+  }
+  const user       = p.user || {};
+  const onboarding = p.raw.onboarding || {};
+  const persona    = p.raw.persona || null;
+  const quiz       = p.quizzes[0] || null;
+  const speaking   = p.speaking || [];
+  const dims       = (persona && persona.dimensions) || {};
+
+  const personaDone = !!(persona && persona.summary);
+  const mcqDone     = !!quiz;
+  const skillsDone  = !!(speaking && speaking.length);
+
+  const first = (user.name || 'You').split(' ')[0];
+  document.getElementById('heroTitle').innerHTML = 'Your full analysis, <em>' + esc(first) + '</em>.';
+
+  let html = '';
+
+  // ── 01 · Persona (the deep read) ──
+  html += '<div class="section"><div class="section-heading"><span class="section-num">01</span> Persona</div>';
+  if (personaDone) {
+    html += '<p class="section-sub">Aira\'s honest read of you, then every area broken down — sorted so your biggest opportunities come first.</p>';
+    html += block('Your coach\'s read', persona.summary);
+
+    // Sort areas: Developing first (where guidance matters most), then Moderate, then Strong.
+    const keys = RADAR_ORDER.filter(k => dims[k]).sort(function(a, b) {
+      return (LEVEL_RANK[(dims[a] || {}).level] ?? 1) - (LEVEL_RANK[(dims[b] || {}).level] ?? 1);
+    });
+    let lastGroup = null;
+    keys.forEach(function(k) {
+      const level = (dims[k] || {}).level || 'Moderate';
+      if (level !== lastGroup) {
+        lastGroup = level;
+        const meta = {
+          Developing: ['focus', 'Focus here first'],
+          Moderate:   ['building', 'Building — nearly there'],
+          Strong:     ['strength', 'Your strengths'],
+        }[level] || ['building', level];
+        html += '<div class="group-label ' + meta[0] + '">' + esc(meta[1]) + '</div>';
+      }
+      html += dimCard(k, dims[k]);
+    });
+  } else {
+    html += '<div class="empty-block">Complete your Persona assessment to unlock this deep read of who you are across all eight areas.</div>';
+  }
+  html += '</div>';
+
+  // ── 02 · Class Test ──
+  html += '<div class="section"><div class="section-heading"><span class="section-num">02</span> Class Test</div>';
+  if (mcqDone) {
+    html += '<p class="section-sub">What your latest attempt showed, and the study plan to climb from here.</p>';
+    if (quiz.paper_ref) {
+      const refMeaning = Aira.decodePaperRef(quiz.paper_ref);
+      html += block(quiz.paper_ref.indexOf('AIRA') === 0 ? 'Paper Ref' : 'Request Slip', quiz.paper_ref + (refMeaning ? '  ·  ' + refMeaning : ''));
+    }
+    if (quiz.topic) html += block('Topic', quiz.topic);
+    if (quiz.score) html += '<div class="content-block board-card"><div class="block-label">Latest attempt</div><div class="block-text" style="font-family:var(--fd);font-size:1.7rem;color:var(--chalk-yellow);">' + esc(quiz.score) + '</div><div class="block-muted" style="margin-top:4px;">A starting line, not a verdict. The study plan below is your path up.</div></div>';
+    if (quiz.feedback) html += block('What Aira noticed', quiz.feedback);
+    if (quiz.study_plan) html += '<div class="content-block board-card" style="border-left:3px solid rgba(242,226,160,0.5)"><div class="block-label">Your study plan · guidance</div><div class="block-text">' + esc(planText(quiz.study_plan)) + '</div></div>';
+    const qh = (p.quizHistory || []).slice().reverse();
+    if (qh.length > 1) {
+      html += '<div class="content-block board-card"><div class="block-label">Past attempts</div><div class="block-text">' +
+        qh.map(function(q) { return esc((q.topic || '?') + ' — ' + (q.score || 'n/a')); }).join('<br>') + '</div></div>';
+    }
+  } else {
+    html += '<div class="empty-block">Take a Class Test to unlock a breakdown of what you know and a personalised study plan.</div>';
+  }
+  html += '</div>';
+
+  // ── 03 · Soft Skills ──
+  html += '<div class="section"><div class="section-heading"><span class="section-num">03</span> Soft Skills</div>';
+  if (skillsDone) {
+    const agg = avgScores(speaking);
+    html += '<p class="section-sub">How you come across when you speak — measured, tracked, and where to sharpen next.</p>';
+    if (agg.count > 0) {
+      html += '<div class="score-row">' +
+        scoreCard('Fluency', agg.fluency, '/10') +
+        scoreCard('Clarity', agg.clarity, '/10') +
+        scoreCard('Confidence', agg.confidence, '/10') +
+        '</div>';
+      html += '<div style="margin-top:16px">' + sparklineBlock(speaking) + '</div>';
+    }
+    const latest = speaking[0] || {};
+    if (latest.summary) html += block('Latest round — what Aira heard', latest.summary);
+    if (latest.weak_areas && latest.weak_areas.length) {
+      html += '<div class="content-block board-card" style="border-left:3px solid rgba(242,226,160,0.5)"><div class="block-label">Sharpen these next · guidance</div><div class="tags-row">' +
+        latest.weak_areas.map(function(w) { return '<span class="tag weakness">' + esc(w) + '</span>'; }).join('') + '</div></div>';
+    }
+    html += '<div class="content-block board-card"><div class="block-label">Rounds completed</div><div class="block-text">' + speaking.length + ' speaking round' + (speaking.length !== 1 ? 's' : '') + ' recorded — every one sharpens you.</div></div>';
+  } else {
+    html += '<div class="empty-block">Complete a Soft Skills round to unlock your speaking analysis and delivery scores.</div>';
+  }
+  html += '</div>';
+
+  // ── Recurring patterns + the single clearest next step ──
+  const weak = p.recurringWeakAreas || [];
+  const developing = RADAR_ORDER.filter(k => (dims[k] || {}).level === 'Developing').map(k => DIM_LABELS[k] || k);
+  html += '<div class="section"><div class="section-heading">What to do next</div>';
+  if (weak.length) {
+    html += tagsBlock('Keeps coming up across your sessions', weak.map(function(w) { return w.area + ' ×' + w.count; }), 'weakness');
+  }
+  let nsText;
+  if (weak.length) {
+    nsText = 'The habit that keeps surfacing is <b>' + esc(weak[0].area) + '</b>. That\'s your highest-leverage fix — put your next couple of practice rounds there and you\'ll feel the rest lift with it.';
+  } else if (developing.length) {
+    nsText = 'Your clearest opportunity is <b>' + esc(developing[0]) + '</b>. Pick it as your next Soft Skills round — small, steady reps there move you fastest.';
+  } else if (!personaDone) {
+    nsText = 'Start with your Persona assessment — it unlocks the full map of where you are and where to grow.';
+  } else {
+    nsText = 'You\'re well-rounded across the board. Keep practising to turn your strengths into instincts, and revisit this after a few more rounds.';
+  }
+  html += '<div class="next-step"><div class="ns-title">Your single clearest next step</div>' +
+    '<div class="ns-text">' + nsText + '</div>' +
+    '<div class="next-actions">' +
+      '<a class="btn-chalk primary" style="text-decoration:none" href="soft_skills.html">Practice soft skills →</a>' +
+      '<a class="btn-chalk" style="text-decoration:none" href="ai_quiz.html">Take a class test →</a>' +
+    '</div></div>';
+  html += '</div>';
+
+  // ── Footer: finish reviewing, or keep a copy ──
+  html += '<div class="footer-actions">' +
+    '<button class="btn-chalk primary" id="doneBtn">✓ Done</button>' +
+    '<button class="btn-chalk" id="saveBtn">&#8595; Save analysis</button>' +
+    '<span class="footer-hint">Saved automatically to your report — this is just for a copy of your own.</span>' +
+    '</div>';
+
+  document.getElementById('loadingNote').style.display = 'none';
+  const body = document.getElementById('analysisBody');
+  body.innerHTML = html;
+  body.style.display = 'block';
+
+  // Build the plain-text copy from the same data the page just rendered.
+  const exportText = buildAnalysisText({
+    user: user, onboarding: onboarding, persona: persona, dims: dims,
+    quiz: quiz, speaking: speaking, nsPlain: nsText.replace(/<[^>]+>/g, ''),
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function() {
+    downloadText(exportText, 'aira-full-analysis-' + slug(user.name) + '.txt');
+    showToast('↓ Saved to your Downloads.', true);
+  });
+  document.getElementById('doneBtn').addEventListener('click', function() {
+    showToast('✓ Done — this stays saved in your report.', true);
+    setTimeout(function() { window.location.href = 'feedback.html?ctx=general'; }, 1000);
+  });
+})();
+
+// Plain-text export of the whole analysis — a keepsake the user can save/share.
+function buildAnalysisText(ctx) {
+  const L = [];
+  L.push('AIRA — FULL ANALYSIS & GUIDANCE');
+  L.push('================================');
+  L.push('Name: ' + (ctx.user.name || '—'));
+  L.push('Aiming for: ' + (ctx.onboarding.target_role || ctx.onboarding.goal || 'Undeclared'));
+  L.push('Generated: ' + new Date().toDateString());
+  L.push('');
+  L.push('01 · PERSONA');
+  L.push('------------');
+  if (ctx.persona && ctx.persona.summary) { L.push("Coach's read: " + ctx.persona.summary); L.push(''); }
+  const keys = RADAR_ORDER.filter(k => ctx.dims[k]).sort(function(a, b) {
+    return (LEVEL_RANK[(ctx.dims[a] || {}).level] ?? 1) - (LEVEL_RANK[(ctx.dims[b] || {}).level] ?? 1);
+  });
+  if (keys.length) {
+    keys.forEach(function(k) {
+      const d = ctx.dims[k] || {}, lv = d.level || 'Moderate';
+      L.push((DIM_LABELS[k] || k) + ' — ' + lv);
+      L.push('  What it measures: ' + (DIM_INFO[k] || ''));
+      L.push('  What Aira observed: ' + (d.note || '—'));
+      L.push('  Your next step: ' + (LEVEL_MEANING[lv] || '') + ' ' + (LEVEL_ACTION[lv] || ''));
+      L.push('');
+    });
+  } else { L.push('Not assessed yet.'); L.push(''); }
+  L.push('02 · CLASS TEST');
+  L.push('---------------');
+  if (ctx.quiz) {
+    if (ctx.quiz.paper_ref) {
+      const refMeaning = Aira.decodePaperRef(ctx.quiz.paper_ref);
+      L.push((ctx.quiz.paper_ref.indexOf('AIRA') === 0 ? 'Paper Ref: ' : 'Request Slip: ') + ctx.quiz.paper_ref + (refMeaning ? ' (' + refMeaning + ')' : ''));
+    }
+    if (ctx.quiz.topic) L.push('Topic: ' + ctx.quiz.topic);
+    if (ctx.quiz.score) L.push('Latest attempt: ' + ctx.quiz.score);
+    if (ctx.quiz.feedback) L.push('What Aira noticed: ' + ctx.quiz.feedback);
+    if (ctx.quiz.study_plan) L.push('Study plan: ' + planText(ctx.quiz.study_plan));
+  } else { L.push('Not attempted yet.'); }
+  L.push('');
+  L.push('03 · SOFT SKILLS');
+  L.push('----------------');
+  if (ctx.speaking.length) {
+    const agg = avgScores(ctx.speaking);
+    if (agg.count) { L.push('Avg Fluency: ' + agg.fluency + '/10'); L.push('Avg Clarity: ' + agg.clarity + '/10'); L.push('Avg Confidence: ' + agg.confidence + '/10'); }
+    const latest = ctx.speaking[0] || {};
+    if (latest.summary) L.push('Latest round: ' + latest.summary);
+    if (latest.weak_areas && latest.weak_areas.length) L.push('Sharpen next: ' + latest.weak_areas.join(', '));
+    L.push('Rounds completed: ' + ctx.speaking.length);
+  } else { L.push('Not attempted yet.'); }
+  L.push('');
+  L.push('YOUR NEXT STEP');
+  L.push('--------------');
+  L.push(ctx.nsPlain);
+  L.push('');
+  L.push('Slow and steady wins the race. Generated by Aira.');
+  return L.join('\n');
+}
+
+function slug(name) { return String(name || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
+
+function downloadText(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+}
+
+let _toastTimer = null;
+function showToast(msg, success) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (success ? ' success' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { t.className = 'toast'; }, 2600);
+}
+</script>
+<script src="assets/brand.js"></script>
+</body>
+</html>

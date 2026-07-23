@@ -1,0 +1,13 @@
+(function () {
+  var ICON_SVG = '<svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true">'
+    + '<path d="M4 14 Q16 8 16 14 L16 24 Q10 20 4 22 Z" fill="none" stroke="#2F4B34" stroke-width="2.4" stroke-linejoin="round"/>'
+    + '<path d="M28 14 Q16 8 16 14 L16 24 Q22 20 28 22 Z" fill="none" stroke="#2F4B34" stroke-width="2.4" stroke-linejoin="round"/>'
+    + '<rect x="13" y="3" width="6" height="9" rx="3" fill="#2F4B34"/>'
+    + '<path d="M10 10 Q10 16 16 16 Q22 16 22 10" fill="none" stroke="#C9973B" stroke-width="2"/>'
+    + '<line x1="16" y1="16" x2="16" y2="20" stroke="#C9973B" stroke-width="2"/>'
+    + '</svg>';
+
+  document.querySelectorAll('.brand-badge').forEach(function (el) {
+    el.innerHTML = ICON_SVG;
+  });
+})();

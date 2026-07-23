@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aira — Your AI Study Companion</title>
+<title>Aira · Never lose yourself in the moment that matters</title>
+<meta name="description" content="Aira — air, communication and confidence. A practice room for interviews, vivas, and the moments that never offer a second take.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -31,7 +33,6 @@ nav {
 }
 nav.scrolled {
   background: rgba(18,38,28,0.94); backdrop-filter: blur(10px);
-  border-bottom: 2px dashed var(--dash);
 }
 .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-badge {
@@ -40,39 +41,104 @@ nav.scrolled {
   display: flex; align-items: center; justify-content: center;
   color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
-.brand-name { font-family: var(--fd); font-size: 1.2rem; color: var(--chalk); }
+.brand-lockup { display: flex; flex-direction: column; justify-content: center; }
+.brand-name { font-family: var(--fd); font-size: 1.2rem; color: var(--chalk); line-height: 1; }
+.brand-tagline { font-family: 'Nunito', sans-serif; font-size: 0.58rem; font-style: italic; letter-spacing: 0.2px; color: rgba(244,241,228,0.6); margin-top: 2px; white-space: nowrap; }
+@media (max-width: 500px) { .brand-tagline { display: none; } }
 .nav-links { display: flex; align-items: center; gap: 12px; }
 
 /* ── HERO — the big blackboard ── */
 .hero {
   position: relative; min-height: 100vh;
   display: flex; flex-direction: column; justify-content: center;
-  padding: 90px 56px 80px; overflow: hidden;
+  padding: 84px 56px 40px; overflow: hidden;
+}
+/* atmospheric "layer of class" — a soft spotlight on the board with a vignette */
+.hero::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 780px 520px at 50% 42%, rgba(183,217,168,0.10), transparent 62%),
+    radial-gradient(ellipse 1200px 900px at 50% 42%, transparent 45%, rgba(0,0,0,0.30) 100%);
 }
 .hero-content {
-  position: relative; z-index: 2; max-width: 760px; margin: 0 auto; text-align: center;
+  position: relative; z-index: 2; max-width: 700px; margin: 0 auto; text-align: center;
+  padding: 32px 48px 28px;
+  background: linear-gradient(180deg, rgba(20,42,30,0.55), rgba(12,26,20,0.62));
+  border: 1px solid rgba(244,241,228,0.09);
+  border-radius: 22px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.34), 0 1px 0 rgba(255,255,255,0.05) inset;
+  backdrop-filter: blur(3px);
   opacity: 0; transform: translateY(32px);
   animation: heroIn 1s ease 0.3s forwards;
 }
 @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
 
-.hero-eyebrow { margin-bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.eyebrow-line { width: 28px; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 6px, transparent 6px 10px); }
-.hero-title { font-size: clamp(2.6rem, 5.5vw, 4.2rem); line-height: 1.15; margin-bottom: 20px; }
-.hero-sub { font-size: 1.1rem; color: var(--chalk-dim); line-height: 1.7; max-width: 540px; margin: 0 auto 36px; }
-.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 52px; }
+.hero-eyebrow {
+  margin-bottom: 14px; display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 15px; border-radius: 999px;
+  background: rgba(242,226,160,0.1); border: 1px solid rgba(242,226,160,0.22);
+}
+.hero-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--chalk-yellow); box-shadow: 0 0 8px rgba(242,226,160,0.6); }
+.hero-title { font-size: clamp(2.3rem, 4.8vw, 3.6rem); line-height: 1.15; margin-bottom: 14px; }
+.hero-sub { font-size: 1.02rem; color: var(--chalk-dim); line-height: 1.6; max-width: 520px; margin: 0 auto 24px; }
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
 
 /* chalk underline squiggle under the title */
-.squiggle { display: block; margin: 10px auto 0; width: 220px; opacity: 0.7; }
+.squiggle { display: block; margin: 8px auto 0; width: 220px; opacity: 0.7; }
+
+/* ── HERO ATMOSPHERE — faint charts, chalk pieces & dust pinned to the board ── */
+.hero-atmosphere { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* extra chalk-dust haze layered over the board behind the panel */
+.hero-atmosphere::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle 3px at 18% 30%, rgba(244,241,228,0.14), transparent 60%),
+    radial-gradient(circle 2px at 82% 24%, rgba(244,241,228,0.12), transparent 60%),
+    radial-gradient(circle 2px at 70% 74%, rgba(244,241,228,0.1), transparent 60%),
+    radial-gradient(circle 260px at 22% 80%, rgba(244,241,228,0.05), transparent 70%),
+    radial-gradient(circle 220px at 84% 66%, rgba(244,241,228,0.045), transparent 70%);
+}
+.atm { position: absolute; }
+.atm-bars   { top: 15%; left: 4.5%;  width: 190px; opacity: 0.16; transform: rotate(-4deg); }
+.atm-line   { bottom: 16%; right: 4%; width: 230px; opacity: 0.16; transform: rotate(2deg); }
+.atm-abc    { top: 20%; right: 7%; font-family: var(--fd); font-size: 2.4rem; color: var(--chalk); opacity: 0.1; transform: rotate(-6deg); }
+/* chalk pieces resting on the board */
+.atm-piece { position: absolute; height: 9px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.35); opacity: 0.7; }
+.atm-piece.p1 { width: 36px; bottom: 9%;  left: 8%;  background: linear-gradient(180deg, #fff, var(--chalk)); transform: rotate(-22deg); }
+.atm-piece.p2 { width: 30px; bottom: 12%; left: 12%; background: linear-gradient(180deg, #fff4c8, var(--chalk-yellow)); transform: rotate(-8deg); }
+.atm-piece.p3 { width: 28px; top: 68%;   right: 10%; background: linear-gradient(180deg, #fff, var(--chalk)); transform: rotate(16deg); }
+
+/* ── BUTTONS — solid & secure, consistent from nav to footer ── */
+.btn-chalk {
+  border: 1.5px solid rgba(244,241,228,0.3);
+  border-radius: 10px;
+  background: rgba(244,241,228,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+}
+.btn-chalk:hover {
+  background: rgba(244,241,228,0.12);
+  border-color: var(--chalk); border-style: solid;
+  transform: translateY(-2px);
+}
+.btn-chalk.primary {
+  color: var(--board-dark);
+  background: linear-gradient(180deg, #f8efc6, var(--chalk-yellow));
+  border: 1.5px solid #e6d488;
+  box-shadow: 0 6px 18px rgba(242,226,160,0.28);
+  text-shadow: none;
+}
+.btn-chalk.primary:hover {
+  background: linear-gradient(180deg, #fbf4d4, #f5e4a6);
+  box-shadow: 0 9px 24px rgba(242,226,160,0.36);
+}
 
 /* Hero stats bar — like tally marks on the board corner */
 .hero-stats {
-  display: flex; gap: 40px; padding-top: 26px; justify-content: center;
-  border-top: 2px dashed var(--dash);
+  display: flex; gap: 40px; padding-top: 20px; justify-content: center;
 }
 .h-stat { display: flex; flex-direction: column; gap: 2px; align-items: center; }
 .h-stat-val { font-family: var(--fd); font-size: 1.6rem; color: var(--chalk-yellow); }
-.h-stat-label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.h-stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 
 .scroll-hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2; color: var(--muted); font-size: 0.8rem; animation: scrollPulse 2s ease-in-out infinite; }
 @keyframes scrollPulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
@@ -80,7 +146,7 @@ nav.scrolled {
 /* ── QUOTE BREAK — like a line the teacher left on the board ── */
 .image-break {
   position: relative; padding: 90px 56px; overflow: hidden;
-  border-top: 2px dashed var(--dash); border-bottom: 2px dashed var(--dash);
+  border-top: 2px dashed var(--dash);
   background: rgba(0,0,0,0.12);
 }
 .image-break-content { position: relative; z-index: 2; max-width: 680px; margin: 0 auto; text-align: center; }
@@ -93,61 +159,141 @@ section { padding: 96px 56px; position: relative; z-index: 1; }
 .section-title { font-size: clamp(1.9rem, 3.5vw, 2.7rem); line-height: 1.2; margin-bottom: 14px; }
 .section-sub { font-size: 0.95rem; color: var(--muted); line-height: 1.7; max-width: 480px; }
 
-/* ── MODULES — index cards pinned to the board ── */
-.modules-header { max-width: 1100px; margin: 0 auto 52px; }
-.modules-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.module-card {
-  padding: 30px 24px 24px;
-  display: flex; flex-direction: column; gap: 14px;
+/* ── TIMETABLE — the day's journey, ruled down a chalk spine ── */
+.modules-header { max-width: 760px; margin: 0 auto 8px; }
+.timetable { max-width: 760px; margin: 44px auto 0; }
+
+/* each period sits to the right of a node on the spine */
+.tt-period { position: relative; padding: 0 0 34px 74px; }
+.tt-period:last-child { padding-bottom: 0; }
+/* the chalk spine connecting one period to the next */
+.tt-period::before {
+  content: ''; position: absolute; left: 24px; top: 46px; bottom: -6px; width: 2px;
+  background: repeating-linear-gradient(180deg, var(--chalk-faint) 0 7px, transparent 7px 14px);
 }
-.module-card:hover { transform: translateY(-5px) rotate(0deg); }
-.module-num { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
-.module-icon-wrap { width: 44px; height: 44px; border-radius: 10px; border: 2px dashed var(--dash); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-.module-title { font-family: var(--fd); font-size: 1.35rem; color: var(--chalk); }
-.module-desc { font-size: 0.87rem; color: var(--chalk-dim); line-height: 1.6; flex: 1; }
-.module-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--chalk-yellow); border: 1.5px dashed rgba(242,226,160,0.4); padding: 4px 10px; border-radius: 999px; width: fit-content; }
+.tt-period:last-child::before { display: none; }
+/* the numbered node on the spine */
+.tt-node {
+  position: absolute; left: 0; top: 6px; width: 50px; height: 50px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 1.35rem; color: var(--chalk);
+  background: var(--board-light);
+  border: 2px solid var(--chalk-faint);
+  box-shadow: 0 0 0 5px var(--board);
+}
+.tt-period.goal .tt-node {
+  color: var(--board-dark); border-color: var(--chalk-yellow);
+  background: radial-gradient(circle at 35% 30%, #fff4c8, var(--chalk-yellow) 75%);
+  box-shadow: 0 0 0 5px var(--board), 0 0 22px rgba(242,226,160,0.5);
+}
 
-.module-card.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 24px; }
-.module-card.wide .module-desc { max-width: 480px; }
-.module-card.wide .module-tag { margin-left: auto; }
+/* the period's content card */
+.tt-card {
+  background: rgba(244,241,228,0.045);
+  border: 1px solid rgba(244,241,228,0.1);
+  border-left: 3px solid var(--chalk-faint);
+  border-radius: 12px;
+  padding: 22px 26px;
+  transition: transform 0.28s ease, border-color 0.28s ease, background 0.28s ease;
+}
+.tt-card:hover { transform: translateX(4px); border-left-color: var(--chalk); background: rgba(244,241,228,0.07); }
+.tt-period.goal .tt-card { border-left-color: var(--chalk-yellow); }
+.tt-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tt-label { font-family: var(--fb); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); }
+.tt-title { font-family: var(--fd); font-size: 1.5rem; color: var(--chalk); line-height: 1.1; }
+.tt-period.goal .tt-title { color: var(--chalk-yellow); }
+.tt-desc { font-size: 0.9rem; color: var(--chalk-dim); line-height: 1.65; margin-top: 8px; max-width: 560px; }
 
-/* ── HOW IT WORKS — a timetable ruled on the board ── */
-.how-wrap { max-width: 1100px; margin: 0 auto; }
-.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 52px; border: 2px dashed var(--dash); border-radius: 12px; overflow: hidden; }
-.how-step { padding: 32px 28px; border-right: 2px dashed var(--dash); display: flex; flex-direction: column; gap: 12px; transition: background 0.3s; }
-.how-step:last-child { border-right: none; }
-.how-step:hover { background: rgba(244,241,228,0.05); }
-.how-num { font-family: var(--fd); font-size: 3rem; color: rgba(244,241,228,0.15); line-height: 1; }
-.how-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); }
-.how-desc { font-size: 0.85rem; color: var(--chalk-dim); line-height: 1.6; }
+/* Period 02's fork — the two practice choices */
+.tt-fork { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.tt-option {
+  display: flex; align-items: center; gap: 11px;
+  background: rgba(244,241,228,0.05); border: 1px solid rgba(244,241,228,0.12);
+  border-radius: 10px; padding: 13px 15px; transition: border-color 0.2s, background 0.2s;
+}
+.tt-option:hover { border-color: var(--chalk); background: rgba(244,241,228,0.09); }
+.tt-opt-icon { font-size: 1.15rem; color: var(--chalk-yellow); flex-shrink: 0; }
+.tt-opt-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
+.tt-opt-sub { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+.tt-or {
+  font-family: var(--fd); font-size: 0.85rem; color: var(--muted);
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 8px;
+}
+
+/* ── NOTICE BOARD — the communication moat, pinned as a paper notice ── */
+.notice-section { padding: 40px 56px 96px; position: relative; z-index: 1; }
+.notice-wrap { max-width: 760px; margin: 0 auto; text-align: center; }
+.notice-eyebrow { margin-bottom: 12px; }
+.notice-lead { font-size: clamp(1.9rem, 3.5vw, 2.7rem); line-height: 1.2; margin-bottom: 44px; }
+
+/* the pinned paper notice */
+.notice {
+  position: relative;
+  max-width: 620px; margin: 0 auto;
+  text-align: left;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.35), transparent 40%),
+    linear-gradient(160deg, #ece0c6, #e2d3b2);
+  color: #3a2c17;
+  border-radius: 4px;
+  padding: 40px 44px 46px;
+  transform: rotate(-1.1deg);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.32);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.notice:hover { transform: rotate(-0.3deg) translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.38); }
+/* strip of tape holding it to the board */
+.notice::before {
+  content: '';
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+  width: 120px; height: 26px;
+  background: repeating-linear-gradient(90deg, rgba(244,241,228,0.5) 0 6px, rgba(244,241,228,0.32) 6px 12px);
+  border-left: 1px solid rgba(255,255,255,0.35); border-right: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.notice-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.notice-stamp {
+  font-family: var(--fb); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #8a2b22;
+  border: 1.5px solid rgba(138,43,34,0.55); border-radius: 4px; padding: 3px 9px;
+}
+.notice-meta { font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(58,44,23,0.6); }
+.notice-headline { font-family: var(--fd); font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1.3; margin-bottom: 16px; color: #2c2110; }
+.notice-headline em { font-style: normal; color: #8a2b22; }
+.notice-body { font-size: 0.98rem; line-height: 1.72; color: #4a3a22; }
+.notice-body strong { color: #2c2110; font-weight: 700; }
+/* red teacher pen annotation in the margin */
+.notice-annot {
+  font-family: var(--fd); font-size: 1.05rem; color: #b3403a;
+  margin-top: 22px; display: inline-block; transform: rotate(-1.5deg);
+}
+
+@media (max-width: 640px) {
+  .notice { transform: none; padding: 32px 26px 36px; }
+  .notice:hover { transform: translateY(-3px); }
+}
 
 /* ── BOTTOM CTA ── */
 .cta-section {
   text-align: center; padding: 96px 56px;
-  border-top: 2px dashed var(--dash);
   position: relative; z-index: 1;
 }
 .cta-title { font-size: clamp(1.8rem, 3vw, 2.6rem); margin-bottom: 12px; line-height: 1.25; }
 .cta-sub { font-size: 0.95rem; color: var(--muted); margin-bottom: 32px; }
 
 /* ── FOOTER ── */
-footer { padding: 22px 56px; border-top: 2px dashed var(--dash); display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); position: relative; z-index: 1; }
+footer { padding: 22px 56px; border-top: 1px solid rgba(244,241,228,0.08); display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); position: relative; z-index: 1; }
 
-@media (max-width: 900px) {
-  .modules-grid { grid-template-columns: repeat(2, 1fr); }
-  .module-card.wide { grid-column: auto; flex-direction: column; }
-  .module-card.wide .module-tag { margin-left: 0; }
-  .how-grid { grid-template-columns: 1fr; }
-  .how-step { border-right: none; border-bottom: 2px dashed var(--dash); }
-  .how-step:last-child { border-bottom: none; }
-}
 @media (max-width: 640px) {
   nav { padding: 12px 20px; }
   .hero { padding: 90px 20px 60px; }
   section { padding: 60px 20px; }
   .hero-stats { gap: 20px; flex-wrap: wrap; }
   .image-break { padding: 60px 20px; }
-  .modules-grid { grid-template-columns: 1fr; }
+  .tt-period { padding-left: 60px; }
+  .tt-node { width: 42px; height: 42px; font-size: 1.15rem; }
+  .tt-period::before { left: 20px; }
+  .tt-fork { grid-template-columns: 1fr; }
   .cta-section { padding: 60px 20px; }
   footer { padding: 20px; flex-direction: column; gap: 8px; text-align: center; }
   .scroll-hint { display: none; }
@@ -159,8 +305,11 @@ footer { padding: 22px 56px; border-top: 2px dashed var(--dash); display: flex; 
 <!-- NAV -->
 <nav id="mainNav">
   <a class="nav-brand" href="index.html">
-    <div class="brand-badge">A</div>
-    <div class="brand-name">Aira</div>
+    <div class="brand-badge"></div>
+    <div class="brand-lockup">
+      <div class="brand-name">Aira</div>
+      <div class="brand-tagline">Never lose yourself in the moment that matters</div>
+    </div>
   </a>
   <div class="nav-links">
     <button class="btn-chalk" onclick="window.location.href='login.html'">Log in</button>
@@ -170,17 +319,37 @@ footer { padding: 22px 56px; border-top: 2px dashed var(--dash); display: flex; 
 
 <!-- HERO -->
 <div class="hero">
+  <!-- faint classroom atmosphere: charts, chalk pieces, dust -->
+  <div class="hero-atmosphere" aria-hidden="true">
+    <svg class="atm atm-bars" viewBox="0 0 190 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 8 V132 H182" stroke="#f4f1e4" stroke-width="2" stroke-linecap="round"/>
+      <rect x="38"  y="94" width="20" height="38"  fill="#f4f1e4" opacity="0.5"/>
+      <rect x="74"  y="72" width="20" height="60"  fill="#f4f1e4" opacity="0.6"/>
+      <rect x="110" y="52" width="20" height="80"  fill="#f2e2a0" opacity="0.75"/>
+      <rect x="146" y="30" width="20" height="102" fill="#f2e2a0" opacity="0.9"/>
+    </svg>
+    <svg class="atm atm-line" viewBox="0 0 230 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 118 L58 92 L106 100 L154 54 L214 22" stroke="#f2e2a0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="58" cy="92" r="3.5" fill="#f4f1e4"/>
+      <circle cx="154" cy="54" r="3.5" fill="#f4f1e4"/>
+      <circle cx="214" cy="22" r="4" fill="#f2e2a0"/>
+    </svg>
+    <div class="atm atm-abc">A⁺</div>
+    <span class="atm-piece p1"></span>
+    <span class="atm-piece p2"></span>
+    <span class="atm-piece p3"></span>
+  </div>
   <div class="hero-content">
-    <div class="hero-eyebrow chalk-tag"><div class="eyebrow-line"></div>For fresh graduates &amp; job seekers<div class="eyebrow-line"></div></div>
+    <div class="hero-eyebrow chalk-tag">A practice room for the moments that count</div>
     <h1 class="chalk-title hero-title">
-      Today's lesson:<br>turning study hours into <em>real momentum.</em>
+      You already know your answers.<br>Aira makes sure the <em>room hears them.</em>
       <svg class="squiggle" viewBox="0 0 220 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 8 Q 20 2, 40 8 T 80 8 T 120 8 T 160 8 T 217 7" stroke="rgba(242,226,160,0.75)" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
     </h1>
-    <p class="hero-sub">Aira is your own classroom — the green board, the chalk, the bell — rebuilt with an AI coach that actually knows you. Three periods. One clear path from uncertain to unstoppable.</p>
+    <p class="hero-sub">Interviews, vivas, the first two minutes that decide everything — the moments that never offer a second take. Aira is where you rehearse them out loud, hear the honest truth about how you came across, and stop shrinking when it finally matters.</p>
     <div class="hero-ctas">
-      <button class="btn-chalk primary" style="font-size:1.2rem;padding:13px 32px" onclick="window.location.href='signup.html'">Take a seat →</button>
+      <button class="btn-chalk primary" style="font-size:1.2rem;padding:13px 32px" onclick="window.location.href='signup.html'">Take your first step →</button>
       <button class="btn-chalk" style="font-size:1.1rem;padding:13px 26px" onclick="window.location.href='login.html'">I have an account</button>
     </div>
     <div class="hero-stats">
@@ -195,93 +364,103 @@ footer { padding: 22px 56px; border-top: 2px dashed var(--dash); display: flex; 
 <!-- QUOTE BREAK -->
 <div class="image-break">
   <div class="image-break-content reveal">
-    <div class="break-quote">"The gap between where you are and where you want to be is closed by <em>deliberate, structured practice</em> — not wishful thinking."</div>
-    <div class="break-attr">— written on the board, The Aira approach</div>
+    <div class="break-quote">"You don't lose marks for what you know. You lose <em>the room</em> for how it came out."</div>
+    <div class="break-attr">— written on the board, the Aira approach</div>
   </div>
 </div>
 
-<!-- MODULES -->
+<!-- TIMETABLE -->
 <section id="modules">
   <div class="modules-header reveal">
     <div class="chalk-tag">Today's timetable</div>
-    <h2 class="chalk-title section-title">Three periods. Every tool<br>you need to <em>get there.</em></h2>
-    <p class="section-sub chalk-sub">Persona first, then practice. Both paths lead to a downloadable report card that proves your growth.</p>
+    <h2 class="chalk-title section-title">Three periods. One clear path<br>from knowing it to <em>saying it.</em></h2>
+    <p class="section-sub chalk-sub">Every day follows the same simple arc — get to know yourself, put it into practice, and walk away with proof.</p>
   </div>
-  <div class="modules-grid">
 
-    <div class="module-card board-card pin-yellow reveal reveal-delay-1">
-      <div class="module-num">Period 01</div>
-      <div class="module-icon-wrap">◈</div>
-      <div class="module-title">Persona</div>
-      <p class="module-desc">Answer 10 deep questions. Aira maps your strengths, learning style, and mindset into a coach profile that personalises every other module.</p>
-      <div class="module-tag">&#10003; Attendance first</div>
-    </div>
+  <div class="timetable">
 
-    <div class="module-card board-card reveal reveal-delay-2">
-      <div class="module-num">Period 02 · Option A</div>
-      <div class="module-icon-wrap">⬡</div>
-      <div class="module-title">MCQs</div>
-      <p class="module-desc">Pick any topic. Aira generates interview-style questions tailored to your weak areas and evaluates your answers with a specific study plan.</p>
-      <div class="module-tag">&#9654; Class test</div>
-    </div>
-
-    <div class="module-card board-card reveal reveal-delay-3">
-      <div class="module-num">Period 02 · Option B</div>
-      <div class="module-icon-wrap">◎</div>
-      <div class="module-title">Soft Skills</div>
-      <p class="module-desc">Practice speaking, delivery, and communication under pressure. Scored on fluency, clarity and confidence — every single session.</p>
-      <div class="module-tag">&#9670; Elocution period</div>
-    </div>
-
-    <div class="module-card board-card pin-green wide reveal reveal-delay-4">
-      <div class="module-icon-wrap">&#9646;</div>
-      <div>
-        <div class="module-num">Period 03</div>
-        <div class="module-title">Report Card</div>
-        <p class="module-desc">A downloadable summary of your Persona, quiz performance, and soft skills scores. Your evidence of growth — ready to share with recruiters or keep for yourself.</p>
+    <div class="tt-period reveal reveal-delay-1">
+      <div class="tt-node">01</div>
+      <div class="tt-card">
+        <div class="tt-head">
+          <span class="tt-label">Period 01 · Attendance</span>
+          <span class="tt-title">Build your Persona</span>
+        </div>
+        <p class="tt-desc">Ten honest questions about how you learn, speak, and handle pressure. Aira maps them into a coach profile that quietly personalises everything that follows.</p>
       </div>
-      <div class="module-tag">&#8595; Take it home</div>
+    </div>
+
+    <div class="tt-period reveal reveal-delay-2">
+      <div class="tt-node">02</div>
+      <div class="tt-card">
+        <div class="tt-head">
+          <span class="tt-label">Period 02 · Practice</span>
+          <span class="tt-title">Put it to work</span>
+        </div>
+        <p class="tt-desc">Pick the room you want to grow in today. Your Persona shapes both.</p>
+        <div class="tt-fork">
+          <div class="tt-option">
+            <span class="tt-opt-icon">⬡</span>
+            <div>
+              <div class="tt-opt-name">Mock Interview</div>
+              <div class="tt-opt-sub">Role questions tailored to your weak spots</div>
+            </div>
+          </div>
+          <div class="tt-option">
+            <span class="tt-opt-icon">◎</span>
+            <div>
+              <div class="tt-opt-name">Soft Skills</div>
+              <div class="tt-opt-sub">Speaking &amp; delivery, scored on confidence</div>
+            </div>
+          </div>
+        </div>
+        <div class="tt-or">↕ choose one — or come back for the other</div>
+      </div>
+    </div>
+
+    <div class="tt-period goal reveal reveal-delay-3">
+      <div class="tt-node">03</div>
+      <div class="tt-card">
+        <div class="tt-head">
+          <span class="tt-label">Period 03 · The bell</span>
+          <span class="tt-title">Take home your Report Card</span>
+        </div>
+        <p class="tt-desc">A downloadable evaluation sheet — your Persona, your practice scores, and where to focus next. Proof you were a slightly better communicator today than yesterday.</p>
+      </div>
     </div>
 
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section style="padding-top:0">
-  <div class="how-wrap">
-    <div class="chalk-tag reveal">The process</div>
-    <h2 class="chalk-title section-title reveal">Simple to start,<br><em>structured to stick.</em></h2>
-    <div class="how-grid">
-      <div class="how-step reveal reveal-delay-1">
-        <div class="how-num">01</div>
-        <div class="how-title">Enrol yourself</div>
-        <p class="how-desc">One signup. No subscriptions. Your data stays yours and every module is available from day one.</p>
+<!-- NOTICE BOARD — the communication moat -->
+<section class="notice-section">
+  <div class="notice-wrap">
+    <div class="chalk-tag notice-eyebrow reveal">Pinned to the notice board</div>
+    <h2 class="chalk-title notice-lead reveal">What makes Aira different is<br><em>hard to fake.</em></h2>
+
+    <div class="notice reveal reveal-delay-1">
+      <div class="notice-header">
+        <span class="notice-stamp">Notice</span>
+        <span class="notice-meta">Period 00 · Read this first</span>
       </div>
-      <div class="how-step reveal reveal-delay-2">
-        <div class="how-num">02</div>
-        <div class="how-title">Build your Persona</div>
-        <p class="how-desc">Ten honest questions. Aira generates your AI coach profile — the lens through which every quiz, prompt and plan is personalised for you specifically.</p>
-      </div>
-      <div class="how-step reveal reveal-delay-3">
-        <div class="how-num">03</div>
-        <div class="how-title">Practice, report, repeat</div>
-        <p class="how-desc">MCQs or Soft Skills — your choice. Both build towards a downloadable report card. Every session compounds into a clearer, more confident version of you.</p>
-      </div>
+      <div class="notice-headline">Everyone can test what you <em>know.</em><br>We coach how you <em>say</em> it.</div>
+      <p class="notice-body">Recall gets you through a quiz. <strong>Delivery gets you the offer</strong> — the words you choose, the pauses you hold, the steadiness in your voice when it counts. Aira is the one coach here that listens to how you actually speak, scores it honestly, and helps it grow session after session.</p>
+      <div class="notice-annot">↳ this is the part no one else teaches you</div>
     </div>
   </div>
 </section>
 
 <!-- BOTTOM CTA -->
 <div class="cta-section reveal">
-  <h2 class="chalk-title cta-title">The best day to start was yesterday.<br><em>Today works just fine.</em></h2>
-  <p class="cta-sub chalk-sub">Free. Structured. Built for people who are serious about what comes next.</p>
+  <h2 class="chalk-title cta-title">Stop rehearsing in your head.<br><em>Say it out loud, where it's safe to be wrong.</em></h2>
+  <p class="cta-sub chalk-sub">Free. Structured. Built for the moments you don't get to redo.</p>
   <button class="btn-chalk primary" style="font-size:1.2rem;padding:13px 32px" onclick="window.location.href='signup.html'">Enrol me →</button>
 </div>
 
 <!-- FOOTER -->
 <footer>
-  <div>&#169; 2026 Aira &middot; Personal study companion</div>
-  <div>Built for fresh graduates &amp; job seekers</div>
+  <div>&#169; 2026 Aira &middot; Never lose yourself in the moment that matters</div>
+  <div>Air &middot; Communication &middot; Confidence</div>
 </footer>
 
 <script>
@@ -299,10 +478,17 @@ window.addEventListener('scroll', function() {
 // Scroll reveal with IntersectionObserver
 const observer = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
-    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    // Reveal when it scrolls into view, OR when it's already above the viewport
+    // (page loaded scrolled down — refresh, back button, deep link). Otherwise
+    // everything above the fold stays stuck at opacity:0 as a blank band.
+    if (e.isIntersecting || e.boundingClientRect.top < 0) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
   });
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

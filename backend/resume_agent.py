@@ -16,20 +16,14 @@ Two steps, mirroring the existing Groq-call pattern used elsewhere in the app:
 """
 import io
 
+from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
+
 from groq_client import groq_json, GroqError, GROQ_API_KEY
+from llm_schemas import PERSONA_DIMENSIONS, Option, normalize_options, require_non_blank
 
 # Dimensions the generated questions are allowed to probe (must match
-# session_controller.DIMENSION_ORDER).
-ALLOWED_DIMENSIONS = [
-    "work_culture_preferences",
-    "teamwork_style",
-    "leadership_tendencies",
-    "decision_making_approach",
-    "problem_solving_behavior",
-    "professional_values",
-    "career_goals",
-    "communication_style",
-]
+# session_controller.DIMENSION_ORDER — both now derive from llm_schemas).
+ALLOWED_DIMENSIONS = list(PERSONA_DIMENSIONS)
 
 
 class ResumeError(Exception):
@@ -108,13 +102,15 @@ Do two things and return them as ONE JSON object.
    - experience_level: one of "student", "fresher", "intern", "experienced"
    - likely_gaps: array of areas they appear weak in or that are missing for their goal
 
-2) Write FOUR persona questions grounded in THIS resume. The candidate must not be
-   able to tell these came from their resume, so phrase them naturally.
+2) Write FOUR persona questions grounded in THIS resume. Phrase them the way a real
+   interviewer would — natural and conversational. The candidate must never be able to
+   tell which persona trait each question is secretly measuring.
    - TWO "technical" questions: free-text, about their OWN specific projects/skills,
      probing whether they genuinely understand what they built (depth, decisions,
-     trade-offs). These validate resume claims.
+     trade-offs). These validate resume claims — it's fine (and expected) that these
+     reference their actual work, just like a real interviewer asking about it.
    - TWO "hr" questions: multiple-choice behavioural/HR-interview style (teamwork,
-     conflict, motivation, ownership) with 3 options each.
+     conflict, motivation, ownership) with exactly 4 options each.
 
    Tag every question with the persona dimension it best probes. Allowed dimensions:
    {dims}.
@@ -134,13 +130,15 @@ Return ONLY this JSON, no markdown, no commentary:
       "options": [
         {{"label": "A", "text": "...", "signal": "what choosing this reveals"}},
         {{"label": "B", "text": "...", "signal": "..."}},
-        {{"label": "C", "text": "...", "signal": "..."}}
+        {{"label": "C", "text": "...", "signal": "..."}},
+        {{"label": "D", "text": "...", "signal": "..."}}
       ]}},
     {{"dimension": "<one allowed dimension>", "text": "behavioural question",
       "options": [
         {{"label": "A", "text": "...", "signal": "..."}},
         {{"label": "B", "text": "...", "signal": "..."}},
-        {{"label": "C", "text": "...", "signal": "..."}}
+        {{"label": "C", "text": "...", "signal": "..."}},
+        {{"label": "D", "text": "...", "signal": "..."}}
       ]}}
   ]
 }}"""
@@ -174,51 +172,80 @@ def parse_resume(resume_text, onboarding=None):
     return _normalize(data)
 
 
+def _default_dimension(cls, v):
+    return v if v in PERSONA_DIMENSIONS else "problem_solving_behavior"
+
+
+class TechnicalQuestion(BaseModel):
+    dimension: str = "problem_solving_behavior"
+    text: str
+
+    _dim = field_validator("dimension", mode="before")(classmethod(_default_dimension))
+    _text = field_validator("text")(classmethod(lambda cls, v: require_non_blank(v)))
+
+
+class HRQuestion(BaseModel):
+    dimension: str = "problem_solving_behavior"
+    text: str
+    options: list[Option] = Field(default_factory=list)
+
+    _dim = field_validator("dimension", mode="before")(classmethod(_default_dimension))
+    _text = field_validator("text")(classmethod(lambda cls, v: require_non_blank(v)))
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def _normalize_opts(cls, v):
+        return normalize_options(v)
+
+    @model_validator(mode="after")
+    def _min_two_options(self):
+        if len(self.options) < 2:
+            raise ValueError("hr_question needs at least 2 usable options")
+        return self
+
+
+class ResumeProfile(BaseModel):
+    skills: list = Field(default_factory=list)
+    projects: list = Field(default_factory=list)
+    experience_level: str = "student"
+    likely_gaps: list = Field(default_factory=list)
+    technical_questions: list[TechnicalQuestion]
+    hr_questions: list[HRQuestion]
+
+    @field_validator("skills", "projects", "likely_gaps", mode="before")
+    @classmethod
+    def _default_empty_list(cls, v):
+        return v or []
+
+    @field_validator("experience_level", mode="before")
+    @classmethod
+    def _default_experience_level(cls, v):
+        return v or "student"
+
+    @field_validator("technical_questions", mode="before")
+    @classmethod
+    def _need_2_tech(cls, v):
+        v = v or []
+        if len(v) < 2:
+            raise ValueError("need at least 2 technical_questions")
+        return v[:2]
+
+    @field_validator("hr_questions", mode="before")
+    @classmethod
+    def _need_2_hr(cls, v):
+        v = v or []
+        if len(v) < 2:
+            raise ValueError("need at least 2 hr_questions")
+        return v[:2]
+
+
 def _normalize(data):
     """Validate/repair the agent output so downstream code can trust its shape."""
-    tech = data.get("technical_questions") or []
-    hr = data.get("hr_questions") or []
-    if len(tech) < 2 or len(hr) < 2:
+    try:
+        profile = ResumeProfile.model_validate(data)
+    except ValidationError:
         raise ResumeError("Resume analysis came back incomplete. Please try again.")
-
-    def _dim(q):
-        d = q.get("dimension")
-        return d if d in ALLOWED_DIMENSIONS else "problem_solving_behavior"
-
-    technical_questions = [
-        {"dimension": _dim(q), "text": (q.get("text") or "").strip()}
-        for q in tech[:2]
-    ]
-    hr_questions = []
-    for i, q in enumerate(hr[:2]):
-        opts = q.get("options") or []
-        norm_opts = [
-            {
-                "label": o.get("label") or chr(65 + j),
-                "text": (o.get("text") or "").strip(),
-                "signal": (o.get("signal") or "").strip(),
-            }
-            for j, o in enumerate(opts) if (o.get("text") or "").strip()
-        ]
-        if len(norm_opts) < 2:
-            raise ResumeError("Resume analysis came back incomplete. Please try again.")
-        hr_questions.append({
-            "dimension": _dim(q),
-            "text": (q.get("text") or "").strip(),
-            "options": norm_opts,
-        })
-
-    if any(not q["text"] for q in technical_questions + hr_questions):
-        raise ResumeError("Resume analysis came back incomplete. Please try again.")
-
-    return {
-        "skills": data.get("skills") or [],
-        "projects": data.get("projects") or [],
-        "experience_level": data.get("experience_level") or "student",
-        "likely_gaps": data.get("likely_gaps") or [],
-        "technical_questions": technical_questions,
-        "hr_questions": hr_questions,
-    }
+    return profile.model_dump()
 
 
 def build_resume_questions(resume_data):

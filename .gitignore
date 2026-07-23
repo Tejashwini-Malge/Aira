@@ -2,6 +2,10 @@
 .env
 *.env
 !.env.example
+google_creds.json
+
+# Feedback exports — contain user emails/free text, never commit
+feedback_export_*.csv
 
 # Python
 __pycache__/

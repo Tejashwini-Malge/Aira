@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Questions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -18,7 +19,7 @@ body.loaded { opacity: 1; }
 
 .header {
   max-width: 680px; width: 100%; display: flex;
-  align-items: center; justify-content: space-between; margin-bottom: 36px; position: relative; z-index: 1;
+  align-items: center; justify-content: space-between; margin-bottom: 20px; position: relative; z-index: 1;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-badge {
@@ -28,11 +29,11 @@ body.loaded { opacity: 1; }
   color: var(--board-dark); font-weight: 700; font-family: var(--fd); font-size: 1rem;
 }
 .brand-name { font-family: var(--fd); font-size: 1.05rem; color: var(--chalk); }
-.brand-sub { font-size: 0.72rem; color: var(--muted); }
+.brand-sub { font-size: 0.8rem; color: var(--muted); }
 .header-right { display: flex; align-items: center; gap: 8px; }
-.step-pill { padding: 5px 12px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.76rem; color: var(--chalk-yellow); }
+.step-pill { padding: 5px 12px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.8rem; color: var(--chalk-yellow); }
 .nav-back {
-  font-size: 0.78rem; color: var(--muted); cursor: pointer;
+  font-size: 0.8rem; color: var(--muted); cursor: pointer;
   padding: 5px 12px; border-radius: 999px; border: 1.5px dashed var(--dash);
   transition: all 0.2s;
 }
@@ -40,7 +41,7 @@ body.loaded { opacity: 1; }
 
 .container { max-width: 680px; width: 100%; position: relative; z-index: 1; }
 
-.progress-area { margin-bottom: 28px; }
+.progress-area { margin-bottom: 16px; }
 .progress-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .progress-dots { display: flex; gap: 6px; }
 .dot {
@@ -50,25 +51,25 @@ body.loaded { opacity: 1; }
 }
 .dot.done { background: rgba(244,241,228,0.5); border-style: solid; border-color: rgba(244,241,228,0.5); }
 .dot.active { background: var(--chalk-yellow); border-style: solid; border-color: var(--chalk-yellow); transform: scale(1.15); }
-.progress-pct { font-size: 0.76rem; color: var(--muted); }
+.progress-pct { font-size: 0.8rem; color: var(--muted); }
 .progress-track { height: 5px; border-radius: 999px; background: rgba(244,241,228,0.08); overflow: hidden; border: 1px dashed var(--dash); }
 .progress-fill { height: 100%; width: 0; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--chalk) 0 5px, transparent 5px 8px); transition: width 0.4s ease-out; }
 
-.page-title { font-family: var(--fd); font-size: 1.7rem; color: var(--chalk); margin-bottom: 5px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
-.page-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 22px; line-height: 1.55; }
+.page-title { font-family: var(--fd); font-size: 1.55rem; color: var(--chalk); margin-bottom: 4px; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+.page-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
 
-.q-card { padding: 24px 22px; animation: fadeUp 0.4s ease forwards; }
+.q-card { padding: 20px 22px; animation: fadeUp 0.4s ease forwards; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.q-meta { font-size: 0.72rem; color: var(--chalk-yellow); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; opacity: 0.85; }
-.q-text { font-family: var(--fd); font-size: 1.25rem; line-height: 1.55; color: var(--chalk); margin-bottom: 18px; }
+.q-meta { font-size: 0.8rem; color: var(--chalk-yellow); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; opacity: 0.85; }
+.q-text { font-family: var(--fd); font-size: 1.2rem; line-height: 1.5; color: var(--chalk); margin-bottom: 14px; }
 
 /* Choice options — like options chalked on the board */
-.options-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .option-card {
-  padding: 12px 14px; border-radius: 8px;
+  padding: 10px 14px; border-radius: 8px;
   border: 1.5px dashed var(--dash);
   cursor: pointer; transition: all 0.18s ease;
   display: flex; align-items: flex-start; gap: 10px;
@@ -81,7 +82,7 @@ body.loaded { opacity: 1; }
 .option-letter {
   min-width: 24px; height: 24px; border-radius: 50%;
   border: 1.5px dashed var(--dash); display: flex; align-items: center;
-  justify-content: center; font-size: 0.76rem; font-weight: 700;
+  justify-content: center; font-size: 0.8rem; font-weight: 700;
   color: var(--muted); flex-shrink: 0; margin-top: 1px;
   transition: all 0.18s ease;
 }
@@ -102,9 +103,16 @@ textarea {
 textarea::placeholder { color: rgba(244,241,228,0.3); }
 textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
 
-.q-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
-.helper { font-size: 0.78rem; color: var(--muted); font-style: italic; }
-.answer-hint { font-size: 0.78rem; color: var(--chalk-yellow); margin-top: 12px; display: none; }
+.q-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  margin-top: 16px; padding-top: 12px;
+  position: sticky; bottom: 12px;
+  background: rgba(18,38,28,0.94); backdrop-filter: blur(6px);
+  border: 1.5px dashed var(--dash); border-radius: 10px;
+  padding: 12px 14px;
+}
+.helper { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+.answer-hint { font-size: 0.8rem; color: var(--chalk-yellow); margin-top: 12px; display: none; }
 .btn-row { display: flex; gap: 8px; }
 
 @media (max-width: 600px) {
@@ -117,7 +125,7 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 <body class="board">
 <div class="header">
   <div class="brand">
-    <div class="brand-badge">A</div>
+    <div class="brand-badge"></div>
     <div>
       <div class="brand-name">Aira</div>
       <div class="brand-sub">One question at a time</div>
@@ -186,6 +194,23 @@ window.addEventListener('load', async () => {
       if (!d.complete) { window.location.replace('onboarding.html'); return; }
     }
   } catch (e) {}
+
+  // A Core Persona is generated once and locked — this page isn't a free "retake"
+  // once one exists. It's only reachable again as a deliberate refresh, and only
+  // once Aira has enough new session evidence (server is the source of truth here,
+  // this is just closing off the wasted-effort path of retaking 10 questions that
+  // would get rejected at the end anyway).
+  try {
+    const check = await fetch(`${API_BASE}/me/persona`, { credentials: 'include' });
+    if (check.ok) {
+      const d = await check.json();
+      if (d.persona && d.persona.ready && !d.persona.canRefresh) {
+        window.location.replace('Welcome.html');
+        return;
+      }
+    }
+  } catch (e) {}
+
   document.body.classList.add('loaded');
   loadQuestions();
 });
@@ -245,6 +270,7 @@ function renderQuestion() {
       <div class="q-meta">Persona setup · Question ${currentIndex + 1}</div>
       <div class="q-text">${escHtml(q.text)}</div>
       ${inputHtml}
+      <div class="answer-hint" id="answerHint">${isChoiceBased(q) ? 'Pick the option that fits you best to continue.' : 'Write a little more so Aira can actually understand you.'}</div>
       <div class="q-footer">
         <div class="helper">${helperText}</div>
         <div class="btn-row">
@@ -252,7 +278,6 @@ function renderQuestion() {
           <button class="btn-chalk primary" id="nextBtn">${isLast ? 'Save & view persona' : 'Next ›'}</button>
         </div>
       </div>
-      <div class="answer-hint" id="answerHint">${isChoiceBased(q) ? 'Pick the option that fits you best to continue.' : 'Write a little more so Aira can actually understand you.'}</div>
     </div>
   `;
 
@@ -288,7 +313,7 @@ function renderQuestion() {
       btn.textContent = 'Saving…';
       try {
         await submitAnswers();
-        window.location.href = 'persona.html';
+        window.location.href = 'persona.html?refresh=1';
       } catch (err) {
         btn.disabled = false;
         btn.textContent = 'Save & view persona';
@@ -368,5 +393,6 @@ function escHtml(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

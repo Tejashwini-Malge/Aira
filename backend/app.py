@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
@@ -9,14 +10,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # directory it's launched from (e.g. `python backend/app.py` from the repo root).
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-from models import db, User
+from models import db, User, migrate_new_columns
 from auth import current_user, login_required
+from rate_limiter import limiter
 from session_controller import session_bp
 from persona_bp import persona_bp
 from ai_quiz_bp import quiz_bp
 from communication_bp import comm_bp
+from account_bp import account_bp
+from feedback_bp import feedback_bp
 
 app = Flask(__name__)
+limiter.init_app(app)
 
 IS_PRODUCTION = os.getenv("FLASK_ENV") == "production"
 
@@ -68,6 +73,13 @@ app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "La
 app.config["SESSION_COOKIE_SECURE"] = IS_PRODUCTION or \
     os.getenv("SESSION_COOKIE_SAMESITE", "Lax").lower() == "none"
 
+# "Stay signed in" (login route) keeps a session alive until explicit logout.
+# True "forever" isn't achievable — Chrome caps every cookie's Max-Age/Expires
+# at 400 days and silently clamps anything longer — so 400 days is the actual
+# ceiling, not an arbitrary number. Only applies when session.permanent is set
+# True at login; everyone else keeps today's behavior (dies at browser close).
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=400)
+
 # CORS is only needed if a DIFFERENT origin calls this API with credentials.
 # A wildcard origin ("*") is invalid with credentialed requests, so we never use
 # one: enable credentialed CORS only for an explicit allowlist (CORS_ORIGINS,
@@ -80,12 +92,22 @@ if _cors_origins:
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    migrate_new_columns(db.engine)
+
+@app.errorhandler(429)
+def rate_limited(e):
+    return jsonify({
+        "error": "Aira is handling a lot of requests from your account right now — please wait a bit and try again.",
+    }), 429
+
 
 # Register Blueprints
 app.register_blueprint(session_bp)
 app.register_blueprint(persona_bp)
 app.register_blueprint(quiz_bp)
 app.register_blueprint(comm_bp)
+app.register_blueprint(account_bp)
+app.register_blueprint(feedback_bp)
 
 # Frontend folder — resolved relative to this file, works from any working directory
 FRONTEND_FOLDER = os.path.join(os.path.dirname(BASE_DIR), "frontend")
@@ -95,6 +117,22 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 @app.route("/")
 def index():
     return send_from_directory(FRONTEND_FOLDER, "index.html")
+
+
+# Browsers auto-request /favicon.ico on every page load; without this route the
+# catch-all below 404s it, which shows up (deduped) in the console on every visit.
+# Served inline as the chalk "A" badge so there's no binary asset to ship.
+_FAVICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<rect width="32" height="32" rx="7" fill="#1c3a2b"/>'
+    '<text x="16" y="23" font-family="Georgia,\'Times New Roman\',serif" font-size="21"'
+    ' font-weight="700" fill="#f4f1e4" text-anchor="middle">A</text></svg>'
+)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return app.response_class(_FAVICON_SVG, mimetype="image/svg+xml")
 
 
 @app.route("/<path:filename>")
@@ -138,9 +176,13 @@ def login():
     data = request.json or {}
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
+    remember = bool(data.get("remember"))
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
         session["user_id"] = user.id
+        # Explicit even for False: documents the choice (session dies at browser
+        # close) rather than relying on Flask's default, which could change.
+        session.permanent = remember
         return jsonify({"success": True, "name": user.name, "email": user.email})
     return jsonify({"success": False, "message": "Incorrect email or password"}), 401
 

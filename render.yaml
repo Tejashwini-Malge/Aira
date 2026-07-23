@@ -5,7 +5,12 @@ services:
     plan: free
 
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: python -m gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT
+    # gthread + --threads lets one process handle several requests concurrently
+    # (they share memory, so the in-memory rate limiter in rate_limiter.py stays
+    # correct — this is NOT the same as multiple --workers, which would need a
+    # shared backend like Redis instead). --timeout is bumped past groq_client's
+    # own 45s request timeout so gunicorn never kills a worker mid-Groq-call.
+    startCommand: python -m gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 1 --threads 10 --timeout 60
 
     envVars:
       - key: FLASK_ENV
@@ -15,9 +20,6 @@ services:
         generateValue: true
 
       - key: GROQ_API_KEY
-        sync: false
-
-      - key: GEMINI_API_KEY
         sync: false
 
       - key: DATABASE_URL

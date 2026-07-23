@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aira · Classroom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
 <style>
 * { margin: 0; padding: 0; }
@@ -47,48 +48,144 @@
 .prog-label { font-size: 0.85rem; color: var(--muted); }
 .prog-label span { color: var(--chalk-yellow); }
 
-/* ── Journey ── */
-.journey { display: flex; align-items: flex-start; gap: 0; margin-bottom: 20px; position: relative; }
-.step-connector { display: flex; align-items: center; padding-top: 46px; flex-shrink: 0; width: 34px; justify-content: center; }
-.connector-line { color: var(--muted); font-size: 1.2rem; }
+/* ── Journey — stacked vertically, one board beneath the next ── */
+.journey { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-bottom: 20px; position: relative; max-width: 620px; margin-left: auto; margin-right: auto; }
+.step-connector { display: flex; align-items: center; justify-content: center; padding: 0; height: 38px; }
+.connector-line { color: var(--muted); font-size: 1.2rem; display: inline-block; transform: rotate(90deg); }
 
-.step { flex: 1; overflow: hidden; padding: 4px 4px 14px; }
-.step-header { padding: 20px 22px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.step-num { font-family: var(--fb); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
-.step-title { font-family: var(--fd); font-size: 1.4rem; }
-.step-body { padding: 0 22px 20px; }
-.step-desc { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.55; margin-bottom: 16px; }
-
-/* Toggle inside Step 2 */
-.toggle-wrap { display: flex; flex-direction: column; gap: 10px; }
-.toggle-tab {
-  padding: 12px 14px; border-radius: 8px; border: 1.5px dashed var(--dash);
-  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px;
+/* Journey steps — framed like a wooden classroom board, not a loose paper card.
+   Selector is #journey .step (ID + class) deliberately: .board-card.active in
+   the shared stylesheet is two classes, which otherwise outranks a plain
+   .step and silently strips the wood frame the moment JS marks a step
+   active/done — an ID beats any number of classes, so this always wins. */
+#journey .step {
+  flex: none; overflow: hidden; padding: 4px 4px 14px; display: flex; flex-direction: column;
+  border: none; border-radius: 0; transform: none;
+  box-shadow:
+    0 0 0 2px var(--wood-dark),
+    0 0 0 6px var(--wood),
+    0 0 0 8px var(--wood-highlight),
+    0 14px 32px rgba(0,0,0,0.35);
 }
-.toggle-tab:hover { border-color: var(--chalk); background: rgba(244,241,228,0.05); }
-.toggle-tab.selected { border-color: var(--chalk-yellow); border-style: solid; }
+.step-header { padding: 20px 22px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.step-num { font-family: var(--fb); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
+.step-title { font-family: var(--fd); font-size: 1.4rem; }
+.step-body { padding: 0 22px 20px; flex: 1; display: flex; flex-direction: column; }
+.step-desc { font-size: 0.88rem; color: var(--chalk-dim); line-height: 1.55; margin-bottom: 16px; flex: 1; }
+
+/* Toggle inside Step 2 — Mock Interview and Soft Skills are two different jobs,
+   so each is its own fully-bordered, tinted rectangle rather than a shared
+   template with one accent stripe. Blue = tested/scored on accuracy.
+   Pink = practiced/scored on delivery. */
+.toggle-wrap { display: flex; flex-direction: column; gap: 0; }
+.toggle-tab {
+  padding: 14px 14px; border-radius: 0;
+  border: 1.5px solid rgba(244,241,228,0.16);
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+}
+
+/* the chalk-and-duster tray that connects the two practice tiles */
+.practice-tray {
+  height: 15px; margin: 0 6px; position: relative; z-index: 2;
+  background: repeating-linear-gradient(90deg, var(--wood) 0px, var(--wood-light) 3px, var(--wood) 6px);
+  border-left: 1px solid var(--wood-highlight); border-right: 1px solid var(--wood-highlight);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.32) inset;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.practice-tray .chalk-stick, .practice-tray .duster { position: relative; top: -5px; }
+.toggle-tab.selected { border-color: var(--chalk-yellow); }
 .toggle-tab.done-tab { border-color: var(--chalk-green); }
-.tab-icon { width: 30px; height: 30px; border-radius: 6px; border: 1.5px dashed var(--dash); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+.tab-icon {
+  width: 34px; height: 34px; border-radius: 0;
+  border: 1.5px solid rgba(244,241,228,0.16);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tab-icon svg { width: 17px; height: 17px; }
+.toggle-tab.mock   { border-color: rgba(169,201,224,0.5); background: rgba(169,201,224,0.07); }
+.toggle-tab.mock:hover { background: rgba(169,201,224,0.12); }
+.toggle-tab.mock .tab-icon   { color: var(--chalk-blue); background: rgba(169,201,224,0.16); border-color: rgba(169,201,224,0.55); }
+.toggle-tab.skills { border-color: rgba(234,172,184,0.5); background: rgba(234,172,184,0.07); }
+.toggle-tab.skills:hover { background: rgba(234,172,184,0.12); }
+.toggle-tab.skills .tab-icon { color: var(--chalk-pink); background: rgba(234,172,184,0.16); border-color: rgba(234,172,184,0.55); }
 .tab-label { font-family: var(--fd); font-size: 1.02rem; }
-.tab-sub { font-size: 0.76rem; color: var(--muted); margin-top: 1px; }
-.tab-check { margin-left: auto; font-size: 0.78rem; color: var(--chalk-green); font-family: var(--fb); }
+.tab-sub { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.tab-check { margin-left: auto; font-size: 0.8rem; color: var(--chalk-green); font-family: var(--fb); }
+.quota-label { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+
+/* Core Profile status — replaces the persona CTA once a persona exists.
+   No free "retake" here; a refresh only appears once Aira has evidence for it. */
+.persona-stable { display: flex; align-items: center; gap: 8px; padding: 10px 0 2px; font-size: 0.86rem; color: var(--muted); }
+.persona-stable .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chalk-green); flex-shrink: 0; }
+.persona-refresh {
+  padding: 12px 14px; border-radius: 8px; border: 1.5px dashed rgba(242,226,160,0.5);
+  background: rgba(242,226,160,0.06);
+}
+.persona-refresh p { font-size: 0.85rem; color: var(--chalk-dim); line-height: 1.5; margin-bottom: 10px; }
+.persona-refresh .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.persona-refresh .btn-chalk { font-size: 0.92rem; padding: 8px 14px; }
 
 /* ── Stats row ── */
-.section-label { font-family: var(--fb); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-.section-label::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-faint) 0 8px, transparent 8px 13px); }
-.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.stat-card { padding: 16px 18px; text-align: center; }
-.stat-label { font-family: var(--fb); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 5px; }
+.section-label { font-family: var(--fb); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: rgba(244,241,228,0.12); }
+
+/* Attendance Record — a teacher's register page: one ruled ledger, three
+   columns, each entry marked present/absent the way a real register is,
+   not a status color borrowed from elsewhere in the app. */
+.register-tag {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid rgba(179,64,58,0.55); color: #d5675f;
+  font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+}
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid rgba(244,241,228,0.12); border-radius: 10px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 31px, rgba(244,241,228,0.04) 31px 32px),
+    rgba(244,241,228,0.03);
+  overflow: hidden;
+}
+.stat-card { padding: 18px 18px; text-align: center; border-right: 1px solid rgba(244,241,228,0.1); position: relative; }
+.stat-card:last-child { border-right: none; }
+.stat-mark {
+  position: absolute; top: 10px; right: 10px;
+  width: 19px; height: 19px; border-radius: 50%;
+  border: 1.5px solid rgba(244,241,228,0.22); color: var(--muted);
+  font-size: 0.66rem; font-weight: 700; font-family: var(--fb);
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-mark.present { border-color: rgba(179,64,58,0.6); color: #d5675f; }
+.stat-label { font-family: var(--fb); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 5px; }
 .stat-val { font-family: var(--fd); font-size: 1.5rem; color: var(--chalk-yellow); }
-.stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Premium teasers — confidently premium, not "unfinished" ── */
+.premium-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+.premium-card {
+  display: block; position: relative; text-decoration: none;
+  padding: 20px 20px 18px; overflow: hidden;
+  border: 1px solid rgba(242,226,160,0.32); border-radius: 12px;
+  background: rgba(242,226,160,0.035);
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+}
+.premium-card:hover { transform: translateY(-3px); border-color: var(--chalk-yellow); background: rgba(242,226,160,0.06); }
+.premium-badge {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 0.68rem; font-family: var(--fb); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--board-dark); background: linear-gradient(180deg, #f4e6a8, var(--chalk-yellow));
+  padding: 3px 10px; border-radius: 999px; box-shadow: 0 2px 8px rgba(242,226,160,0.25);
+}
+.premium-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin: 2px 0 6px; padding-right: 70px; }
+.premium-desc { font-size: 0.84rem; color: var(--chalk-dim); line-height: 1.6; margin-bottom: 10px; }
+.premium-link { font-family: var(--fd); font-size: 0.98rem; color: var(--chalk-yellow); }
+.premium-card:hover .premium-link { text-shadow: 0 0 8px rgba(242,226,160,0.3); }
 
 @media (max-width: 820px) {
   .header { padding: 10px 20px; }
   .main { padding: 28px 20px 70px; }
-  .journey { flex-direction: column; gap: 14px; }
-  .step-connector { display: none; }
   .stats-row { grid-template-columns: 1fr 1fr; }
   .welcome-title { font-size: 1.9rem; }
+  .premium-row { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -103,11 +200,12 @@
 
 <header class="header">
   <div class="brand" onclick="window.location.href='index.html'">
-    <div class="brand-badge">A</div>
+    <div class="brand-badge"></div>
     <div class="brand-name">Aira</div>
   </div>
   <div class="header-right">
     <div class="user-pill"><div class="user-dot"></div><span id="headerName">—</span></div>
+    <button class="btn-logout" onclick="window.location.href='profile.html'">Profile</button>
     <button class="btn-logout" onclick="logout()">Log out</button>
   </div>
 </header>
@@ -117,8 +215,8 @@
   <!-- Welcome -->
   <div class="welcome">
     <div class="chalk-tag">Roll call · your classroom</div>
-    <h1 class="chalk-title welcome-title">Good to see you, <em id="greetName">there</em>.</h1>
-    <p class="chalk-sub welcome-sub">Work through the three periods below. Start with Persona — Aira needs to know you before it can teach you anything else.</p>
+    <h1 class="chalk-title welcome-title">Good to see you, <em id="greetName">here</em>.</h1>
+    <p class="chalk-sub welcome-sub">Work through the three periods below. Start with Persona Aira needs to know you before it can teach you anything else.</p>
     <div class="prog-row">
       <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
       <div class="prog-label"><span id="progText">0</span> of 3 periods complete</div>
@@ -140,6 +238,7 @@
       <div class="step-body">
         <p class="step-desc">Answer 10 questions about how you learn, handle pressure, and think. Aira maps your answers into a personal coach profile used across every other module.</p>
         <button class="btn-chalk primary" style="width:100%" id="cta1" onclick="window.location.href='questions.html'">Begin Persona →</button>
+        <div id="personaStatus" style="display:none"></div>
       </div>
     </div>
 
@@ -158,25 +257,35 @@
         <p class="step-desc">Choose your practice mode. Your Persona profile shapes both paths.</p>
         <div class="toggle-wrap" id="toggleWrap">
 
-          <div class="toggle-tab" id="tab-mcq" onclick="goTo('ai_quiz.html')">
-            <div class="tab-icon">⬡</div>
+          <div class="toggle-tab mock" id="tab-mcq" onclick="goTo('ai_quiz.html')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.6 2.6 0 0 1 5.1.6c0 1.7-2.4 1.9-2.4 3.4"/><circle cx="12" cy="16.4" r="0.6" fill="currentColor" stroke="none"/></svg>
+            </div>
             <div>
               <div class="tab-label">Mock Interview</div>
-              <div class="tab-sub">A role interview or topic quiz, shaped by your private profile</div>
+              <div class="tab-sub">Role &amp; topic questions — scored on accuracy and reasoning</div>
             </div>
             <div class="tab-check" id="check-mcq" style="display:none">✓ Done</div>
           </div>
 
-          <div class="toggle-tab" id="tab-skills" onclick="goTo('soft_skills.html')">
-            <div class="tab-icon">◎</div>
+          <div class="practice-tray">
+            <div class="chalk-stick"></div>
+            <div class="duster"></div>
+          </div>
+
+          <div class="toggle-tab skills" id="tab-skills" onclick="goTo('soft_skills.html')">
+            <div class="tab-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>
+            </div>
             <div>
               <div class="tab-label">Soft Skills</div>
-              <div class="tab-sub">Speaking, delivery &amp; communication practice</div>
+              <div class="tab-sub">Speaking practice — scored on delivery, clarity &amp; confidence</div>
             </div>
             <div class="tab-check" id="check-skills" style="display:none">✓ Done</div>
           </div>
 
         </div>
+        <div class="quota-label" id="trackQuota" style="display:none"></div>
       </div>
     </div>
 
@@ -203,24 +312,43 @@
 
   <hr class="chalk-rule">
 
-  <!-- Stats -->
-  <div class="section-label">Attendance record</div>
+  <!-- Stats — a teacher's register: one ruled ledger, each entry marked present/absent -->
+  <div class="section-label"><span class="register-tag">✓</span>Attendance record</div>
   <div class="stats-row">
-    <div class="stat-card board-card">
+    <div class="stat-card" id="cardPersona">
+      <span class="stat-mark" id="markPersona">—</span>
       <div class="stat-label">Persona</div>
       <div class="stat-val" id="statPersona">Not built</div>
       <div class="stat-sub">complete period 01</div>
     </div>
-    <div class="stat-card board-card">
+    <div class="stat-card" id="cardQuiz">
+      <span class="stat-mark" id="markQuiz">—</span>
       <div class="stat-label">Quiz topics</div>
       <div class="stat-val" id="statQuiz">0</div>
       <div class="stat-sub">attempted</div>
     </div>
-    <div class="stat-card board-card">
+    <div class="stat-card" id="cardSessions">
+      <span class="stat-mark" id="markSessions">—</span>
       <div class="stat-label">Speaking sessions</div>
       <div class="stat-val" id="statSessions">0</div>
       <div class="stat-sub">recorded</div>
     </div>
+  </div>
+
+  <div class="section-label" style="margin-top:32px">Coming soon</div>
+  <div class="premium-row">
+    <a class="premium-card" href="coming-soon.html?feature=Full%20Mock%20Interview%20Day">
+      <span class="premium-badge">✦ Premium</span>
+      <div class="premium-title">Full Mock Interview Day</div>
+      <p class="premium-desc">One chained, scored session — self-intro, project talk, technical, and HR back to back, just like the real thing.</p>
+      <span class="premium-link">Learn more →</span>
+    </a>
+    <a class="premium-card" href="coming-soon.html?feature=1:1%20Mentor%20Review">
+      <span class="premium-badge">✦ Premium</span>
+      <div class="premium-title">1:1 Mentor Review</div>
+      <p class="premium-desc">A real mentor reviews your report card and speaking sessions with you, one on one.</p>
+      <span class="premium-link">Learn more →</span>
+    </a>
   </div>
 
 </div>
@@ -229,6 +357,36 @@
 <script>
 // Set once the server confirms the persona exists — gates the step-2 tabs.
 let personaReady = false;
+
+function renderPersonaStable(el) {
+  el.innerHTML = '<div class="persona-stable"><span class="dot"></span>Core Profile · Stable</div>';
+}
+
+const TRACK_LABELS = {
+  communication: 'Communication practice', intro: 'Self-introduction', project: 'Talk about your project',
+  voice: 'Voice module', leadership: 'Leadership stories', technical: 'Technical communication',
+};
+function trackLabel(id) { return TRACK_LABELS[id] || id; }
+
+// "Continue where you left off" — all 6 tracks are always open (no unlock
+// gate anymore, see communication_bp.py), so this just nudges toward the
+// first one with no recorded speaking session yet. Deliberately does NOT try
+// to map a persona "developing" dimension to a track id (they don't
+// correspond 1:1) — an untried track is the reliable signal. Reuses the
+// .persona-refresh/.btn-row card pattern verbatim.
+function renderContinueNudge(speaking) {
+  const practiced = new Set(speaking.map(s => s.track));
+  const untried = Object.keys(TRACK_LABELS).filter(t => !practiced.has(t));
+  if (!untried.length) return '';
+  const next = untried[0];
+  return `
+    <div class="persona-refresh" id="continueNudge">
+      <p>You haven't practiced <strong>${trackLabel(next)}</strong> yet.</p>
+      <div class="btn-row">
+        <button class="btn-chalk primary" onclick="window.location.href='soft_skills.html?track=${encodeURIComponent(next)}'">Continue practicing →</button>
+      </div>
+    </div>`;
+}
 
 (async function() {
   // Server-truth auth + progress: one /me/report call replaces the old
@@ -263,14 +421,51 @@ let personaReady = false;
     s1.classList.remove('active'); s1.classList.add('done');
     document.getElementById('badge1').textContent = 'Complete ✓';
     document.getElementById('badge1').className = 'chalk-badge done';
-    document.getElementById('cta1').textContent = 'Revisit Persona →';
-    document.getElementById('cta1').className = 'btn-chalk';
     document.getElementById('statPersona').textContent = 'Built ✓';
+    const markP = document.getElementById('markPersona');
+    markP.textContent = '✓'; markP.classList.add('present');
+
+    // A Core Persona is generated once and locked — no free retake button here.
+    // It only becomes a deliberate choice once Aira has real session evidence to
+    // act on. canRefresh/totalSessions ride along on the /me/report call this
+    // page already makes (via Aira.progress() above) — no second round trip.
+    document.getElementById('cta1').style.display = 'none';
+    const statusEl = document.getElementById('personaStatus');
+    statusEl.style.display = 'block';
+    renderPersonaStable(statusEl);
+    if (p.raw.persona && p.raw.persona.canRefresh) {
+      statusEl.innerHTML = `
+        <div class="persona-refresh">
+          <p>Aira has gathered enough practice evidence to improve your profile.</p>
+          <div class="btn-row">
+            <button class="btn-chalk" id="dismissRefreshBtn">Keep current profile</button>
+            <button class="btn-chalk primary" onclick="window.location.href='questions.html'">Refresh with AI insights →</button>
+          </div>
+        </div>`;
+      document.getElementById('dismissRefreshBtn').onclick = () => renderPersonaStable(statusEl);
+    }
 
     // Activate Step 2
     document.getElementById('step2').classList.add('active');
     document.getElementById('badge2').textContent = 'Choose a path';
     document.getElementById('badge2').className = 'chalk-badge active';
+
+    // Continue-practicing nudge — all tracks are always open, so this only
+    // needs the speaking history Aira.progress() already fetched.
+    const nudgeHtml = renderContinueNudge(p.speaking);
+    if (nudgeHtml) {
+      document.getElementById('step2').querySelector('.step-body').insertAdjacentHTML('beforeend', nudgeHtml);
+    }
+
+    // Today's real rep quota (2 free sessions/day, any track) — not a track count.
+    try {
+      const q = await Aira.api('/comm/quota');
+      const quotaEl = document.getElementById('trackQuota');
+      quotaEl.textContent = q.remainingToday > 0
+        ? q.sessionsUsedToday + ' of ' + q.maxFreeSessionsPerDay + ' free sessions used today'
+        : 'Today’s ' + q.maxFreeSessionsPerDay + ' free sessions used — more tomorrow';
+      quotaEl.style.display = 'block';
+    } catch (e) { /* quota display is informational only */ }
   } else {
     // Lock Step 2 tabs
     document.getElementById('tab-mcq').onclick = null;
@@ -286,6 +481,8 @@ let personaReady = false;
     document.getElementById('check-mcq').style.display = 'block';
     document.getElementById('tab-mcq').classList.add('done-tab');
     document.getElementById('statQuiz').textContent = p.quizzes.length;
+    const markQ = document.getElementById('markQuiz');
+    markQ.textContent = '✓'; markQ.classList.add('present');
   }
 
   // Soft skills done tick
@@ -293,6 +490,8 @@ let personaReady = false;
     document.getElementById('check-skills').style.display = 'block';
     document.getElementById('tab-skills').classList.add('done-tab');
     document.getElementById('statSessions').textContent = p.speaking.length;
+    const markS = document.getElementById('markSessions');
+    markS.textContent = '✓'; markS.classList.add('present');
   }
 
   // Step 2 done
@@ -310,7 +509,7 @@ let personaReady = false;
     cta3.textContent = 'View my report card →';
     cta3.className = 'btn-chalk primary';
     cta3.disabled = false;
-    cta3.onclick = function() { window.location.href = 'report.html'; };
+    cta3.onclick = function() { window.location.href = 'feedback.html?ctx=general'; };
   }
 })();
 
@@ -324,8 +523,9 @@ async function logout() {
   // Sweep any legacy mirror keys so an old cache can't leak into the next account.
   ['aira_user','aira_persona','aira_persona_done','aira_quiz_result','aira_quiz_count',
    'aira_mcq_done','aira_skills_done','speakingHistory'].forEach(k => localStorage.removeItem(k));
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 </script>
+<script src="assets/brand.js"></script>
 </body>
 </html>

@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="assets/aira-mark.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Speaking Reflection | Aira</title>
+  <title>Aira · Speaking Reflection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/chalkboard.css">
   <style>
     * { margin: 0; padding: 0; }
@@ -23,11 +24,11 @@
     }
     .brand-texts { display: flex; flex-direction: column; }
     .brand-texts span:first-child { font-family: var(--fd); font-size: 1rem; color: var(--chalk); }
-    .brand-texts span:last-child { font-size: 0.76rem; color: var(--muted); }
+    .brand-texts span:last-child { font-size: 0.8rem; color: var(--muted); }
     .header-right { display: flex; gap: 10px; align-items: center; }
-    .chip { padding: 5px 11px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.78rem; color: var(--chalk-yellow); }
+    .chip { padding: 5px 11px; border-radius: 999px; border: 1.5px dashed rgba(242,226,160,0.4); font-size: 0.8rem; color: var(--chalk-yellow); }
     .nav-btn {
-      font-size: 0.78rem; color: var(--muted); cursor: pointer;
+      font-size: 0.8rem; color: var(--muted); cursor: pointer;
       padding: 6px 11px; border-radius: 999px; border: 1.5px dashed var(--dash);
       background: none; font-family: var(--fb); transition: all 0.2s;
     }
@@ -39,7 +40,7 @@
     .grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr); gap: 20px; }
     .card { padding: 16px 16px 14px; }
     .card h2 { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin: 0 0 6px; }
-    .card small { font-size: 0.78rem; color: var(--muted); }
+    .card small { font-size: 0.8rem; color: var(--muted); }
     .card.full { grid-column: 1 / -1; }
 
     .metrics-row { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -58,11 +59,11 @@
     .metric-score { font-size: 0.8rem; color: var(--chalk-yellow); min-width: 42px; text-align: right; font-family: var(--fd); }
 
     .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .pill { font-size: 0.76rem; padding: 4px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); color: var(--muted); }
+    .pill { font-size: 0.8rem; padding: 4px 10px; border-radius: 999px; border: 1.5px dashed var(--dash); color: var(--muted); }
     .pill.good { border-color: rgba(183,217,168,0.6); color: var(--chalk-green); }
     .pill.warn { border-color: rgba(234,172,184,0.6); color: var(--chalk-pink); }
 
-    .section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); margin-bottom: 4px; opacity: 0.85; }
+    .section-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--chalk-yellow); margin-bottom: 4px; opacity: 0.85; }
     .summary-text { font-size: 0.88rem; line-height: 1.6; color: var(--chalk); }
 
     .answers-list { margin: 8px 0 0; padding: 0; list-style: none; max-height: 240px; overflow-y: auto; }
@@ -71,9 +72,9 @@
       padding: 8px 10px; border-radius: 8px;
       border: 1.5px dashed var(--dash); margin-bottom: 6px;
     }
-    .answers-list span.q-tag { font-size: 0.75rem; color: var(--muted); display: inline-block; margin-bottom: 2px; }
+    .answers-list span.q-tag { font-size: 0.8rem; color: var(--muted); display: inline-block; margin-bottom: 2px; }
     .answers-list .verdict {
-      float: right; font-size: 0.72rem; padding: 2px 9px; border-radius: 999px;
+      float: right; font-size: 0.8rem; padding: 2px 9px; border-radius: 999px;
       border: 1.5px dashed var(--dash); color: var(--muted);
     }
     .answers-list .verdict.Strong { border-color: rgba(183,217,168,0.7); color: var(--chalk-green); }
@@ -119,7 +120,7 @@
 <div class="layout">
   <div class="header-row">
     <div class="brand">
-      <div class="brand-badge">A</div>
+      <div class="brand-badge"></div>
       <div class="brand-texts">
         <span>Aira</span>
         <span>Speaking reflection report</span>
@@ -183,14 +184,14 @@
       <ul class="tips-list" id="suggestionsList"></ul>
 
       <div class="actions-row">
-        <button class="btn-chalk" onclick="window.location.href='report.html'">
+        <button class="btn-chalk" onclick="window.location.href='feedback.html?ctx=speaking'">
           View report card
         </button>
         <button class="btn-chalk" onclick="window.location.href='soft_skills.html'">
           Practice again
         </button>
       </div>
-      <p class="mode-tag" id="modeText" style="margin-top:6px; font-size:0.78rem; color:var(--muted);"></p>
+      <p class="mode-tag" id="modeText" style="margin-top:6px; font-size: 0.8rem; color:var(--muted);"></p>
     </div>
 
     <!-- Redo the weakest beat -->
@@ -279,7 +280,7 @@
       ? transcript.map((t, i) => {
           const b = beats[i] || {};
           const verdict = b.verdict ? `<span class="verdict ${esc(b.verdict)}">${esc(b.verdict)}</span>` : "";
-          const note = b.note ? `<div style="font-size:0.76rem;color:var(--muted);margin-top:3px;">${esc(b.note)}</div>` : "";
+          const note = b.note ? `<div style="font-size: 0.8rem;color:var(--muted);margin-top:3px;">${esc(b.note)}</div>` : "";
           return `<li>${verdict}<span class="q-tag">Q${i + 1} · ${esc(t.prompt || "")}</span>${esc(t.answer || "(blank)")}${note}</li>`;
         }).join("")
       : `<li><span class="q-tag">No transcript</span>This session's answers weren't handed over for display.</li>`;
@@ -345,6 +346,17 @@
         'No session to review. <a href="soft_skills.html">Start a practice round</a> first.';
       return;
     }
+
+    // Fast path: practice.html already ran the evaluation while the bell rang and
+    // handed the verdict over — render it immediately, no network wait at all.
+    if (handoff.feedback) {
+      sessionStorage.removeItem("aira_comm_session");
+      render(handoff.feedback);
+      return;
+    }
+
+    // Fallback: the hand-off carries no verdict (the evaluate call failed on the
+    // practice page, or an older tab) — grade it from here instead.
     try {
       const res = await fetch("/comm/evaluate", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -367,5 +379,6 @@
   evaluate();
 </script>
 
+<script src="assets/brand.js"></script>
 </body>
 </html>
