@@ -37,17 +37,21 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 # restart / across workers), the signature no longer verifies, Flask silently
 # discards the session, and the user looks logged out on their very next click.
 # So the key MUST come from a persistent env var and stay identical everywhere.
-# In production we refuse to boot on the shared dev default rather than sign real
-# sessions with a guessable key that also wouldn't survive a config change.
+#
+# Always required — no dev-only fallback. A fallback value here would be a
+# fixed, publicly-readable string (it's right here in the source), so if
+# IS_PRODUCTION were ever wrong (FLASK_ENV unset/mistyped on some future host)
+# the app would silently sign real user sessions with a key anyone could read
+# out of this file — a full session-forgery hole with no error to point at it.
+# Requiring the var unconditionally means that failure mode can't exist: a
+# misconfigured host fails loudly at boot instead of shipping quietly broken.
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 if not SECRET_KEY:
-    if IS_PRODUCTION:
-        raise RuntimeError(
-            "FLASK_SECRET_KEY is not set. Configure a persistent secret (e.g. the "
-            "Render env var from render.yaml) so signed session cookies stay valid "
-            "across restarts and workers."
-        )
-    SECRET_KEY = "dev-only-change-me"  # local dev only — stable, never shipped
+    raise RuntimeError(
+        "FLASK_SECRET_KEY is not set. Generate one (e.g. "
+        "python -c \"import secrets;print(secrets.token_hex(32))\") and add it "
+        "to backend/.env for local dev, or as the Render env var in production."
+    )
 app.config["SECRET_KEY"] = SECRET_KEY
 
 # DATABASE_URL is set by the host (Render/Railway) when a managed Postgres

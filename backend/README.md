@@ -29,7 +29,7 @@ created automatically, along with all tables, on first boot.
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `GROQ_API_KEY` | yes | All LLM calls (persona, resume parsing, interviews, practice). Without it, LLM features fail. |
-| `FLASK_SECRET_KEY` | yes in prod | Signs the session cookie. Defaults to a dev-only value locally. |
+| `FLASK_SECRET_KEY` | yes | Signs the session cookie. Always required — no fallback value, in dev or prod. |
 | `DATABASE_URL` | no | Set by the host when a managed Postgres instance is attached (see Deployment below). Omit for local SQLite. |
 | `FLASK_ENV` | no | Set to `production` in prod so the session cookie is marked `Secure` (HTTPS-only). |
 
