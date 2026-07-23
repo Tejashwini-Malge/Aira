@@ -53,9 +53,21 @@ def extract_text(file_storage):
 
     text = (text or "").strip()
     if len(text) < 50:
+        # Logged, not just raised — the raw file itself is never persisted
+        # (extract_text only ever sees it in-memory for this one request), so
+        # this line is the ONLY record of what actually went wrong once the
+        # request ends. Without it, a report of "resume upload failed" leaves
+        # nothing to look at afterward.
+        print(
+            f"Resume text extraction failed: filename={filename!r} "
+            f"size={len(raw)}b final_extracted_chars={len(text)}"
+        )
         raise ResumeError(
-            "Couldn't read enough text from that resume — if it's a scanned image, "
-            "please upload a text-based PDF or a DOCX instead."
+            "This looks like a photo or scan of your resume — it has no readable "
+            "text inside, only an image, so we can't analyse it. Please upload a "
+            "text-based file: export your resume as a PDF (or DOCX) straight from "
+            "Word, Google Docs, or Canva — not a photo, screenshot, or scanned copy. "
+            "Tip: if you can highlight and copy the text in your file, it'll work."
         )
     return text
 
@@ -71,15 +83,20 @@ def _extract_pdf(raw):
     """
     from pypdf import PdfReader
     reader = PdfReader(io.BytesIO(raw))
-    text = "\n".join((page.extract_text() or "") for page in reader.pages)
-    if len((text or "").strip()) >= 50:
+    pages = reader.pages
+    text = "\n".join((page.extract_text() or "") for page in pages)
+    pypdf_chars = len((text or "").strip())
+    if pypdf_chars >= 50:
         return text
 
+    print(f"pypdf got only {pypdf_chars} chars from {len(pages)} page(s) — trying pdfminer.six")
     from pdfminer.high_level import extract_text as _pdfminer_extract_text
     try:
-        return _pdfminer_extract_text(io.BytesIO(raw))
+        fallback_text = _pdfminer_extract_text(io.BytesIO(raw))
+        print(f"pdfminer.six got {len((fallback_text or '').strip())} chars")
+        return fallback_text
     except Exception as e:
-        print("pdfminer fallback also failed:", e)
+        print(f"pdfminer.six raised {type(e).__name__}: {e}")
         return text
 
 
