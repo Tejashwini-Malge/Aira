@@ -33,7 +33,7 @@ class GroqError(Exception):
         self.rate_limited = rate_limited
 
 
-def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=45):
+def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=45, label="unknown"):
     """One chat call -> parsed JSON (dict or list). Raises GroqError on any failure.
 
     json_mode adds response_format={"type":"json_object"} so the model can't wrap
@@ -42,6 +42,12 @@ def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=4
 
     If a model's daily quota is exhausted (HTTP 429), retries the same prompt on
     the next model in FALLBACK_MODELS before giving up.
+
+    label identifies the calling feature (e.g. "evaluate_quiz") purely for the
+    [groq_usage] log line below — it has no effect on the request itself. Exists
+    so real per-feature, per-model token usage can be read back out of the Render
+    logs instead of guessed from max_tokens caps, ahead of splitting features
+    across models by task size.
     """
     if not GROQ_API_KEY:
         raise GroqError("GROQ_API_KEY is not set.")
@@ -49,7 +55,7 @@ def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=4
     last_err = None
     for model in [MODEL_NAME] + FALLBACK_MODELS:
         try:
-            return _call_model(model, prompt, max_tokens, temperature, json_mode, timeout)
+            return _call_model(model, prompt, max_tokens, temperature, json_mode, timeout, label)
         except GroqError as e:
             if not e.rate_limited:
                 raise
@@ -58,7 +64,7 @@ def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=4
     raise last_err
 
 
-def _call_model(model, prompt, max_tokens, temperature, json_mode, timeout):
+def _call_model(model, prompt, max_tokens, temperature, json_mode, timeout, label="unknown"):
     body = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -78,7 +84,13 @@ def _call_model(model, prompt, max_tokens, temperature, json_mode, timeout):
         if resp.status_code == 429:
             raise GroqError(f"Rate limited on {model}: {resp.text[:300]}", rate_limited=True)
         resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
+        payload = resp.json()
+        usage = payload.get("usage", {})
+        print(f"[groq_usage] label={label} model={model} "
+              f"prompt_tokens={usage.get('prompt_tokens')} "
+              f"completion_tokens={usage.get('completion_tokens')} "
+              f"total_tokens={usage.get('total_tokens')}")
+        text = payload["choices"][0]["message"]["content"]
         try:
             return json.loads(text)
         except json.JSONDecodeError:

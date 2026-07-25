@@ -98,7 +98,7 @@ def generate_dimension_questions(dimensions, onboarding=None, harder=False):
     # recall prompt (see _normalize below). Keeping temperature fixed and letting
     # the (now more concrete, example-banning) instructions alone do the work.
     try:
-        data = groq_json(prompt, max_tokens=1400, temperature=0.6, json_mode=True)
+        data = groq_json(prompt, max_tokens=1400, temperature=0.6, json_mode=True, label="generate_dimension_questions")
     except GroqError as e:
         print("Dimension question generation error:", e)
         raise QuestionGenerationError("Aira couldn't prepare your questions right now. Please try again.")

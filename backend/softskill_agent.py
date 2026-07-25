@@ -216,7 +216,7 @@ quoting their private profile.
 Return ONLY this JSON, no markdown:
 {{{_FRAMEWORK_JSON}, "example": "..."}}"""
 
-    data = _call(prompt, max_tokens=650, temperature=0.5)
+    data = _call(prompt, max_tokens=650, temperature=0.5, label="generate_lesson")
     fw = _validate(data.get("framework"), track)
     example = _clean_text(data.get("example"))
     return {"framework": fw, "example": example or _default_example(fw)}
@@ -239,7 +239,7 @@ private profile.
 Return ONLY this JSON, no markdown:
 {{{_FRAMEWORK_JSON}, "first_question": "the opening question", "hint": "one short tip"}}"""
 
-    data = _call(prompt, max_tokens=700, temperature=0.5)
+    data = _call(prompt, max_tokens=700, temperature=0.5, label="generate_opening")
     fw = _validate(data.get("framework"), track)
     return {
         "framework": fw,
@@ -251,9 +251,9 @@ Return ONLY this JSON, no markdown:
 # ---------------------------------------------------------------------------
 # Internals
 # ---------------------------------------------------------------------------
-def _call(prompt, max_tokens, temperature):
+def _call(prompt, max_tokens, temperature, label="unknown"):
     try:
-        data = groq_json(prompt, max_tokens=max_tokens, temperature=temperature)
+        data = groq_json(prompt, max_tokens=max_tokens, temperature=temperature, label=label)
     except GroqError as e:
         print("Soft-skill framework generation error:", e)
         raise SoftSkillGenerationError("Aira couldn't design your framework right now.")

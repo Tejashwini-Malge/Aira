@@ -191,7 +191,7 @@ def parse_resume(resume_text, onboarding=None):
     try:
         # json_mode off: this prompt asks for a JSON object with nested arrays and the
         # historical behaviour relied on regex extraction rather than response_format.
-        data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False)
+        data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False, label="parse_resume")
     except GroqError as e:
         print("Resume agent error:", e)
         if e.rate_limited:

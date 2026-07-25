@@ -260,7 +260,7 @@ Return ONLY JSON:
 {{"quality":"strong|ok|weak","level":<new level 1-5>,"reaction":"one short line to them",
   "prompt":"the next question","hint":"one short tip"}}"""
 
-    gen = _call_groq(prompt, max_tokens=400, temperature=0.4)
+    gen = _call_groq(prompt, max_tokens=400, temperature=0.4, label="comm_next")
     gen = gen if isinstance(gen, dict) else {}
     new_level = _clamp(gen.get("level") or cur_level)
     beat = _beat_from(gen, answered + 1, new_level, fw)
@@ -353,7 +353,7 @@ Return ONLY JSON:
   ]
 }}"""
 
-    result = _call_groq(prompt, max_tokens=1100)
+    result = _call_groq(prompt, max_tokens=1100, label="comm_evaluate")
     if not isinstance(result, dict) or not result.get("feedback"):
         result = {
             "feedback": "We couldn't fully evaluate this session. Try again.",
@@ -420,7 +420,7 @@ First attempt: "{a1 or '(blank)'}"
 Second attempt: "{a2}"
 In one short, encouraging sentence say what improved (or what still needs work). Plain English.
 Return ONLY JSON: {{"improved": "one sentence", "verdict": "Better|About the same|Needs more"}}"""
-    gen = _call_groq(prompt, max_tokens=200, temperature=0.4)
+    gen = _call_groq(prompt, max_tokens=200, temperature=0.4, label="comm_redo")
     gen = gen if isinstance(gen, dict) else {}
     return jsonify({
         "improved": (gen.get("improved") or "Good effort — keep practising that beat.").strip(),

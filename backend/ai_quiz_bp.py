@@ -34,14 +34,14 @@ _DIM_LABELS = {
 }
 
 
-def _call_groq(prompt, max_tokens=700, temperature=0.4):
+def _call_groq(prompt, max_tokens=700, temperature=0.4, label="unknown"):
     """One Groq chat call returning parsed JSON, or None on failure.
 
     The quiz/communication flows always have a hand-written fallback, so failures
     degrade quietly instead of erroring the request.
     """
     try:
-        return groq_json(prompt, max_tokens=max_tokens, temperature=temperature)
+        return groq_json(prompt, max_tokens=max_tokens, temperature=temperature, label=label)
     except GroqError as e:
         print("Groq call failed:", e)
         return None
@@ -261,7 +261,7 @@ Rules:
 
 Return ONLY JSON: {{"questions":[{{"id":1,"question":"..."}}, ... 5 total]}}"""
 
-    result = _call_groq(prompt, max_tokens=900)
+    result = _call_groq(prompt, max_tokens=900, label="generate_quiz")
     questions = (result or {}).get("questions") if isinstance(result, dict) else None
     if not questions:
         print("Quiz fallback for", label)
@@ -357,7 +357,7 @@ Return ONLY JSON:
   ]
 }}"""
 
-    result = _call_groq(prompt, max_tokens=1100)
+    result = _call_groq(prompt, max_tokens=1100, label="evaluate_quiz")
     if not isinstance(result, dict) or not result.get("feedback"):
         print("Evaluation fallback for", topic)
         # Keep the fallback tied to the session's topic, not generic persona traits.

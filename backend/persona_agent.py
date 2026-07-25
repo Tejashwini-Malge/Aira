@@ -235,7 +235,7 @@ def generate_core_persona(responses, onboarding=None, resume_data=None, session_
     try:
         # Low temperature so the same answers score consistently and the rubric is
         # followed rather than improvised. json_mode forces valid JSON output.
-        data = groq_json(prompt, max_tokens=1100, temperature=0.2)
+        data = groq_json(prompt, max_tokens=1100, temperature=0.2, label="generate_core_persona")
     except GroqError as e:
         # A genuine LLM/network failure. Surface it as retryable rather than
         # silently persisting a generic persona that would then be cached forever.
