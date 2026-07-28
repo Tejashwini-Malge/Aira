@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, field_validator, model_validator, ValidationError
 
 from groq_client import groq_json, GroqError
-from llm_schemas import PERSONA_DIMENSIONS
+from llm_schemas import PERSONA_DIMENSIONS, describe_validation_error
 
 
 class PersonaGenerationError(Exception):
@@ -53,7 +53,11 @@ def _validate(data):
     try:
         result = PersonaResult.model_validate(data)
     except ValidationError as e:
-        print("Persona generation error:", e)
+        # Metrics only (see llm_schemas.describe_validation_error): the exception
+        # renders the offending input value, which here is the model's persona
+        # summary and per-dimension notes — a written assessment of a named
+        # person, derived from their answers and resume.
+        print(f"Persona validation failed ({describe_validation_error(e)})")
         raise PersonaGenerationError("Aira couldn't build your persona right now. Please try again.")
     return result.model_dump()
 
@@ -239,7 +243,11 @@ def generate_core_persona(responses, onboarding=None, resume_data=None, session_
     except GroqError as e:
         # A genuine LLM/network failure. Surface it as retryable rather than
         # silently persisting a generic persona that would then be cached forever.
-        print("Persona generation error:", e)
+        # Distinct wording from the validation path above: both used to print
+        # "Persona generation error", so a log line couldn't tell a network
+        # failure apart from a malformed reply. GroqError carries API/transport
+        # detail, not persona content, so it's safe to log whole.
+        print("Persona generation failed (Groq call):", e)
         raise PersonaGenerationError("Aira couldn't build your persona right now. Please try again.")
 
     out = _validate(data)

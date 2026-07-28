@@ -93,6 +93,24 @@ def test_validate_accepts_full_valid_data():
     assert len(result["dimensions"]) == len(PERSONA_DIMENSIONS)
 
 
+def test_validate_failure_log_has_no_persona_content(capsys):
+    """str(ValidationError) renders the offending input value — here the model's
+    summary and per-dimension notes, i.e. a written assessment of a named person
+    derived from their answers and resume. Logs get the shape, not the content."""
+    bad = _valid_persona_data()
+    bad["summary"] = "You struggled to explain your own SmartAttend OpenCV pipeline."
+    bad["dimensions"][PERSONA_DIMENSIONS[0]]["level"] = "High"
+
+    with pytest.raises(PersonaGenerationError):
+        _validate(bad)
+
+    log = capsys.readouterr().out
+    assert "SmartAttend" not in log and "OpenCV" not in log
+    assert "note for" not in log
+    # The failure is still diagnosable: which field, and why.
+    assert PERSONA_DIMENSIONS[0] in log and "literal_error" in log
+
+
 def test_validate_rejects_missing_dimension():
     bad = _valid_persona_data()
     del bad["dimensions"][PERSONA_DIMENSIONS[0]]

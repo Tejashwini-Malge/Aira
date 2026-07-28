@@ -86,11 +86,23 @@ class Persona(db.Model):
     dimension_questions = db.Column(db.JSON)
 
     # Resume artifacts produced by the resume agent at onboarding.
-    resume_text = db.Column(db.Text)        # raw extracted text from the uploaded file
-    resume_data = db.Column(db.JSON)        # {skills, projects, experience_level,
-                                            #  likely_gaps, technical_questions[2],
-                                            #  hr_questions[2]} — questions are tagged
-                                            #  with the persona dimension they probe.
+    # FILTERED resume text only — projects/skills sections with contact details
+    # redacted (resume_agent.sanitize_resume_text). The raw upload is never
+    # persisted: it holds the candidate's name, phone, email, college and
+    # employers, none of which any code path reads. Rows written before this
+    # change still hold raw text — scrub them with backend/scrub_resume_text.py.
+    resume_text = db.Column(db.Text)
+    # Which resume_agent.SANITIZER_VERSION produced resume_text. 0 means the row
+    # predates filtering and still holds raw text. Lets a future filter
+    # improvement be re-applied to only the rows below the new version.
+    resume_sanitizer_version = db.Column(db.Integer, default=0, nullable=False)
+    resume_data = db.Column(db.JSON)        # {skills (technical), soft_skills, projects,
+                                            #  experience_level, likely_gaps,
+                                            #  technical_questions[2], hr_questions[2]}
+                                            #  — questions are tagged with the persona
+                                            #  dimension they probe. Rows written before
+                                            #  soft-skill extraction have no soft_skills
+                                            #  key; readers must tolerate its absence.
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -309,6 +321,13 @@ def migrate_new_columns(engine):
                 ))
             if "dimension_questions" not in existing:
                 conn.execute(text("ALTER TABLE personas ADD COLUMN dimension_questions JSON"))
+            if "resume_sanitizer_version" not in existing:
+                # Defaults to 0 — every pre-existing row holds RAW resume text
+                # until scrub_resume_text.py rewrites it.
+                conn.execute(text(
+                    "ALTER TABLE personas ADD COLUMN resume_sanitizer_version "
+                    "INTEGER NOT NULL DEFAULT 0"
+                ))
 
     if "users" in table_names:
         existing = {c["name"] for c in inspector.get_columns("users")}

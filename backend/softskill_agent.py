@@ -23,6 +23,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, ValidationError
 
 from groq_client import groq_json, GroqError
+from llm_schemas import describe_validation_error
 
 # Steps allowed per framework — enough to be a real structure, few enough to keep
 # a spoken answer memorable. Practice length is derived from this, not trusted raw.
@@ -266,7 +267,10 @@ def _validate(raw, track):
     try:
         model = Framework.model_validate(raw or {})
     except ValidationError as e:
-        print("Soft-skill framework validation error:", e)
+        # Metrics only (see llm_schemas.describe_validation_error): the framework
+        # is generated from the candidate's experience level and project context,
+        # so the rejected value is resume-derived content.
+        print(f"Soft-skill framework validation failed ({describe_validation_error(e)})")
         raise SoftSkillGenerationError("Aira couldn't design your framework right now.")
     return _finalize(model, TRACK_BLUEPRINTS[track]["intent"])
 

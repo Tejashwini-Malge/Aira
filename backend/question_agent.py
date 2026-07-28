@@ -12,17 +12,139 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 
 from groq_client import groq_json, GroqError
-from llm_schemas import PERSONA_DIMENSIONS, Option, normalize_options, require_non_blank
+from llm_schemas import (
+    PERSONA_DIMENSIONS,
+    Option,
+    describe_validation_error,
+    normalize_dimension,
+    normalize_options,
+    require_non_blank,
+)
 
 
 class QuestionGenerationError(Exception):
     """Raised on a genuine LLM/network failure generating dimension questions."""
 
 
-def _build_prompt(dimensions, onboarding, harder=False):
+# Used when the model drops a dimension entirely. These are real interview
+# questions, one per dimension — NOT a template built from the dimension name.
+# The old fallback ("...how you handle leadership tendencies") was both vague and
+# a direct leak of the trait being measured, which the whole assessment depends
+# on staying hidden.
+FALLBACK_QUESTIONS = {
+    "work_culture_preferences":
+        "Think about a place you studied or worked where you did your best work. "
+        "What was it about how that place ran day to day that suited you?",
+    "teamwork_style":
+        "Tell me about a group project where the work was not shared evenly. "
+        "What did you do about it?",
+    "leadership_tendencies":
+        "Tell me about a time you took ownership of something when nobody else "
+        "stepped forward.",
+    "decision_making_approach":
+        "Describe a difficult decision you had to make when you did not have all "
+        "the information you wanted.",
+    "problem_solving_behavior":
+        "Tell me about the hardest bug or technical problem you have solved "
+        "recently. How did you get to the bottom of it?",
+    "professional_values":
+        "Tell me about a time you were pushed to do something the quick way when "
+        "you felt there was a right way. What did you do?",
+    "career_goals":
+        "Where do you want to be in your work two years from now, and what are "
+        "you doing right now to get there?",
+    "communication_style":
+        "Think of something technical you have built or studied. How would you "
+        "explain it to someone with no technical background?",
+}
+
+_GENERIC_FALLBACK = (
+    "Tell me about a recent situation in your work or studies that you think "
+    "says a lot about how you operate."
+)
+
+
+def _clean_list(values, limit):
+    """Drop null/blank entries BEFORE stringifying. Filtering on str(v) instead
+    lets a None through as the literal text "None", which then reaches the model
+    as if it were a skill."""
+    out = []
+    for v in values or []:
+        if v is None or isinstance(v, bool):
+            continue
+        s = str(v).strip()
+        if s:
+            out.append(s)
+    return out[:limit]
+
+
+def _format_resume_context(resume_data):
+    """The concrete resume facts a question can be built around. Returns "" when
+    there's no resume on file, so the prompt simply omits the section rather than
+    telling the model about an empty resume.
+
+    Mirrors the shape stored by resume_agent.parse_resume().
+    """
+    resume_data = resume_data or {}
+    lines = []
+
+    projects = [p for p in (resume_data.get("projects") or []) if isinstance(p, dict)]
+    project_lines = []
+    for p in projects[:4]:
+        name = str(p.get("name") or "").strip()
+        what = str(p.get("what_they_did") or "").strip()
+        if not name and not what:
+            continue
+        project_lines.append(f"  - {name}: {what}" if name and what else f"  - {name or what}")
+    if project_lines:
+        lines.append("Projects:")
+        lines.extend(project_lines)
+
+    skills = _clean_list(resume_data.get("skills"), 12)
+    if skills:
+        lines.append("Technical skills: " + ", ".join(skills))
+
+    # Absent from resume_data stored before soft-skill extraction existed, so this
+    # section simply doesn't render for those users rather than breaking.
+    soft = _clean_list(resume_data.get("soft_skills"), 8)
+    if soft:
+        lines.append("Soft skills: " + ", ".join(soft))
+
+    level = str(resume_data.get("experience_level") or "").strip()
+    if level:
+        lines.append(f"Experience level: {level}")
+
+    gaps = _clean_list(resume_data.get("likely_gaps"), 5)
+    if gaps:
+        lines.append("Areas they look weaker in: " + ", ".join(gaps))
+
+    if not lines:
+        return ""
+    return "THEIR RESUME:\n" + "\n".join(lines)
+
+
+def _build_prompt(dimensions, onboarding, harder=False, resume_data=None):
     onboarding = onboarding or {}
     context = ", ".join(f"{k}={v}" for k, v in onboarding.items() if v) or "none provided"
     dims_list = "\n".join(f"  - {d}" for d in dimensions)
+
+    # Without this the model only ever saw goal/field/year, so every question it
+    # wrote was necessarily generic — the reported "questions don't relate to my
+    # resume" bug. The resume block is omitted entirely when there's no resume.
+    resume_block = _format_resume_context(resume_data)
+    resume_section = f"\n{resume_block}\n" if resume_block else ""
+    resume_rule = (
+        """  - GROUND THE SCENARIOS IN THEIR OWN WORK. Wherever it fits naturally, build the
+    question around a real project, technology or responsibility from the resume
+    above — name it explicitly ("While building SmartAttend, ...", "Your OpenCV
+    pipeline starts ..."). A question that could have been asked of any candidate
+    is a wasted question.
+  - Do NOT force it. If a dimension has nothing to do with their technical work,
+    a realistic everyday work/study scenario is fine — but still keep it concrete.
+  - Grounding a question in their resume must NOT turn it into a technical quiz:
+    you are still measuring how they work and think, not what they know.\n"""
+        if resume_block else ""
+    )
 
     difficulty_rule = (
         """  - REFRESH mode (the candidate already has a Core Persona and real practice
@@ -41,13 +163,13 @@ def _build_prompt(dimensions, onboarding, harder=False):
 The candidate will answer these questions and must never see which trait each one targets.
 
 CANDIDATE CONTEXT: {context}
-
+{resume_section}
 Write ONE question for EACH of these {len(dimensions)} dimensions, in this order:
 {dims_list}
 
 Rules per question:
   - Ground it in a realistic, everyday work/study scenario — concrete, not abstract.
-  - For the "communication_style" dimension: write a free-text "recall" question
+{resume_rule}  - For the "communication_style" dimension: write a free-text "recall" question
     ("Tell me about a time you...") asking them to recount a real situation.
   - For every OTHER dimension: write a multiple-choice "situational" question with
     exactly 4 options. Each option must read like something a real person would
@@ -76,7 +198,7 @@ Return ONLY this JSON, no markdown, no commentary:
 For a "recall" question, omit "options" (or set it to null)."""
 
 
-def generate_dimension_questions(dimensions, onboarding=None, harder=False):
+def generate_dimension_questions(dimensions, onboarding=None, harder=False, resume_data=None):
     """One Groq call -> one question per requested dimension, shaped like the old
     fixed-bank/resume-grounded questions. Raises QuestionGenerationError on a
     genuine LLM/network failure so the caller can surface a retryable error
@@ -86,11 +208,16 @@ def generate_dimension_questions(dimensions, onboarding=None, harder=False):
     Persona and real practice-session history) — scenarios get higher-stakes
     and options closer in plausibility, instead of repeating the same
     first-timer difficulty every attempt.
+
+    resume_data is the structured profile stored by resume_agent.parse_resume().
+    It's optional (a caller without a resume still gets a valid, if generic,
+    quiz) but passing it is what makes these questions actually about the
+    candidate rather than about nobody in particular.
     """
     if not dimensions:
         return []
 
-    prompt = _build_prompt(dimensions, onboarding, harder=harder)
+    prompt = _build_prompt(dimensions, onboarding, harder=harder, resume_data=resume_data)
     # NOTE: an earlier version also raised temperature to 0.8 on refresh, hoping
     # more sampling variance would help the model diverge from its default
     # completion. In practice it destabilized JSON schema compliance instead —
@@ -148,24 +275,28 @@ def _normalize(questions, requested_dims):
     for raw in questions:
         if not isinstance(raw, dict):
             continue
-        dim = raw.get("dimension")
-        if dim not in requested_dims or dim in by_dim:
+        # Resolve near-misses ("leadership" -> leadership_tendencies) instead of
+        # discarding them: a dropped question here becomes a fallback question
+        # below, so loose tagging used to silently cost real generated content.
+        dim = normalize_dimension(raw.get("dimension"))
+        if dim is None or dim not in requested_dims or dim in by_dim:
             continue
         try:
-            q = GeneratedQuestion.model_validate(raw)
+            q = GeneratedQuestion.model_validate({**raw, "dimension": dim})
         except ValidationError as e:
-            print(f"Dimension question for '{dim}' failed validation, falling back:", e)
+            print(f"Dimension question for '{dim}' failed validation "
+                  f"({describe_validation_error(e)}) — falling back.")
             continue
         by_dim[dim] = q.model_dump()
 
     result = []
     for i, dim in enumerate(requested_dims):
         if dim not in by_dim:
-            print(f"No valid model question for '{dim}' — using the generic fallback recall prompt.")
+            print(f"No valid model question for '{dim}' — using the natural fallback question.")
         q = by_dim.get(dim) or {
             "dimension": dim,
             "type": "recall",
-            "text": f"Tell me about a recent moment that shows how you handle {dim.replace('_', ' ')}.",
+            "text": FALLBACK_QUESTIONS.get(dim, _GENERIC_FALLBACK),
             "options": None,
         }
         q["id"] = f"gen-{dim}-{i}"

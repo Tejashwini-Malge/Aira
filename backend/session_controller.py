@@ -12,7 +12,14 @@ from persona_eligibility import (
     total_sessions as _total_sessions,
     refresh_eligible as _refresh_eligible,
 )
-from resume_agent import extract_text, parse_resume, build_resume_questions, ResumeError
+from resume_agent import (
+    extract_text,
+    parse_resume,
+    build_resume_questions,
+    sanitize_resume_text,
+    SANITIZER_VERSION,
+    ResumeError,
+)
 from question_agent import generate_dimension_questions, QuestionGenerationError
 from persona_agent import generate_core_persona, format_session_evidence, PersonaGenerationError
 from persona_bp import _build_report_payload
@@ -68,9 +75,11 @@ def _assemble_questions(persona, user=None, question_generator=generate_dimensio
     """
     reflections = _reflections()
 
+    resume_data = persona.resume_data if persona is not None else None
+
     resume_questions = []
-    if persona is not None and persona.resume_data:
-        resume_questions = build_resume_questions(persona.resume_data)
+    if resume_data:
+        resume_questions = build_resume_questions(resume_data)
 
     covered = {q["dimension"] for q in resume_questions}
     # Prefer dimensions the resume didn't already probe, but ALWAYS keep
@@ -92,7 +101,13 @@ def _assemble_questions(persona, user=None, question_generator=generate_dimensio
         # A persona that already has a summary is being re-assessed after real
         # practice sessions, not built for the first time — raise the bar.
         is_refresh = persona is not None and bool(persona.summary)
-        dim_questions = question_generator(target_dims, onboarding, harder=is_refresh)
+        # resume_data is what makes these questions about THIS candidate. Without
+        # it the generator only ever saw goal/field/year and had no way to
+        # mention their projects or skills — the "questions don't relate to my
+        # resume" bug. The resume-grounded questions are only 4 of the 10.
+        dim_questions = question_generator(
+            target_dims, onboarding, harder=is_refresh, resume_data=resume_data
+        )
         if persona is not None:
             # Caching is the caller's DB transaction to commit — this function
             # stays testable without a Flask app/DB context.
@@ -177,13 +192,31 @@ def save_onboarding():
         return jsonify({"success": False, "message": "A resume is required to continue."}), 400
 
     try:
-        resume_text = extract_text(resume_file)
-        resume_data = parse_resume(resume_text, details)
+        # --- privacy boundary -------------------------------------------------
+        # raw_resume holds the candidate's name, contact details, college and
+        # employers. It exists for exactly two statements and is dropped before
+        # anything else runs, so no later edit in this function can reach it and
+        # accidentally send or store it. Past this point `sanitized_resume` is
+        # the only resume text in scope, and it is what BOTH the Groq call and
+        # the stored column receive.
+        #
+        # (`del` is a scoping/readability guarantee, not a memory-wipe: CPython
+        # frees the string but does not zero the bytes, and the upload buffer
+        # still exists on the request. It makes the boundary explicit and makes
+        # a later misuse a NameError rather than a silent leak.)
+        raw_resume = extract_text(resume_file)
+        sanitized_resume = sanitize_resume_text(raw_resume)
+        del raw_resume
+        # ----------------------------------------------------------------------
+        # parse_resume filters again internally as a safety net for other
+        # callers; sanitize_resume_text is idempotent, so this is a no-op.
+        resume_data = parse_resume(sanitized_resume, details)
     except ResumeError as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
     persona = _get_or_create_persona(user)
-    persona.resume_text = resume_text
+    persona.resume_text = sanitized_resume
+    persona.resume_sanitizer_version = SANITIZER_VERSION
     persona.resume_data = resume_data
 
     user.onboarding = details

@@ -56,11 +56,33 @@ def test_normalize_rejects_blank_question_text():
         _normalize(bad)
 
 
-def test_normalize_maps_unknown_dimension_to_default():
+def test_normalize_resolves_dimension_aliases():
+    """Near-misses the model actually returns are normalized to the real
+    dimension rather than defaulted away from their meaning."""
     odd = _valid_agent_output()
-    odd["technical_questions"][0]["dimension"] = "made_up_dimension"
+    odd["technical_questions"][0]["dimension"] = "Problem Solving"
+    odd["hr_questions"][0]["dimension"] = "leadership"
     data = _normalize(odd)
     assert data["technical_questions"][0]["dimension"] == "problem_solving_behavior"
+    assert data["hr_questions"][0]["dimension"] == "leadership_tendencies"
+
+
+def test_normalize_rejects_unresolvable_dimension():
+    """Regression test: an unrecognised tag used to silently become
+    problem_solving_behavior, crediting that dimension with evidence it never
+    earned and leaving the real dimension with no question at all."""
+    odd = _valid_agent_output()
+    odd["technical_questions"][0]["dimension"] = "made_up_dimension"
+    with pytest.raises(ResumeError):
+        _normalize(odd)
+
+
+def test_normalize_rejects_untagged_question():
+    """A missing dimension must not fall through to a model default either."""
+    odd = _valid_agent_output()
+    odd["technical_questions"][0].pop("dimension")
+    with pytest.raises(ResumeError):
+        _normalize(odd)
 
 
 def test_normalize_fills_missing_option_labels():

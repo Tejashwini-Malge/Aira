@@ -11,7 +11,7 @@ from session_controller import (
 )
 
 
-def _stub_generator(dimensions, onboarding=None, harder=False):
+def _stub_generator(dimensions, onboarding=None, harder=False, resume_data=None):
     """Deterministic stand-in for the real (Groq-backed) generator, so these
     tests exercise the blending/coverage logic without hitting the network."""
     return [
@@ -115,9 +115,9 @@ def test_assemble_reuses_cache_during_a_refresh_attempt():
     request during the entire refresh attempt."""
     calls = []
 
-    def counting_generator(dimensions, onboarding=None, harder=False):
+    def counting_generator(dimensions, onboarding=None, harder=False, resume_data=None):
         calls.append(dimensions)
-        return _stub_generator(dimensions, onboarding, harder)
+        return _stub_generator(dimensions, onboarding, harder, resume_data)
 
     persona = _persona_with_resume()
     persona.summary = "An existing Core Persona summary."
@@ -142,15 +142,43 @@ def test_assemble_regenerates_once_cache_is_cleared():
     assert persona.dimension_questions is not None
 
 
+def test_assemble_forwards_resume_data_to_the_generator():
+    """Regression test for the reported bug: the controller had persona.resume_data
+    in hand but never passed it on, so 5 of the 10 questions were generated from
+    onboarding alone and could not mention the candidate's projects or skills."""
+    seen = {}
+
+    def spy_generator(dimensions, onboarding=None, harder=False, resume_data=None):
+        seen["resume_data"] = resume_data
+        return _stub_generator(dimensions, onboarding, harder, resume_data)
+
+    persona = _persona_with_resume()
+    _assemble_questions(persona, question_generator=spy_generator)
+    assert seen["resume_data"] is persona.resume_data
+
+
+def test_assemble_passes_none_resume_data_when_there_is_no_persona():
+    """A user with no persona/resume still gets a quiz — the generator is just
+    told there's nothing to ground it in."""
+    seen = {}
+
+    def spy_generator(dimensions, onboarding=None, harder=False, resume_data=None):
+        seen["resume_data"] = resume_data
+        return _stub_generator(dimensions, onboarding, harder, resume_data)
+
+    _assemble_questions(None, question_generator=spy_generator)
+    assert seen["resume_data"] is None
+
+
 def test_assemble_requests_harder_questions_on_a_refresh():
     """A persona that already has a summary is being re-assessed after real
     practice sessions — the generator must be asked for harder questions, not
     the same first-timer difficulty every time."""
     seen = {}
 
-    def spy_generator(dimensions, onboarding=None, harder=False):
+    def spy_generator(dimensions, onboarding=None, harder=False, resume_data=None):
         seen["harder"] = harder
-        return _stub_generator(dimensions, onboarding, harder)
+        return _stub_generator(dimensions, onboarding, harder, resume_data)
 
     refreshing_persona = _persona_with_resume()
     refreshing_persona.summary = "An existing Core Persona summary."
