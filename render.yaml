@@ -22,11 +22,12 @@ services:
       - key: GROQ_API_KEY
         sync: false
 
+      # Free-tier Postgres instances expire ~90 days after creation and get
+      # deleted, which breaks the fromDatabase auto-link below (it silently
+      # keeps pointing at the dead instance's now-unresolvable hostname until
+      # you edit render.yaml — a dashboard-only edit gets reverted by the next
+      # Blueprint sync). So this is a plain manually-set secret instead: set
+      # the current database's connection string directly in the Render
+      # dashboard (Environment tab) whenever the database is rotated.
       - key: DATABASE_URL
-        fromDatabase:
-          name: aira-db
-          property: connectionString
-
-databases:
-  - name: aira-db
-    plan: free
+        sync: false
