@@ -80,6 +80,116 @@ def _clamp(n):
         return START_LEVEL
 
 
+# The model judges the ANSWER; the arithmetic on top of that judgement is ours.
+# Asking it for the new level too meant paying tokens for a sum we re-derived and
+# re-clamped in Python anyway — and left it free to return a level that didn't
+# match the quality it had just reported.
+_LEVEL_STEP = {"strong": 1, "ok": 0, "weak": -1}
+
+
+def _next_level(cur_level, quality):
+    # quality comes straight out of model JSON, so it is not guaranteed to be a
+    # string — anything unrecognised leaves the difficulty where it is.
+    key = quality.strip().lower() if isinstance(quality, str) else ""
+    return _clamp(cur_level + _LEVEL_STEP.get(key, 0))
+
+
+# A spoken answer to one interview question is a few hundred words. Anything past
+# this is not a person talking — it is a broken dictation loop, and letting it reach
+# the model silently costs the student their whole session (the prompt blows the
+# context window, _call_groq returns nothing, and they get the 5/5/5/5 fallback
+# scores as if they had actually been graded). Clamp on ingest instead.
+MAX_ANSWER_CHARS = 3000
+_OVERLAP_WINDOW = 30   # words; bounds the cost of the adjacent-repeat scan
+_SIGNATURE_WORDS = 8       # words that identify "the answer started over here"
+_RESTART_SEARCH_WORDS = 200  # how far in to look for a restart point
+_MAX_RESTART_DEPTH = 4       # restarts-within-restarts before we stop digging
+_MAX_RAW_CHARS = 200_000     # refuse to even scan beyond this; it is not speech
+_DEDUPE_FIRST_WORDS = 1500   # above this, collapse before de-duplicating (see below)
+
+
+def _collapse_restarts(words, depth=0):
+    """Keep the fullest revision when an answer restarts and re-says itself.
+
+    A dictation loop re-delivers the same sentence over and over, one word longer each
+    time, so the answer becomes a chain of growing prefixes. Every one of those
+    restarts opens with the same run of words, so indexing the signature-length
+    word-grams by position finds the restart point in a single pass: split there and
+    keep the longest section, since each section is a prefix of the same sentence and
+    the longest is the complete thing they said. A student can trail off and restart
+    again inside that section, so the survivor is re-examined for a restart of its own.
+    """
+    if depth > _MAX_RESTART_DEPTH or len(words) < _SIGNATURE_WORDS * 2:
+        return words
+
+    lowered = [w.lower() for w in words]
+    positions = {}
+    for i in range(len(words) - _SIGNATURE_WORDS + 1):
+        positions.setdefault(tuple(lowered[i:i + _SIGNATURE_WORDS]), []).append(i)
+
+    # Earliest point the answer starts over. Anything before it was said once.
+    for p in range(min(len(words) - _SIGNATURE_WORDS, _RESTART_SEARCH_WORDS)):
+        starts = positions.get(tuple(lowered[p:p + _SIGNATURE_WORDS]), ())
+        starts = [i for i in starts if i >= p]
+        if len(starts) < 2:
+            continue
+        bounds = starts + [len(words)]
+        longest = max((words[a:b] for a, b in zip(bounds, bounds[1:])), key=len)
+        return words[:p] + _collapse_restarts(longest, depth + 1)
+    return words
+
+
+def _dedupe_adjacent(words):
+    """Drop any run of words that immediately repeats the run just kept.
+
+    Unwinds short stutters and the tail of a dictation loop ("the interest for" +
+    "for admission" -> "the interest for admission"). Ordinary speech only ever loses
+    a genuine repetition, which is what we want in a transcript anyway.
+    """
+    kept, lowered_kept, i = [], [], 0
+    while i < len(words):
+        limit = min(len(kept), len(words) - i, _OVERLAP_WINDOW)
+        tail = [w.lower() for w in words[i:i + limit]]
+        overlap = 0
+        for k in range(limit, 0, -1):
+            if lowered_kept[len(kept) - k:] == tail[:k]:
+                overlap = k
+                break
+        if overlap:
+            i += overlap          # already have these words; skip the repeat
+        else:
+            kept.append(words[i])
+            lowered_kept.append(words[i].lower())
+            i += 1
+    return kept
+
+
+def _sanitize_answer(text):
+    """Recover a dictated answer from a broken speech loop, then hard-cap its length.
+
+    De-duplicating before collapsing recovers slightly more of what was said, because
+    the restart points line up better once the stutters between them are gone. But
+    that pass is quadratic in the overlap window, so on a badly runaway answer it is
+    far too slow for a request path — there we collapse first to get the word count
+    down, and accept losing a trailing clause of already-mangled speech.
+    """
+    text = (text or "").strip()
+    if not text:
+        return ""
+
+    words = text[:_MAX_RAW_CHARS].split()
+    if len(words) > _DEDUPE_FIRST_WORDS:
+        words = _collapse_restarts(words)
+    words = _collapse_restarts(_dedupe_adjacent(words))
+
+    cleaned = " ".join(words)
+    if len(cleaned) > MAX_ANSWER_CHARS:
+        # Still oversized after collapsing — cut at a word boundary so the prompt
+        # stays well inside the context window no matter what the client sent.
+        cleaned = cleaned[:MAX_ANSWER_CHARS].rsplit(" ", 1)[0]
+    return cleaned
+
+
 # ---------------------------------------------------------------------------
 # Setup — teach the framework + a persona-personalised example
 # ---------------------------------------------------------------------------
@@ -206,7 +316,12 @@ def _beat_from(gen, beat_id, level, fw):
 @limiter.limit("60 per hour")
 def comm_next():
     data = request.get_json() or {}
-    answer = (data.get("answer") or "").strip()
+    raw_answer = (data.get("answer") or "").strip()
+    answer = _sanitize_answer(raw_answer)
+    if len(raw_answer) > len(answer) * 2 + 200:
+        # Loud on purpose: the last time a dictation loop reached the model it cost a
+        # student their whole session and left no trace anywhere but the transcript.
+        print(f"Dictation loop cleaned: {len(raw_answer)} -> {len(answer)} chars")
 
     # Only the stored session can advance — the client sends just its latest answer,
     # and the prompts/difficulty come from what WE actually asked.
@@ -246,23 +361,23 @@ PRIVATE PROFILE (for your eyes only, do not quote):
 CONVERSATION SO FAR:
 {transcript}
 
-The current difficulty level is {cur_level} (of 5). Do THREE things:
+The current difficulty level is {cur_level} (of 5). Do TWO things:
 1. Judge their MOST RECENT answer: "strong" (specific, clear, confident), "ok" (some
    substance but generic/safe), or "weak" (vague, very short, or blank).
-2. Set the next difficulty: strong -> {cur_level}+1, ok -> {cur_level}, weak -> {cur_level}-1
-   (clamp between 1 and 5). Harder = more depth, edge cases, or follow-up pressure.
-3. Ask the NEXT question at that new level. This is question {answered+1} of {fw['total']};
+2. Ask the NEXT question, pitched one notch harder than the last if their answer was
+   strong, the same if ok, and gentler if weak. Harder = more depth, edge cases, or
+   follow-up pressure. This is question {answered+1} of {fw['total']};
    it should move the framework forward (next focus: {next_step['label']} — {next_step['hint']}).
    Phrase it naturally, plain English. If their last answer was weak, a one-line supportive
    reaction; if strong, acknowledge it briefly.
 
 Return ONLY JSON:
-{{"quality":"strong|ok|weak","level":<new level 1-5>,"reaction":"one short line to them",
+{{"quality":"strong|ok|weak","reaction":"one short line to them",
   "prompt":"the next question","hint":"one short tip"}}"""
 
     gen = _call_groq(prompt, max_tokens=400, temperature=0.4, label="comm_next")
     gen = gen if isinstance(gen, dict) else {}
-    new_level = _clamp(gen.get("level") or cur_level)
+    new_level = _next_level(cur_level, gen.get("quality"))
     beat = _beat_from(gen, answered + 1, new_level, fw)
 
     # Persist the new beat so the next round (and the final evaluation) grades what
@@ -300,7 +415,7 @@ def comm_evaluate():
     history = state["history"]
     # If the client skipped the final /comm/next round-trip, accept its last answer
     # here — but only slotted into the beat we actually asked.
-    final_answer = (data.get("answer") or "").strip()
+    final_answer = _sanitize_answer(data.get("answer"))
     if final_answer and not (history[-1].get("answer") or "").strip():
         history[-1]["answer"] = final_answer
 
@@ -310,8 +425,10 @@ def comm_evaluate():
     qa = [{"prompt": h.get("prompt"), "answer": h.get("answer"), "difficulty": h.get("difficulty")} for h in history]
     brief, _, _ = _persona_brief(for_eval=True)
 
+    # Sanitize again on the way out, not just on ingest: a session that was already
+    # in flight when this deployed still has raw answers sitting in pending state.
     transcript = "\n\n".join(
-        f"Q{i+1}: {item.get('prompt','')}\nTheir answer: {(item.get('answer') or '').strip() or '(left blank)'}"
+        f"Q{i+1}: {item.get('prompt','')}\nTheir answer: {_sanitize_answer(item.get('answer')) or '(left blank)'}"
         for i, item in enumerate(qa)
     )
     metrics_line = (f"Measured delivery signals — speaking pace: {metrics.get('wpm','?')} words/min, "

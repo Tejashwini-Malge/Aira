@@ -9,7 +9,9 @@ snapshots (`/me/report/snapshot`).
 
 The stack: Flask + SQLAlchemy (SQLite locally, Postgres in production),
 signed-cookie sessions for auth, and the Groq chat API
-(`llama-3.3-70b-versatile`) for all LLM calls via `groq_client.py`. The
+(`openai/gpt-oss-120b`, falling back to `llama-3.3-70b-versatile` then
+`llama-3.1-8b-instant` when a model's daily quota runs out) for all LLM
+calls via `groq_client.py`. The
 plain-HTML frontend in `../frontend/` is served by this same Flask app —
 there is no separate frontend server, in dev or in production.
 

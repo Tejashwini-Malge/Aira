@@ -18,11 +18,22 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "openai/gpt-oss-120b"
 # Groq's free-tier daily token quota is tracked PER MODEL, so when the primary
-# model is exhausted (100k tokens/day burns fast with real users) the fallback
-# still has its own, much larger quota.
-FALLBACK_MODELS = ["llama-3.1-8b-instant"]
+# model is exhausted the fallbacks still have their own, separate quotas. Primary
+# is gpt-oss-120b for its 200k/day allowance; llama-3.3-70b-versatile (100k/day)
+# is now the first fallback rather than the primary, and 8b-instant the last net.
+FALLBACK_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+# For calls that are extraction/formatting rather than judgement (resume parsing,
+# question generation). Cheaper per token AND it spreads load across the per-model
+# daily quotas, which is what actually buys free-tier headroom — the ladder below
+# still falls back to the bigger models if this one is exhausted.
+FAST_MODEL = "llama-3.1-8b-instant"
+
+# gpt-oss is a reasoning model and its reasoning tokens are billed against
+# max_tokens. Callers here cap as low as 200 tokens, so a full reasoning pass
+# would consume the whole budget and return empty content — keep effort low.
+REASONING_EFFORT = "low"
 
 
 class GroqError(Exception):
@@ -33,7 +44,16 @@ class GroqError(Exception):
         self.rate_limited = rate_limited
 
 
-def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=45, label="unknown"):
+def _ladder(preferred=None):
+    """Models to try, in order. A caller's `preferred` model goes first but still
+    falls back to the rest — so routing a call to a cheaper model never makes it
+    MORE likely to fail outright when that model's daily quota runs out."""
+    chain = [preferred] if preferred else []
+    return chain + [m for m in [MODEL_NAME] + FALLBACK_MODELS if m != preferred]
+
+
+def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=45,
+              label="unknown", model=None):
     """One chat call -> parsed JSON (dict or list). Raises GroqError on any failure.
 
     json_mode adds response_format={"type":"json_object"} so the model can't wrap
@@ -42,6 +62,9 @@ def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=4
 
     If a model's daily quota is exhausted (HTTP 429), retries the same prompt on
     the next model in FALLBACK_MODELS before giving up.
+
+    model overrides which model is tried FIRST (see FAST_MODEL) for calls that
+    don't need the primary's quality; the rest of the ladder still applies.
 
     label identifies the calling feature (e.g. "evaluate_quiz") purely for the
     [groq_usage] log line below — it has no effect on the request itself. Exists
@@ -53,13 +76,13 @@ def groq_json(prompt, max_tokens=700, temperature=0.4, json_mode=True, timeout=4
         raise GroqError("GROQ_API_KEY is not set.")
 
     last_err = None
-    for model in [MODEL_NAME] + FALLBACK_MODELS:
+    for candidate in _ladder(model):
         try:
-            return _call_model(model, prompt, max_tokens, temperature, json_mode, timeout, label)
+            return _call_model(candidate, prompt, max_tokens, temperature, json_mode, timeout, label)
         except GroqError as e:
             if not e.rate_limited:
                 raise
-            print(f"Groq model {model} rate-limited, trying next fallback")
+            print(f"Groq model {candidate} rate-limited, trying next fallback")
             last_err = e
     raise last_err
 
@@ -73,6 +96,8 @@ def _call_model(model, prompt, max_tokens, temperature, json_mode, timeout, labe
     }
     if json_mode:
         body["response_format"] = {"type": "json_object"}
+    if model.startswith("openai/gpt-oss"):
+        body["reasoning_effort"] = REASONING_EFFORT
 
     try:
         resp = requests.post(

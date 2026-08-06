@@ -325,11 +325,33 @@ startSession();
 // Speech recognition — stays on until YOU turn it off.
 // The browser ends recognition on its own after any silence, so `wantListening`
 // tracks the user's intent and onend auto-restarts while it's still true.
-// Transcription REPLACES the textarea from a base snapshot (base + finals + interim)
-// instead of appending — interim results are cumulative revisions of the same phrase,
-// and appending each revision duplicated words ("firstly firstly i came firstly…").
+//
+// `baseText` is the authoritative record of FINALISED speech. It is never re-read
+// from the textarea: aEl.value is base + interim, so snapshotting it on restart
+// promoted un-finalised interim into the base. On mobile Chrome, which ignores
+// `continuous` and ends recognition constantly, that looped once per revision and
+// grew the answer into tens of thousands of characters of the same sentence
+// ("so / so basically / so basically the / so basically the interest…").
+// Pending interim is dropped on restart instead — losing a trailing part-word beats
+// duplicating the whole answer. appendSpeech() strips any overlap as a second line
+// of defence in case the engine replays audio it already gave us.
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const MAX_ANSWER_CHARS = 3000;
 let recog, isListening = false, wantListening = false, baseText = "";
+
+// Append `add` to `base`, skipping the longest run of trailing words in `base`
+// that `add` repeats. "the interest for" + "for admission" -> "the interest for admission".
+function appendSpeech(base, add) {
+  const b = base.trim().split(/\s+/).filter(Boolean);
+  const a = add.trim().split(/\s+/).filter(Boolean);
+  if (!a.length) return base;
+  const max = Math.min(b.length, a.length, 30);
+  let overlap = 0;
+  for (let k = max; k > 0; k--) {
+    if (b.slice(b.length - k).join(" ").toLowerCase() === a.slice(0, k).join(" ").toLowerCase()) { overlap = k; break; }
+  }
+  return b.concat(a.slice(overlap)).join(" ") + " ";
+}
 if (SR) {
   recog = new SR();
   recog.continuous = true; recog.interimResults = true; recog.lang = "en-US";
@@ -337,8 +359,9 @@ if (SR) {
   recog.onend = () => {
     isListening = false;
     if (wantListening) {
-      // Silence timeout, not a user stop — pick up where we left off.
-      baseText = aEl.value.trim() ? aEl.value.trim() + " " : "";
+      // Silence timeout, not a user stop — resume from the finalised text only.
+      // Do NOT re-snapshot aEl.value here; that is what caused the runaway growth.
+      aEl.value = baseText.trim();
       try { recog.start(); return; } catch { wantListening = false; }
     }
     micBtn.classList.remove("listening");
@@ -351,8 +374,9 @@ if (SR) {
       if (e.results[i].isFinal) fin += e.results[i][0].transcript + " ";
       else int += e.results[i][0].transcript;
     }
-    if (fin) baseText += fin;
-    aEl.value = (baseText + int).trim();
+    if (fin) baseText = appendSpeech(baseText, fin);
+    if (baseText.length > MAX_ANSWER_CHARS) baseText = baseText.slice(0, MAX_ANSWER_CHARS);
+    aEl.value = (baseText + int).trim().slice(0, MAX_ANSWER_CHARS);
   };
   recog.onerror = e => {
     if (e.error === "no-speech" || e.error === "aborted") return; // harmless; onend handles restart

@@ -70,7 +70,7 @@ Nothing here is decoration for its own sake — every module feeds the report:
 ## Tech stack
 
 - **Backend:** Flask + SQLAlchemy, session-cookie auth, Groq's
-  `llama-3.3-70b-versatile` for every LLM call (persona generation, resume
+  `openai/gpt-oss-120b` for every LLM call (persona generation, resume
   parsing, interview questions/grading, speaking prompts/grading).
   SQLite locally, Postgres in production (same ORM, just a different
   connection string — see [`backend/README.md`](backend/README.md)).

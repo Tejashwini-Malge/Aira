@@ -11,7 +11,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 
-from groq_client import groq_json, GroqError
+from groq_client import groq_json, GroqError, FAST_MODEL
 from llm_schemas import (
     PERSONA_DIMENSIONS,
     Option,
@@ -225,7 +225,8 @@ def generate_dimension_questions(dimensions, onboarding=None, harder=False, resu
     # recall prompt (see _normalize below). Keeping temperature fixed and letting
     # the (now more concrete, example-banning) instructions alone do the work.
     try:
-        data = groq_json(prompt, max_tokens=1400, temperature=0.6, json_mode=True, label="generate_dimension_questions")
+        data = groq_json(prompt, max_tokens=1400, temperature=0.6, json_mode=True,
+                         label="generate_dimension_questions", model=FAST_MODEL)
     except GroqError as e:
         print("Dimension question generation error:", e)
         raise QuestionGenerationError("Aira couldn't prepare your questions right now. Please try again.")

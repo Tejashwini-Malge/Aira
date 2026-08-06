@@ -19,7 +19,7 @@ import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 
-from groq_client import groq_json, GroqError, GROQ_API_KEY
+from groq_client import groq_json, GroqError, GROQ_API_KEY, FAST_MODEL
 from llm_schemas import (
     PERSONA_DIMENSIONS,
     Option,
@@ -356,7 +356,11 @@ def parse_resume(resume_text, onboarding=None):
     try:
         # json_mode off: this prompt asks for a JSON object with nested arrays and the
         # historical behaviour relied on regex extraction rather than response_format.
-        data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False, label="parse_resume")
+        # Extraction, not judgement — the smaller model reads a resume into fields
+        # just as well, and every parse it handles leaves the big models' daily
+        # quota free for the coaching calls that actually need them.
+        data = groq_json(prompt, max_tokens=1500, temperature=0.4, json_mode=False,
+                         label="parse_resume", model=FAST_MODEL)
     except GroqError as e:
         print("Resume agent error:", e)
         if e.rate_limited:
