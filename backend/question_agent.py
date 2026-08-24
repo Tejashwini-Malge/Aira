@@ -11,6 +11,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 
+from candidate_profile import resolve_profile
+from onboarding_schema import prompt_context
 from groq_client import groq_json, GroqError, FAST_MODEL
 from llm_schemas import (
     PERSONA_DIMENSIONS,
@@ -35,9 +37,13 @@ FALLBACK_QUESTIONS = {
     "work_culture_preferences":
         "Think about a place you studied or worked where you did your best work. "
         "What was it about how that place ran day to day that suited you?",
+    # Deliberately not "a group project" — these fire for ANY band, and a live
+    # experienced-switcher set fell back to exactly this question, handing a
+    # four-year professional a college-framed one. Every entry here has to read
+    # naturally to a student and a senior alike.
     "teamwork_style":
-        "Tell me about a group project where the work was not shared evenly. "
-        "What did you do about it?",
+        "Tell me about a time you worked with others and the load was not shared "
+        "evenly. What did you do about it?",
     "leadership_tendencies":
         "Tell me about a time you took ownership of something when nobody else "
         "stepped forward.",
@@ -62,6 +68,27 @@ _GENERIC_FALLBACK = (
     "Tell me about a recent situation in your work or studies that you think "
     "says a lot about how you operate."
 )
+
+
+# The output cap was a flat 1400 while the job it pays for is variable: one
+# situational question is a stem plus 4 options, each carrying its own text AND a
+# signal line. Measured against the senior band — whose options must trade two
+# real priorities and so run longer — a 5-dimension set came back at 1127 and
+# 1317 completion tokens. 1317 of 1400 is 94% of the cap, and a truncated reply
+# is unclosed JSON: the whole set fails, or a dimension silently drops to a
+# generic fallback question with nothing naming the cause.
+#
+# Scaled per dimension instead, with headroom over the worst measurement. An
+# unused cap costs nothing — Groq bills tokens actually generated, so the only
+# thing a generous ceiling risks is a rambling model, while a tight one risks
+# every senior question set.
+_TOKENS_PER_QUESTION = 400
+_OUTPUT_OVERHEAD = 150
+
+
+def _output_budget(dimension_count):
+    """Room for `dimension_count` questions plus the JSON wrapper."""
+    return _TOKENS_PER_QUESTION * max(dimension_count, 1) + _OUTPUT_OVERHEAD
 
 
 def _clean_list(values, limit):
@@ -125,7 +152,7 @@ def _format_resume_context(resume_data):
 
 def _build_prompt(dimensions, onboarding, harder=False, resume_data=None):
     onboarding = onboarding or {}
-    context = ", ".join(f"{k}={v}" for k, v in onboarding.items() if v) or "none provided"
+    context = ", ".join(f"{k}={v}" for k, v in prompt_context(onboarding).items()) or "none provided"
     dims_list = "\n".join(f"  - {d}" for d in dimensions)
 
     # Without this the model only ever saw goal/field/year, so every question it
@@ -133,12 +160,21 @@ def _build_prompt(dimensions, onboarding, harder=False, resume_data=None):
     # resume" bug. The resume block is omitted entirely when there's no resume.
     resume_block = _format_resume_context(resume_data)
     resume_section = f"\n{resume_block}\n" if resume_block else ""
+
+    # Seniority and stated goal, resolved deterministically (candidate_profile).
+    # Both facts were already IN the prompt — experience_level via the resume
+    # block, goal via the key=value context line — but as inert context with no
+    # rule telling the model to act on them, so it wrote manager-level scenarios
+    # for students and ignored the goal entirely. These are rules, not context.
+    framing_rules = resolve_profile(onboarding, resume_data).rules()
     resume_rule = (
         """  - GROUND THE SCENARIOS IN THEIR OWN WORK. Wherever it fits naturally, build the
     question around a real project, technology or responsibility from the resume
-    above — name it explicitly ("While building SmartAttend, ...", "Your OpenCV
-    pipeline starts ..."). A question that could have been asked of any candidate
-    is a wasted question.
+    above — name it explicitly, the way "While building <their project name>, ..."
+    or "Your <their technology> pipeline starts ..." would read once filled in.
+    Use ONLY names that appear in THEIR RESUME above. Never invent a project, and
+    never borrow a name from these instructions. A question that could have been
+    asked of any candidate is a wasted question.
   - Do NOT force it. If a dimension has nothing to do with their technical work,
     a realistic everyday work/study scenario is fine — but still keep it concrete.
   - Grounding a question in their resume must NOT turn it into a technical quiz:
@@ -148,14 +184,10 @@ def _build_prompt(dimensions, onboarding, harder=False, resume_data=None):
 
     difficulty_rule = (
         """  - REFRESH mode (the candidate already has a Core Persona and real practice
-    history) — two extra rules, same JSON shape as always:
-    * Do not use these overused setups: a teammate falling behind, an approaching
-      deadline, a coworker disagreeing in a meeting, receiving critical feedback.
-      Pick a different, more specific scenario instead.
-    * Make the 4 options genuinely close calls — each should trade one real value
-      against another, with no single option obviously more "mature" than the rest.
-    Every situational question still needs exactly 4 options with a label, text and
-    signal each — that requirement does not change in refresh mode.\n"""
+    history): make the 4 options genuinely close calls — each should trade one real
+    value against another, with no single option obviously more "mature" than the
+    rest. Every situational question still needs exactly 4 options with a label,
+    text and signal each — that requirement does not change in refresh mode.\n"""
         if harder else ""
     )
 
@@ -168,14 +200,32 @@ Write ONE question for EACH of these {len(dimensions)} dimensions, in this order
 {dims_list}
 
 Rules per question:
-  - Ground it in a realistic, everyday work/study scenario — concrete, not abstract.
+{framing_rules}
+  - Ground it in a realistic, everyday scenario — concrete, not abstract, and always
+    within the world described above.
 {resume_rule}  - For the "communication_style" dimension: write a free-text "recall" question
     ("Tell me about a time you...") asking them to recount a real situation.
   - For every OTHER dimension: write a multiple-choice "situational" question with
     exactly 4 options. Each option must read like something a real person would
     actually choose, and each needs a one-line "signal" describing what choosing
     it reveals about the person.
-  - Vary the scenarios — do not reuse the same setup across questions.
+  - NOT EVERY QUESTION IS ABOUT OTHER PEOPLE. Some of these dimensions are about how
+    someone works WITH people — culture, teamwork, leadership, communication — and
+    those should be interpersonal. The rest (problem solving, decision making,
+    professional values, career direction) are fully answerable alone, and putting
+    them in a team setting measures teamwork a second time instead of what they were
+    meant to measure. For those, prefer a situation the candidate faces on their own:
+    a hard problem in their own work, a choice between two approaches, a trade-off
+    only they will live with. Do not open every question with "Your team ...".
+  - EVERY QUESTION MUST USE A DIFFERENT SETUP. Read the set as a whole before you
+    return it: if two questions put the candidate in the same situation, rewrite one.
+    Do not use these worn-out setups at all — a teammate falling behind or not pulling
+    their weight, an approaching deadline, a coworker disagreeing in a meeting,
+    receiving critical feedback. Pick a more specific situation instead.
+    (This was refresh-only until real first-run sets came back with the same
+    "someone isn't pulling their weight" scenario twice out of five. Narrowing the
+    scenario world to the candidate's actual level shrinks the model's vocabulary,
+    so first-timers need this rule MORE than returning users, not less.)
   - The candidate must never be able to tell these were auto-generated or which
     trait is being measured.
 {difficulty_rule}
@@ -218,6 +268,7 @@ def generate_dimension_questions(dimensions, onboarding=None, harder=False, resu
         return []
 
     prompt = _build_prompt(dimensions, onboarding, harder=harder, resume_data=resume_data)
+    max_tokens = _output_budget(len(dimensions))
     # NOTE: an earlier version also raised temperature to 0.8 on refresh, hoping
     # more sampling variance would help the model diverge from its default
     # completion. In practice it destabilized JSON schema compliance instead —
@@ -225,7 +276,7 @@ def generate_dimension_questions(dimensions, onboarding=None, harder=False, resu
     # recall prompt (see _normalize below). Keeping temperature fixed and letting
     # the (now more concrete, example-banning) instructions alone do the work.
     try:
-        data = groq_json(prompt, max_tokens=1400, temperature=0.6, json_mode=True,
+        data = groq_json(prompt, max_tokens=max_tokens, temperature=0.6, json_mode=True,
                          label="generate_dimension_questions", model=FAST_MODEL)
     except GroqError as e:
         print("Dimension question generation error:", e)

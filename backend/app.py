@@ -11,13 +11,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from models import db, User, migrate_new_columns
+from groq_client import set_usage_sink
 from auth import current_user, login_required
 from rate_limiter import limiter
 from session_controller import session_bp
 from persona_bp import persona_bp
 from ai_quiz_bp import quiz_bp
 from communication_bp import comm_bp
-from account_bp import account_bp
+from account_bp import account_bp, MIN_PASSWORD_LEN
 from feedback_bp import feedback_bp
 
 app = Flask(__name__)
@@ -95,8 +96,24 @@ if _cors_origins:
 
 db.init_app(app)
 with app.app_context():
+    # Imported here, after db.init_app: importing usage_tracker registers its
+    # model on the same `db` metadata, and it must be registered BEFORE
+    # create_all or the groq_usage table isn't created on a fresh database.
+    from usage_tracker import record as _record_groq_usage
+
     db.create_all()
     migrate_new_columns(db.engine)
+
+
+def _usage_sink(**usage):
+    """Persist one Groq call's token spend. Runs inside an app context of its own
+    because Groq calls happen during a request but the recorder must also work if
+    a future caller runs outside one (a script, a scheduled job)."""
+    with app.app_context():
+        _record_groq_usage(**usage)
+
+
+set_usage_sink(_usage_sink)
 
 @app.errorhandler(429)
 def rate_limited(e):
@@ -162,6 +179,14 @@ def signup():
     password = data.get("password", "")
     if not name or not email or not password:
         return jsonify({"success": False, "message": "Name, email and password are required"}), 400
+    # Same floor the reset flow enforces, imported rather than repeated: signup
+    # used to accept a one-character password, so an account could be created
+    # below a length its owner could never reset back to.
+    if len(password) < MIN_PASSWORD_LEN:
+        return jsonify({
+            "success": False,
+            "message": f"Password must be at least {MIN_PASSWORD_LEN} characters",
+        }), 400
     if User.query.filter_by(email=email).first():
         return jsonify({"success": False, "message": "An account with this email already exists"}), 400
 

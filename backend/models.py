@@ -20,6 +20,17 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # The last day this account was seen making an authenticated request.
+    #
+    # Without it there is NO way to ask "did anyone come back?". A return visit
+    # otherwise only leaves a trace if the user finishes a quiz or a speaking
+    # session, and almost nobody does — so someone who logged in three times and
+    # practised nothing is indistinguishable from someone who never returned.
+    #
+    # Nullable on purpose: existing rows genuinely have no such date, and back-
+    # filling created_at would invent return visits that never happened.
+    last_seen_at = db.Column(db.DateTime, index=True)
+
     # Career-development details collected once at onboarding (study, goal, target
     # role, timeline, language, optional note). Stored as a flexible blob so the
     # field set can evolve without a migration. The resume itself feeds the Persona.
@@ -103,6 +114,17 @@ class Persona(db.Model):
                                             #  dimension they probe. Rows written before
                                             #  soft-skill extraction have no soft_skills
                                             #  key; readers must tolerate its absence.
+
+    # Set when a resume arrives AFTER a persona was already built — i.e. the user
+    # onboarded without one and uploaded it later from their profile. It makes the
+    # locked persona eligible for one refresh immediately, without waiting out
+    # SESSIONS_REQUIRED_TO_REFRESH.
+    #
+    # The lock exists to stop a user re-rolling their persona after one bad day,
+    # which is noise. A resume is the opposite of noise: it is the single largest
+    # piece of evidence the assessment can have, and the persona that exists right
+    # now was built without it. Cleared once the refreshed persona is generated.
+    resume_refresh_pending = db.Column(db.Boolean, default=False, nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -328,12 +350,24 @@ def migrate_new_columns(engine):
                     "ALTER TABLE personas ADD COLUMN resume_sanitizer_version "
                     "INTEGER NOT NULL DEFAULT 0"
                 ))
+            if "resume_refresh_pending" not in existing:
+                # FALSE for every existing row: they all onboarded when the resume
+                # was compulsory, so none of them is waiting on a late upload.
+                conn.execute(text(
+                    "ALTER TABLE personas ADD COLUMN resume_refresh_pending "
+                    "BOOLEAN NOT NULL DEFAULT FALSE"
+                ))
 
     if "users" in table_names:
         existing = {c["name"] for c in inspector.get_columns("users")}
         with engine.begin() as conn:
             if "unlocked_tracks" not in existing:
                 conn.execute(text("ALTER TABLE users ADD COLUMN unlocked_tracks JSON"))
+            if "last_seen_at" not in existing:
+                # Left NULL for every existing row rather than defaulted to
+                # created_at: a signup in March that never came back must not be
+                # recorded as having been seen in March-and-therefore-active.
+                conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TIMESTAMP"))
 
     if "feedback" in table_names:
         existing = {c["name"] for c in inspector.get_columns("feedback")}

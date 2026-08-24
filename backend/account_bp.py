@@ -7,11 +7,23 @@ actually changes (via this flow or /account/change-password), the embedded
 fragment no longer matches and any old token fails re-validation on its own —
 a free "invalidate after use" without persisting anything server-side.
 
-There is no email infrastructure yet, so /account/forgot-password returns the
-reset link directly in its JSON response rather than emailing it — the
-frontend renders that link on-screen, clearly labeled as a stand-in until
-email is wired up. Swapping to a real send is a one-line change at the call
-site: replace the returned fields with an actual email dispatch.
+There is no email infrastructure yet, so /account/forgot-password has NO
+self-service path: it accepts the address, says reset-by-email isn't live, and
+mints nothing. It used to return the reset link in its own JSON response, which
+meant anyone who posted a registered address received a valid reset token and
+could take the account over; that is why the token is gone rather than merely
+hidden in the UI. Wiring a real send is a one-line change at the marked call
+site in forgot_password().
+
+/account/reset-password still verifies any validly signed token, so an
+out-of-band reset works today. From the backend/ directory, against the target
+database, hand the user the printed path over a channel you trust:
+
+    python -c "import app;from models import User;from account_bp import _make_token; \\
+      app.app.app_context().push();u=User.query.filter_by(email='them@x.com').first(); \\
+      print('/reset-password.html?token='+_make_token(u))"
+
+The token is single-use by construction (see above) and expires in an hour.
 """
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from flask import Blueprint, request, jsonify, current_app
@@ -25,6 +37,13 @@ account_bp = Blueprint("account_bp", __name__)
 RESET_SALT = "pwd-reset-v1"
 RESET_MAX_AGE = 60 * 60  # 1 hour
 MIN_PASSWORD_LEN = 8
+
+# Same reply for a registered and an unregistered address, so the response can't
+# be used to test whether an account exists. Says what actually happens rather
+# than promising an email that no one sends.
+NO_EMAIL_MESSAGE = (
+    "Password reset by email isn't live yet. Get in touch and we'll reset it for you."
+)
 
 
 def _serializer():
@@ -61,21 +80,23 @@ def forgot_password():
     email = data.get("email", "").strip().lower()
     user = User.query.filter_by(email=email).first()
 
-    # Never reveal whether an email is registered — always 200. Only a real
-    # account gets a token/link back in the response.
+    # Never reveal whether an email is registered: identical body, identical
+    # status, both branches. (This guard used to be undone two lines later by
+    # handing the token back only for real accounts — the presence of the token
+    # WAS the enumeration signal, on top of being the takeover itself.)
     if not user:
-        return jsonify({
-            "success": True,
-            "message": "If that email is registered, a reset link would be sent.",
-        }), 200
+        return jsonify({"success": True, "message": NO_EMAIL_MESSAGE}), 200
 
-    token = _make_token(user)
+    # A real send goes HERE, and nowhere else:
+    #     send_reset_email(user.email, _make_token(user))
+    # Until then this route deliberately mints nothing. Returning the token to
+    # the caller (which it used to do) meant anyone who posted a registered
+    # email got a working reset link back in the response — unauthenticated
+    # takeover of any account whose address you could guess. Logging it instead
+    # is the same secret in a different place, so we don't do that either.
     return jsonify({
         "success": True,
-        "message": "Email isn't connected yet, so here's your reset link directly — "
-                    "this will be sent to your inbox once email is live.",
-        "reset_path": f"/reset-password.html?token={token}",
-        "token": token,
+        "message": NO_EMAIL_MESSAGE,
     }), 200
 
 

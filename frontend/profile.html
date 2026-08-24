@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 
@@ -47,6 +48,38 @@
 .id-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 3px; }
 .id-value { font-size: 0.95rem; color: var(--chalk); }
 .id-value.muted { color: var(--muted); font-style: italic; }
+.stage-edit { margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.12); }
+.stage-toggle { background: none; border: none; color: var(--chalk); opacity: 0.75; font: inherit;
+  font-size: 0.82rem; cursor: pointer; padding: 0; text-decoration: underline dotted; }
+.stage-toggle:hover { opacity: 1; }
+.stage-panel { margin-top: 12px; display: grid; gap: 6px; max-width: 420px; }
+.stage-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 6px; }
+.stage-panel select { width: 100%; padding: 8px 10px; border-radius: 6px; font: inherit; font-size: 0.9rem;
+  background: rgba(0,0,0,0.25); color: var(--chalk); border: 1px solid rgba(255,255,255,0.18); }
+.stage-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.stage-save { padding: 7px 16px; border-radius: 6px; font: inherit; font-size: 0.88rem; cursor: pointer;
+  background: rgba(255,255,255,0.1); color: var(--chalk); border: 1px solid rgba(255,255,255,0.25); }
+.stage-save:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+.stage-save:disabled { opacity: 0.5; cursor: default; }
+.stage-msg { font-size: 0.82rem; color: var(--muted); }
+.stage-msg.err { color: #ffb4a2; }
+.stage-hint { font-size: 0.78rem; color: var(--muted); margin: 8px 0 0; }
+.stage-hint a { color: var(--chalk-yellow); text-decoration: underline dashed; }
+
+/* Resume drop target — same visual language as the onboarding form's, so the
+   "hand it in later" promise made there looks like the same object here. */
+.file-field {
+  border: 2px dashed var(--dash); border-radius: 10px;
+  padding: 16px 14px; text-align: center; cursor: pointer;
+  transition: all 0.2s ease; display: block; margin-top: 4px;
+}
+.file-field:hover { background: rgba(244,241,228,0.05); border-color: var(--chalk); }
+.file-field .fi-icon { font-size: 1.2rem; }
+.file-field .fi-main { font-size: 0.88rem; color: var(--chalk); margin: 5px 0 3px; }
+.file-field .fi-sub { font-size: 0.78rem; color: var(--muted); }
+.file-field.has-file { border-style: solid; border-color: var(--chalk-yellow); }
+.file-field.has-file .fi-main { color: var(--chalk-yellow); }
+.resume-edit { margin-top: 10px; }
 .persona-stable { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--muted); margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--dash); }
 .persona-stable .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--chalk-green); flex-shrink: 0; }
 .persona-stable.pending .dot { background: var(--muted); }
@@ -169,9 +202,60 @@
           <div class="id-field"><div class="id-label">Name</div><div class="id-value" id="idName">—</div></div>
           <div class="id-field"><div class="id-label">Email</div><div class="id-value" id="idEmail">—</div></div>
           <div class="id-field"><div class="id-label">Aiming for</div><div class="id-value" id="idRole">—</div></div>
+          <div class="id-field"><div class="id-label">Where you are</div><div class="id-value" id="idStage">—</div></div>
           <div class="id-field"><div class="id-label">Member since</div><div class="id-value" id="idSince">—</div></div>
         </div>
       </div>
+
+      <!-- Career stage and goal decide which world every practice question is
+           set in, so they can't be answer-once-at-signup fields — a student
+           graduates, a goal changes. Posts to /onboarding/update, which touches
+           only these details and never re-runs the resume parse. -->
+      <div class="stage-edit">
+        <button class="stage-toggle" id="stageToggle" type="button">Update where you are</button>
+        <div class="stage-panel" id="stagePanel" style="display:none">
+          <label class="stage-label" for="stageSelect">Where are you right now?</label>
+          <select id="stageSelect">
+            <option value="Still studying">Still studying</option>
+            <option value="Graduated, looking for my first role">Graduated — looking for my first role</option>
+          </select>
+          <label class="stage-label" for="goalSelect">What brings you to Aira?</label>
+          <select id="goalSelect">
+            <option value="Placement / job preparation">Preparing for placements / a job</option>
+            <option value="Building confidence">Building my confidence</option>
+            <option value="Improving communication">Improving how I communicate</option>
+            <option value="Interview or exam coming up">An interview or exam is coming up</option>
+            <option value="Just exploring">Just exploring for now</option>
+          </select>
+          <div class="stage-actions">
+            <button class="stage-save" id="stageSave" type="button">Save</button>
+            <span class="stage-msg" id="stageMsg"></span>
+          </div>
+          <p class="stage-hint">Changing these re-tunes the questions you haven't answered yet.</p>
+        </div>
+      </div>
+      <!-- The resume is optional at onboarding, so this is the way back in for
+           anyone who skipped it — and the way to replace a stale one. Unlike the
+           stage editor above, this DOES cost a Groq call (/me/resume re-runs the
+           resume agent), and it makes the existing persona refreshable on the
+           spot, since it was built without any of this evidence. -->
+      <div class="resume-edit">
+        <button class="stage-toggle" id="resumeToggle" type="button">Loading…</button>
+        <div class="stage-panel" id="resumePanel" style="display:none">
+          <p class="stage-hint" id="resumeIntro"></p>
+          <label class="file-field" id="resumeField" for="resumeFile">
+            <div class="fi-icon">📄</div>
+            <div class="fi-main" id="resumeMain">Choose your resume</div>
+            <div class="fi-sub" id="resumeSub">PDF or DOCX</div>
+          </label>
+          <input type="file" id="resumeFile" accept=".pdf,.docx" style="display:none">
+          <div class="stage-actions">
+            <button class="stage-save" id="resumeSave" type="button">Hand it in</button>
+            <span class="stage-msg" id="resumeMsg"></span>
+          </div>
+        </div>
+      </div>
+
       <div class="avatar-picker" id="avatarPicker" style="display:none">
         <div class="avatar-picker-label">Pick your avatar</div>
         <div class="avatar-options" id="avatarOptions"></div>
@@ -289,6 +373,124 @@ const AVATARS = [
 function avatarById(id) { return AVATARS.find(a => a.id === id) || AVATARS[0]; }
 function avatarKey(email) { return 'aira_avatar_' + (email || 'guest'); }
 
+// Career stage and goal are routing keys on the backend — they pick the world
+// every practice question is set in. Sent as FormData because /onboarding/update
+// reads request.form (the same allowlist the signup form goes through).
+function setupStageEditor(onboarding) {
+  const toggle = document.getElementById('stageToggle');
+  const panel = document.getElementById('stagePanel');
+  const stageSelect = document.getElementById('stageSelect');
+  const goalSelect = document.getElementById('goalSelect');
+  const saveBtn = document.getElementById('stageSave');
+  const msg = document.getElementById('stageMsg');
+
+  // Only preselect on an exact match — a stored value the dropdown doesn't have
+  // must not be silently rewritten to whatever happens to sit at index 0.
+  if (onboarding.experience) stageSelect.value = onboarding.experience;
+  if (onboarding.goal) goalSelect.value = onboarding.goal;
+
+  toggle.addEventListener('click', function() {
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'grid';
+    toggle.textContent = open ? 'Update where you are' : 'Cancel';
+    msg.textContent = '';
+  });
+
+  saveBtn.addEventListener('click', async function() {
+    saveBtn.disabled = true;
+    msg.className = 'stage-msg';
+    msg.textContent = 'Saving…';
+
+    const body = new FormData();
+    body.append('experience', stageSelect.value);
+    body.append('goal', goalSelect.value);
+
+    try {
+      const data = await Aira.api('/onboarding/update', { body: body });
+      const saved = data.onboarding || {};
+      document.getElementById('idStage').textContent = saved.experience || 'Not set yet';
+      document.getElementById('idStage').className = 'id-value' + (saved.experience ? '' : ' muted');
+      document.getElementById('idRole').textContent = saved.target_role || saved.goal || 'Not set yet';
+      msg.textContent = 'Saved.';
+    } catch (e) {
+      msg.className = 'stage-msg err';
+      msg.textContent = e.message || 'Could not save.';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+}
+
+// Adding a resume after the fact. Two things make this different from the stage
+// editor: it costs a real Groq call, and it invalidates an existing persona —
+// which was built with no resume at all. The server decides whether a refresh is
+// on offer (persona_refresh_available); this only reports what it says.
+function setupResumeEditor(hasResume) {
+  const toggle = document.getElementById('resumeToggle');
+  const panel = document.getElementById('resumePanel');
+  const intro = document.getElementById('resumeIntro');
+  const fileInput = document.getElementById('resumeFile');
+  const saveBtn = document.getElementById('resumeSave');
+  const msg = document.getElementById('resumeMsg');
+
+  toggle.textContent = hasResume ? 'Replace your resume' : 'Hand in your resume';
+  intro.textContent = hasResume
+    ? 'A newer resume means sharper questions about the work you\'ve actually done.'
+    : 'You skipped this at the start — no problem. Adding it now lets me build '
+      + 'questions around your real projects instead of general ones.';
+
+  toggle.addEventListener('click', function() {
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'grid';
+    toggle.textContent = open
+      ? (hasResume ? 'Replace your resume' : 'Hand in your resume')
+      : 'Cancel';
+    msg.textContent = '';
+  });
+
+  fileInput.addEventListener('change', function() {
+    if (!fileInput.files.length) return;
+    document.getElementById('resumeField').classList.add('has-file');
+    document.getElementById('resumeMain').textContent = fileInput.files[0].name;
+    document.getElementById('resumeSub').textContent = 'Click to choose a different file';
+  });
+
+  saveBtn.addEventListener('click', async function() {
+    if (!fileInput.files.length) {
+      msg.className = 'stage-msg err';
+      msg.textContent = 'Pick a file first.';
+      return;
+    }
+    saveBtn.disabled = true;
+    msg.className = 'stage-msg';
+    msg.textContent = 'Reading it…';
+
+    const body = new FormData();
+    body.append('resume', fileInput.files[0]);
+
+    try {
+      const data = await Aira.api('/me/resume', { body: body });
+      if (data.persona_refresh_available) {
+        // The existing persona predates this resume, so offer the retake rather
+        // than silently leaving a profile built on thinner evidence.
+        msg.textContent = 'Got it.';
+        intro.innerHTML = 'Read and saved. Your profile was built before I had this — '
+          + '<a href="questions.html">retake your assessment</a> and I\'ll redo it properly.';
+      } else {
+        msg.textContent = 'Got it — saved.';
+        intro.textContent = 'Read and saved. Your questions will use it from here on.';
+      }
+      hasResume = true;
+      toggle.textContent = 'Cancel';
+    } catch (e) {
+      msg.className = 'stage-msg err';
+      msg.textContent = e.message || 'Could not read that file.';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+}
+
 function setupAvatarPicker(email) {
   const badge = document.getElementById('avatarBadge');
   const picker = document.getElementById('avatarPicker');
@@ -340,8 +542,19 @@ function setupAvatarPicker(email) {
   document.getElementById('idEmail').textContent = user.email || '—';
   document.getElementById('idRole').textContent = onboarding.target_role || onboarding.goal || 'Not set yet';
   document.getElementById('idRole').className = 'id-value' + (onboarding.target_role || onboarding.goal ? '' : ' muted');
+  document.getElementById('idStage').textContent = onboarding.experience || 'Not set yet';
+  document.getElementById('idStage').className = 'id-value' + (onboarding.experience ? '' : ' muted');
   document.getElementById('idSince').textContent = fmtDate(user.created_at);
   setupAvatarPicker(user.email);
+  setupStageEditor(onboarding);
+
+  // /me/report doesn't carry resume state (the persona it returns is the report
+  // view, deliberately without resume internals), so ask the one endpoint that
+  // does. Failing quietly is right: the resume block is an extra, and a profile
+  // page that renders everything else is better than one that dies over it.
+  Aira.api('/onboarding/status')
+    .then(function(s) { setupResumeEditor(!!s.resume); })
+    .catch(function() { setupResumeEditor(false); });
 
   const personaEl = document.getElementById('personaStatus');
   const personaText = document.getElementById('personaStatusText');
@@ -461,5 +674,6 @@ document.getElementById('pwSubmit').addEventListener('click', async () => {
 document.getElementById('pwForm').addEventListener('submit', e => e.preventDefault());
 </script>
 <script src="assets/brand.js"></script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

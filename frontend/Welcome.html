@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 
@@ -37,7 +38,7 @@
 .main { max-width: 1000px; margin: 0 auto; padding: 40px 40px 90px; position: relative; z-index: 1; }
 
 /* ── Welcome ── */
-.welcome { margin-bottom: 40px; }
+.welcome { margin-bottom: 46px; }
 .welcome-title { font-size: 2.4rem; line-height: 1.25; margin-bottom: 8px; }
 .welcome-sub { font-size: 1rem; max-width: 520px; margin-bottom: 22px; }
 
@@ -49,7 +50,7 @@
 .prog-label span { color: var(--chalk-yellow); }
 
 /* ── Journey — stacked vertically, one board beneath the next ── */
-.journey { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-bottom: 20px; position: relative; max-width: 620px; margin-left: auto; margin-right: auto; }
+.journey { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-bottom: 30px; position: relative; max-width: 620px; margin-left: auto; margin-right: auto; }
 .step-connector { display: flex; align-items: center; justify-content: center; padding: 0; height: 38px; }
 .connector-line { color: var(--muted); font-size: 1.2rem; display: inline-block; transform: rotate(90deg); }
 
@@ -62,10 +63,8 @@
   flex: none; overflow: hidden; padding: 4px 4px 14px; display: flex; flex-direction: column;
   border: none; border-radius: 0; transform: none;
   box-shadow:
-    0 0 0 2px var(--wood-dark),
-    0 0 0 6px var(--wood),
-    0 0 0 8px var(--wood-highlight),
-    0 14px 32px rgba(0,0,0,0.35);
+    0 0 0 3px var(--wood-dark),
+    0 10px 26px rgba(0,0,0,0.3);
 }
 .step-header { padding: 20px 22px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .step-num { font-family: var(--fb); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
@@ -110,6 +109,36 @@
 .tab-label { font-family: var(--fd); font-size: 1.02rem; }
 .tab-sub { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
 .tab-check { margin-left: auto; font-size: 0.8rem; color: var(--chalk-green); font-family: var(--fb); }
+/* Practice streak. Tally marks rather than a flame: a classroom counts on the board
+   in fives, and a burning emoji belongs to a different product's visual language. */
+.streak-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px 11px; border-radius: 999px;
+  border: 1.5px dashed rgba(242,226,160,0.45);
+  font-size: 0.78rem; color: var(--chalk-yellow); font-family: var(--fb);
+  white-space: nowrap;
+}
+.streak-chip.at-risk { border-color: var(--dash); color: var(--muted); }
+.tally { letter-spacing: 1px; opacity: 0.9; }
+
+/* Unfinished work, surfaced above everything else on the page. Someone who left a
+   paper half-done has already decided to practise; putting a fresh "Begin Persona"
+   in front of them instead is the one thing guaranteed to waste that decision. */
+.resume-card {
+  padding: 18px 20px; margin-bottom: 24px;
+  border-color: rgba(234,172,184,0.55);
+}
+.resume-tag {
+  font-family: var(--fb); font-size: 0.74rem; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--chalk-pink); margin-bottom: 7px;
+}
+.resume-title { font-size: 1.22rem; margin-bottom: 5px; }
+.resume-sub { font-size: 0.87rem; color: var(--muted); line-height: 1.55; margin-bottom: 13px; }
+
+/* A nudge, not a gate — both doors stay clickable, one is just circled in chalk.
+   Two identical options and some people pick neither. */
+.tab-suggest { margin-left: auto; font-size: 0.72rem; font-family: var(--fb); color: var(--chalk-yellow);
+  border: 1px dashed var(--chalk-yellow); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .quota-label { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
 
 /* Core Profile status — replaces the persona CTA once a persona exists.
@@ -140,21 +169,18 @@
 .stats-row {
   display: grid; grid-template-columns: repeat(3, 1fr);
   border: 1px solid rgba(244,241,228,0.12); border-radius: 10px;
-  background:
-    repeating-linear-gradient(180deg, transparent 0 31px, rgba(244,241,228,0.04) 31px 32px),
-    rgba(244,241,228,0.03);
+  background: rgba(244,241,228,0.03);
   overflow: hidden;
 }
-.stat-card { padding: 18px 18px; text-align: center; border-right: 1px solid rgba(244,241,228,0.1); position: relative; }
+.stat-card { padding: 20px 18px; text-align: center; border-right: 1px solid rgba(244,241,228,0.1); position: relative; }
 .stat-card:last-child { border-right: none; }
 .stat-mark {
-  position: absolute; top: 10px; right: 10px;
-  width: 19px; height: 19px; border-radius: 50%;
-  border: 1.5px solid rgba(244,241,228,0.22); color: var(--muted);
-  font-size: 0.66rem; font-weight: 700; font-family: var(--fb);
-  display: flex; align-items: center; justify-content: center;
+  position: absolute; top: 12px; right: 12px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(244,241,228,0.18); color: transparent;
+  font-size: 0; overflow: hidden;
 }
-.stat-mark.present { border-color: rgba(179,64,58,0.6); color: #d5675f; }
+.stat-mark.present { background: #d5675f; }
 .stat-label { font-family: var(--fb); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 5px; }
 .stat-val { font-family: var(--fd); font-size: 1.5rem; color: var(--chalk-yellow); }
 .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
@@ -216,12 +242,24 @@
   <div class="welcome">
     <div class="chalk-tag">Roll call · your classroom</div>
     <h1 class="chalk-title welcome-title">Good to see you, <em id="greetName">here</em>.</h1>
-    <p class="chalk-sub welcome-sub">Work through the three periods below. Start with Persona Aira needs to know you before it can teach you anything else.</p>
+    <p class="chalk-sub welcome-sub">Build your Persona once. After that, practice as often as you like — in whichever order suits you.</p>
+    <!-- Reps, not periods. A progress bar toward "3 of 3" says the product is
+         something you finish; a rep count says it's something you keep doing.
+         The report card stays available either way. -->
     <div class="prog-row">
-      <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
-      <div class="prog-label"><span id="progText">0</span> of 3 periods complete</div>
+      <div class="prog-label" id="repCount">Getting your classroom ready…</div>
+      <!-- Hidden until there is a streak worth showing. A "0-day streak" on the home
+           screen is the same mistake as a permanent "Speaking sessions: 0" — a
+           scoreboard of your own failure, shown to the people least able to take it. -->
+      <div class="streak-chip" id="streakChip" style="display:none">
+        <span class="tally" id="streakTally" aria-hidden="true"></span>
+        <span id="streakText"></span>
+      </div>
     </div>
   </div>
+
+  <!-- Filled only when there is something half-finished to come back to. -->
+  <div id="resumeSlot"></div>
 
   <!-- Journey: 3 steps -->
   <div class="journey" id="journey">
@@ -230,13 +268,13 @@
     <div class="step board-card pin-yellow active" id="step1">
       <div class="step-header">
         <div>
-          <div class="step-num">Period 01</div>
+          <div class="step-num">Once only</div>
           <div class="step-title chalk-title">Persona</div>
         </div>
         <div class="chalk-badge active" id="badge1">Start here</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">Answer 10 questions about how you learn, handle pressure, and think. Aira maps your answers into a personal coach profile used across every other module.</p>
+        <p class="step-desc">Answer 10 questions about how you learn, handle pressure, and think — you'll only ever do this once. Aira maps your answers into a personal coach profile used across every other module.</p>
         <button class="btn-chalk primary" style="width:100%" id="cta1" onclick="window.location.href='questions.html'">Begin Persona →</button>
         <div id="personaStatus" style="display:none"></div>
       </div>
@@ -248,13 +286,13 @@
     <div class="step board-card" id="step2">
       <div class="step-header">
         <div>
-          <div class="step-num">Period 02</div>
-          <div class="step-title chalk-title">Practice</div>
+          <div class="step-num">As often as you like</div>
+          <div class="step-title chalk-title">Two ways to practice</div>
         </div>
         <div class="chalk-badge pending" id="badge2">After Persona</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">Choose your practice mode. Your Persona profile shapes both paths.</p>
+        <p class="step-desc">Both doors are open — take them in any order, as many times as you want. Your Persona profile shapes both.</p>
         <div class="toggle-wrap" id="toggleWrap">
 
           <div class="toggle-tab mock" id="tab-mcq" onclick="goTo('ai_quiz.html')">
@@ -265,6 +303,7 @@
               <div class="tab-label">Mock Interview</div>
               <div class="tab-sub">Role &amp; topic questions — scored on accuracy and reasoning</div>
             </div>
+            <div class="tab-suggest" id="suggest-mcq" style="display:none">Try this next</div>
             <div class="tab-check" id="check-mcq" style="display:none">✓ Done</div>
           </div>
 
@@ -281,6 +320,7 @@
               <div class="tab-label">Soft Skills</div>
               <div class="tab-sub">Speaking practice — scored on delivery, clarity &amp; confidence</div>
             </div>
+            <div class="tab-suggest" id="suggest-skills" style="display:none">Try this next</div>
             <div class="tab-check" id="check-skills" style="display:none">✓ Done</div>
           </div>
 
@@ -296,14 +336,14 @@
       <div class="tilt-inner">
       <div class="step-header">
         <div>
-          <div class="step-num">Period 03</div>
+          <div class="step-num">Any time</div>
           <div class="step-title chalk-title">Report Card</div>
         </div>
-        <div class="chalk-badge pending" id="badge3">Final period</div>
+        <div class="chalk-badge pending" id="badge3">After your first rep</div>
       </div>
       <div class="step-body">
-        <p class="step-desc">A full downloadable summary of your Persona, quiz performance and Soft Skills scores — like a PTM report card, ready to share.</p>
-        <button class="btn-chalk disabled" style="width:100%" id="cta3" disabled>Complete periods 1 &amp; 2 first</button>
+        <p class="step-desc">A full downloadable summary of your Persona, quiz performance and Soft Skills scores — like a PTM report card, ready to share. It redraws itself every time you practice, so it's worth coming back to.</p>
+        <button class="btn-chalk disabled" style="width:100%" id="cta3" disabled>Do one rep first</button>
       </div>
       </div>
     </div>
@@ -319,7 +359,7 @@
       <span class="stat-mark" id="markPersona">—</span>
       <div class="stat-label">Persona</div>
       <div class="stat-val" id="statPersona">Not built</div>
-      <div class="stat-sub">complete period 01</div>
+      <div class="stat-sub">built once</div>
     </div>
     <div class="stat-card" id="cardQuiz">
       <span class="stat-mark" id="markQuiz">—</span>
@@ -357,6 +397,65 @@
 <script>
 // Set once the server confirms the persona exists — gates the step-2 tabs.
 let personaReady = false;
+
+// Tally marks the way they'd go on a board: groups of five, the fifth struck
+// through. Capped, because past a point this is decoration and the number carries it.
+function tallyMarks(n) {
+  if (n > 15) return '';
+  let out = '';
+  for (let i = 0; i < Math.floor(n / 5); i++) out += '卌 ';
+  out += '|'.repeat(n % 5);
+  return out.trim();
+}
+
+function renderStreak(streak) {
+  if (!streak || !streak.current) return;          // nothing worth showing yet
+  const chip = document.getElementById('streakChip');
+  const n = streak.current;
+  const today = !!streak.practisedToday;
+
+  let text;
+  if (n === 1) text = today ? 'Practised today' : 'Practised yesterday';
+  else text = n + ' days in a row';
+  // Alive but unearned today — say so, rather than letting a number they haven't
+  // kept yet read as though they had.
+  if (!today) text += ' · keep it up today';
+
+  document.getElementById('streakTally').textContent = tallyMarks(n);
+  document.getElementById('streakText').textContent = text;
+  chip.classList.toggle('at-risk', !today);
+  chip.style.display = 'inline-flex';
+}
+
+function escText(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// "Pick up where you left off" rather than "you didn't finish this". A pending row
+// can mean either abandoned midway OR finished-but-never-graded (comm stores the
+// completed transcript for /comm/evaluate), and telling someone they quit something
+// they actually completed is worse than saying nothing. The neutral phrasing is
+// true in both cases.
+function renderUnfinished(items) {
+  const slot = document.getElementById('resumeSlot');
+  if (!slot || !items || !items.length) return;
+  const it = items[0];                       // server sorts most-recent first
+  const when = it.daysAgo === 0 ? 'earlier today'
+             : it.daysAgo === 1 ? 'yesterday'
+             : it.daysAgo + ' days ago';
+  slot.innerHTML = `
+    <div class="resume-card board-card">
+      <div class="resume-tag">Still open</div>
+      <div class="resume-title chalk-title">${escText(it.label)}</div>
+      <p class="resume-sub">You started this ${when}. It's still here, exactly where you left it.</p>
+      <button class="btn-chalk primary" id="resumeBtn">Pick up where you left off →</button>
+    </div>`;
+  document.getElementById('resumeBtn').onclick = function () {
+    window.location.href = it.page;
+  };
+}
 
 function renderPersonaStable(el) {
   el.innerHTML = '<div class="persona-stable"><span class="dot"></span>Core Profile · Stable</div>';
@@ -408,12 +507,19 @@ function renderContinueNudge(speaking) {
   personaReady = personaDone;
   const mcqDone     = p.quizzes.length > 0;
   const skillsDone  = p.speaking.length > 0;
-  const step2Done   = mcqDone || skillsDone;
-  const completed   = [personaDone, step2Done].filter(Boolean).length;
+  const anyRep      = mcqDone || skillsDone;
 
-  // Progress bar (3 steps: persona, practice, report-view)
-  document.getElementById('progFill').style.width = Math.round((completed / 3) * 100) + '%';
-  document.getElementById('progText').textContent = completed;
+  // Reps accumulate; they never total up to a finish line. A user who has done
+  // twelve sessions should see twelve, not "3 of 3 complete" with nowhere to go.
+  renderUnfinished(p.unfinished);
+  renderStreak(p.streak);
+
+  const reps = p.quizzes.length + p.speaking.length;
+  document.getElementById('repCount').textContent =
+    !personaDone ? 'Start with your Persona below — a few minutes, once.'
+    : reps === 0 ? 'No practice reps yet — both doors below are open.'
+    : reps === 1 ? '1 practice rep so far'
+    : reps + ' practice reps so far';
 
   // Step 1 state
   if (personaDone) {
@@ -447,8 +553,14 @@ function renderContinueNudge(speaking) {
 
     // Activate Step 2
     document.getElementById('step2').classList.add('active');
-    document.getElementById('badge2').textContent = 'Choose a path';
+    document.getElementById('badge2').textContent = 'Both open';
     document.getElementById('badge2').className = 'chalk-badge active';
+
+    // A nudge toward whichever half is untouched — speaking first, because it
+    // is the half of the product nobody reaches on their own. Neither tab is
+    // ever disabled by this; it only circles one in chalk.
+    if (!skillsDone) document.getElementById('suggest-skills').style.display = 'block';
+    else if (!mcqDone) document.getElementById('suggest-mcq').style.display = 'block';
 
     // Continue-practicing nudge — all tracks are always open, so this only
     // needs the speaking history Aira.progress() already fetched.
@@ -494,14 +606,10 @@ function renderContinueNudge(speaking) {
     markS.textContent = '✓'; markS.classList.add('present');
   }
 
-  // Step 2 done
-  if (step2Done) {
-    document.getElementById('badge2').textContent = 'Done ✓';
-    document.getElementById('badge2').className = 'chalk-badge done';
-    document.getElementById('step2').classList.remove('active');
-    document.getElementById('step2').classList.add('done');
-
-    // Unlock Step 3
+  // Practice deliberately never flips to "Done ✓". Marking it complete after a
+  // single rep is what told users they had finished the product and could stop
+  // coming back. Only the report card changes state, once there is something in it.
+  if (anyRep) {
     document.getElementById('step3').classList.add('active');
     document.getElementById('badge3').textContent = 'Ready';
     document.getElementById('badge3').className = 'chalk-badge active';
@@ -527,5 +635,6 @@ async function logout() {
 }
 </script>
 <script src="assets/brand.js"></script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

@@ -8,7 +8,9 @@
 
 ### Auth Endpoints
 - `POST /signup` → Create new user account
-  - Input: `{ name, email, password }`
+  - Input: `{ name, email, password }` — password must be at least
+    `account_bp.MIN_PASSWORD_LEN` (8) characters, the same floor the reset flow
+    enforces, so an account can't be created below a length it can't be reset to.
   - Output: `{ success, message, id, name, email, onboarding_complete }` + session cookie
   - Status: 200 (success), 400 (validation / email already registered)
 
@@ -16,6 +18,18 @@
   - Input: `{ email, password }`
   - Output: `{ success, name, email }` + session cookie
   - Status: 200 (success), 401 (invalid credentials)
+
+- `POST /account/forgot-password` → Input `{ email }`. Always
+  `200 { success: true, message }` with a **byte-identical body** whether or not
+  the address is registered — the response is not an account-existence oracle.
+  It returns **no token and no reset link**: until email is wired up there is no
+  self-service reset. (It previously returned a working token for any registered
+  address, which made knowing an email sufficient to take the account over.)
+
+- `POST /account/reset-password` → Input `{ token, password }`. Verifies a signed
+  token issued out of band (see `account_bp`'s docstring) and sets the password.
+  Tokens expire after 1 hour and stop verifying the moment the password changes.
+  Status: 200, 400 (missing fields / password too short / invalid or expired token).
 
 ---
 
@@ -29,10 +43,43 @@ without a valid session cookie.
 - `POST /logout` → Clear session: `{ success: true }`
 
 ### Onboarding
-- `GET /onboarding/status` → `{ complete, onboarding }`
-- `POST /onboarding/save` → multipart form: career detail fields + a compulsory
-  `resume` file (PDF/DOCX). Runs the resume agent and stores its analysis on the
-  persona. 400 if the resume is missing or unreadable.
+- `GET /onboarding/status` → `{ complete, onboarding, resume }` — `resume` is a
+  boolean "is one on file", never its contents. Now that the resume is optional,
+  `complete` no longer implies the user has one.
+- `POST /onboarding/save` → multipart form: career detail fields + an **optional**
+  `resume` file (PDF/DOCX). With a resume it runs the resume agent and stores the
+  analysis on the persona; without one it skips the parse entirely (no Groq call)
+  and everything downstream takes its existing resume-less path — the assessment
+  covers all 8 dimensions with generated questions instead of 5, and the persona
+  prompt records "(no resume on file)". Output `{ success, resume: bool }`.
+  400 if the resume is present but unreadable, or if onboarding is already
+  complete (with a resume it costs a Groq call, so it runs once).
+  The requirement was dropped because it was the heaviest possible first ask and
+  the step users actually stopped at; `POST /me/resume` is the way back in.
+
+- `POST /me/resume` → multipart form with a `resume` file. Adds or replaces the
+  resume after onboarding. Costs a Groq call, so it carries save's rate limit.
+  Beyond storing the analysis it also clears the cached `dimension_questions`
+  (so the next `/session/get-questions` regenerates *with* the 4 resume-grounded
+  questions) and, when a persona already exists, sets `resume_refresh_pending`
+  so that locked persona becomes refreshable immediately instead of waiting out
+  `SESSIONS_REQUIRED_TO_REFRESH`. A persona built with no resume at all is
+  exactly the case the session threshold should not apply to.
+  Output `{ success, persona_refresh_available }`. 400 before onboarding is
+  complete, when no file is attached, or when the file is unreadable.
+- `POST /onboarding/update` → form fields only, no resume, no LLM call. Edits the
+  details captured at onboarding — a career stage changes, and `experience`/`goal`
+  decide which scenarios every practice question is built from. Partial: only the
+  fields present in the request are touched. Changing a routing field clears an
+  unanswered cached question set so the next `/session/get-questions` regenerates
+  at the new stage. → `{ success, onboarding }`. 400 before onboarding is complete
+  or when nothing valid was submitted.
+
+Both write paths run every field through `backend/onboarding_schema.py`, which
+allowlists the field set, caps free text, and validates the dropdown values
+against closed vocabularies. `users.onboarding` is flattened into the question
+and persona prompts, so an unfiltered field here would be a prompt-injection
+channel — any new write path into that column must use the same schema.
 
 ### Persona Assessment
 The persona is **private**: its content is never returned to the client and never

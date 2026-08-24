@@ -7,6 +7,8 @@ back to a template built from the dimension's own name.
 from llm_schemas import PERSONA_DIMENSIONS, normalize_dimension
 from question_agent import (
     FALLBACK_QUESTIONS,
+    _TOKENS_PER_QUESTION,
+    _output_budget,
     _build_prompt,
     _format_resume_context,
     _normalize,
@@ -154,3 +156,101 @@ def test_normalize_dimension_handles_casing_spacing_and_junk():
     assert normalize_dimension("") is None
     assert normalize_dimension(None) is None
     assert normalize_dimension(42) is None
+
+
+# --- seniority and goal reach the prompt as RULES, not just context ---
+# Both facts were already in the prompt before this: experience_level inside the
+# resume block, goal inside the CANDIDATE CONTEXT line. Neither carried an
+# instruction, so the model wrote product-owner/budget scenarios for students
+# and ignored the stated goal. These assert the instruction, not the fact.
+
+def test_student_prompt_forbids_authority_they_have_never_held():
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {},
+                           resume_data={**RESUME_DATA, "experience_level": "student"})
+    assert "no professional job experience yet" in prompt
+    assert "NEVER give them authority they have never held" in prompt
+    assert "product owner" in prompt
+
+
+def test_experienced_prompt_does_not_carry_the_student_ceiling():
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {},
+                           resume_data={**RESUME_DATA, "experience_level": "experienced"})
+    assert "NEVER give them authority they have never held" not in prompt
+
+
+def test_stated_goal_becomes_an_instruction_not_just_context():
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]),
+                           {"goal": "Improving communication"}, resume_data=RESUME_DATA)
+    assert "WHAT THEY CAME FOR" in prompt
+    assert "improve how they COMMUNICATE" in prompt
+
+
+def test_framing_survives_a_user_with_no_resume_on_file():
+    """No resume means no resume block — the seniority ceiling must still ship,
+    and it must be the safest one."""
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {"goal": "Building confidence"})
+    assert "no professional job experience yet" in prompt
+    assert "build CONFIDENCE" in prompt
+
+
+# --- scenario diversity ---
+# The ban list was refresh-only (harder=True). Real first-run sets came back with
+# "someone isn't pulling their weight" twice out of five, across two bands —
+# narrowing the scenario world to the candidate's level shrinks the model's
+# vocabulary, so first-timers need the ban more than returning users do.
+
+def test_overused_setups_are_banned_on_a_first_run_not_just_a_refresh():
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {}, harder=False,
+                           resume_data=RESUME_DATA)
+    assert "EVERY QUESTION MUST USE A DIFFERENT SETUP" in prompt
+    assert "not pulling" in prompt
+    assert "approaching deadline" in prompt
+
+
+def test_the_ban_is_identical_in_refresh_mode():
+    first_run = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {}, harder=False)
+    refresh = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {}, harder=True)
+    for banned in ("teammate falling behind", "approaching deadline",
+                   "coworker disagreeing in a meeting", "receiving critical feedback"):
+        assert banned in first_run and banned in refresh
+
+
+def test_refresh_still_adds_the_close_calls_requirement():
+    """Only the difficulty rule stays refresh-gated — a first-timer should not
+    get options engineered to be maximally hard to choose between."""
+    assert "close calls" in _build_prompt(list(PERSONA_DIMENSIONS[:5]), {}, harder=True)
+    assert "close calls" not in _build_prompt(list(PERSONA_DIMENSIONS[:5]), {}, harder=False)
+
+
+def test_the_grounding_instruction_carries_no_borrowable_project_name():
+    """A live run asked a candidate about "your project SmartAttend" — a name
+    that existed only as the illustrative example inside this prompt, not on
+    their resume. Concrete example names in instructions get copied out as if
+    they were the candidate's own work."""
+    prompt = _build_prompt(list(PERSONA_DIMENSIONS[:5]), {},
+                           resume_data={"projects": [{"name": "Dev Host promo",
+                                                      "what_they_did": "built it"}]})
+    assert "SmartAttend" not in prompt
+    assert "<their project name>" in prompt
+    assert "never borrow a name from these instructions" in prompt
+
+
+# --- the output cap must cover the job it pays for ---
+# A flat 1400 was measured at 1127 and 1317 completion tokens for a 5-dimension
+# senior set — 94% of cap. A truncated reply is unclosed JSON: the set fails, or
+# a dimension silently drops to a generic fallback with nothing naming the cause.
+
+def test_the_budget_scales_with_the_number_of_questions():
+    assert _output_budget(3) < _output_budget(5) < _output_budget(8)
+
+
+def test_a_five_question_set_clears_the_worst_measured_completion():
+    """1317 tokens is the highest real completion observed for 5 dimensions."""
+    assert _output_budget(5) > 1317 * 1.4
+
+
+def test_the_budget_never_collapses_to_the_overhead_alone():
+    """A zero-dimension call is already short-circuited upstream, but a budget of
+    150 would truncate anything that did reach the model."""
+    for count in (0, 1):
+        assert _output_budget(count) >= _TOKENS_PER_QUESTION

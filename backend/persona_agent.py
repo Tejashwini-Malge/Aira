@@ -9,6 +9,7 @@ from pydantic import BaseModel, field_validator, model_validator, ValidationErro
 
 from groq_client import groq_json, GroqError
 from llm_schemas import PERSONA_DIMENSIONS, describe_validation_error
+from onboarding_schema import prompt_context
 
 
 class PersonaGenerationError(Exception):
@@ -66,11 +67,10 @@ def _format_context(onboarding, resume_data):
     """Concrete facts the assessment must be grounded in: who they are, what they
     want, and what their resume actually shows."""
     lines = ["WHAT THEY TOLD US ABOUT THEMSELVES:"]
-    onboarding = onboarding or {}
+    onboarding = prompt_context(onboarding)
     if onboarding:
         for k, v in onboarding.items():
-            if v:
-                lines.append(f"  - {k.replace('_', ' ')}: {v}")
+            lines.append(f"  - {k.replace('_', ' ')}: {v}")
     else:
         lines.append("  - (none provided)")
 
@@ -146,7 +146,33 @@ def _answer_quality_hint(r):
     return None
 
 
-def _build_llm_prompt(responses, onboarding=None, resume_data=None, session_evidence=None):
+# How the verdict is DELIVERED on a first build. The scoring rubric above is
+# untouched — levels stay honest, or the report card means nothing. What changes
+# is the summary's shape: a first-timer meets this screen roughly ten minutes
+# after signing up, and the first thing it said to one real user was that their
+# answers "lacked detail". They abandoned the next quiz and left. A returning
+# user has bought in and can take the blunt read; someone eleven minutes in has
+# not agreed to be assessed like that yet.
+_FIRST_BUILD_SUMMARY_RULE = (
+    "  - This is the FIRST time this person has ever seen a profile from you, minutes "
+    "after signing up. Score the areas exactly as strictly as the rubric says — but "
+    "write the summary as a STARTING POINT, not a verdict. Open with what they "
+    "genuinely did well, citing something real they said. Then name the ONE area that "
+    "would help them most to work on, phrased as the next thing to practise rather "
+    "than a shortcoming. Do not list every weakness. Close by telling them what "
+    "practising will show. Still honest — never invent a strength they did not show — "
+    "but they should finish reading it wanting to continue.\n"
+)
+
+_REFRESH_SUMMARY_RULE = (
+    "  - This person has practised with you before and is seeing an UPDATED profile. "
+    "They have earned the blunt read: say plainly what has improved and what has not "
+    "moved, citing the evidence.\n"
+)
+
+
+def _build_llm_prompt(responses, onboarding=None, resume_data=None, session_evidence=None,
+                      first_build=True):
     lines = [
         "You are an experienced career coach. You have just finished a real assessment of "
         "this person and you are writing your honest verdict. You are warm but you do NOT "
@@ -204,6 +230,7 @@ def _build_llm_prompt(responses, onboarding=None, resume_data=None, session_evid
         "  - \"summary\": 3-4 short sentences spoken to them ('you ...'). Honest coach read — name "
         "what they genuinely did well AND what was weak, citing real things from their answers, "
         "projects and goal. Simple words.\n"
+        + (_FIRST_BUILD_SUMMARY_RULE if first_build else _REFRESH_SUMMARY_RULE) +
         "  - each \"note\": ONE short sentence pointing to what THIS person's actual answer showed "
         "for that area — specific to them, not a generic description. This is the proof of your "
         "score, so a Developing note must say what was missing.\n"
@@ -224,17 +251,25 @@ def _build_llm_prompt(responses, onboarding=None, resume_data=None, session_evid
     return "\n".join(lines)
 
 
-def generate_core_persona(responses, onboarding=None, resume_data=None, session_evidence=None):
+def generate_core_persona(responses, onboarding=None, resume_data=None, session_evidence=None,
+                          first_build=True):
     """Single LLM call → persona dict with source_id tracking merged in.
 
     The assessment is grounded in the user's onboarding details and resume so it
     speaks about the actual person, not a generic label. On a refresh, session_evidence
     (real quiz/speaking performance since the last profile) is weighed alongside the
     questionnaire answers rather than treating a retake as the only signal.
+
+    first_build changes only how the summary is DELIVERED, never how the areas are
+    scored — see _FIRST_BUILD_SUMMARY_RULE. Passed explicitly rather than inferred
+    from `session_evidence is None`, which is a different question: a refreshing
+    user with no completed sessions yet would have no evidence but has still
+    earned the blunt read.
     """
     source_map = {r["dimension"]: r["id"] for r in responses if r.get("dimension")}
 
-    prompt = _build_llm_prompt(responses, onboarding, resume_data, session_evidence)
+    prompt = _build_llm_prompt(responses, onboarding, resume_data, session_evidence,
+                               first_build=first_build)
 
     try:
         # Low temperature so the same answers score consistently and the rubric is

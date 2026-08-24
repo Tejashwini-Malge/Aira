@@ -19,4 +19,10 @@ def total_sessions(user):
 
 
 def refresh_eligible(total, persona):
+    # A resume uploaded after the persona was built short-circuits the session
+    # threshold — see Persona.resume_refresh_pending. getattr keeps this working
+    # against a row object from before the column existed (and in tests that
+    # stub a Persona with SimpleNamespace).
+    if getattr(persona, "resume_refresh_pending", False):
+        return True
     return total - persona.session_count_at_generation >= SESSIONS_REQUIRED_TO_REFRESH

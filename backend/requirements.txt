@@ -8,12 +8,17 @@ itsdangerous==2.2.0
 python-dotenv==1.0.1
 requests==2.31.0
 pydantic==2.12.5
-google-generativeai
+
+# Resume ingestion (backend/resume_agent.py) — mechanical text extraction, no AI.
 pypdf
 pdfminer.six
 python-docx
+
 pytest
 gunicorn==22.0.0
 psycopg2-binary==2.9.9
+
+# Root-level operator scripts only, not the web app: ../export_feedback_to_sheets.py
+# pushes the feedback table into a Google Sheet.
 gspread==6.1.4
 google-auth

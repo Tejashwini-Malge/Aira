@@ -22,19 +22,11 @@ from datetime import datetime
 
 import psycopg2
 
-url = os.environ.get("DB_URL")
+import db_url
+
+url = db_url.resolve()
 if not url:
-    # Fall back to a DB_URL line in backend/.env so the credential can live
-    # in a local file instead of a shell command (same pattern as check_stats.py).
-    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend", ".env")
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                if line.strip().startswith("DB_URL="):
-                    url = line.strip().split("=", 1)[1].strip().strip('"').strip("'")
-if not url:
-    sys.exit('Set DB_URL first ($env:DB_URL = "postgresql://...") '
-             "or add a DB_URL=... line to backend/.env")
+    sys.exit(db_url.MISSING_MESSAGE)
 
 # The three indirect MCQ keys, in the order they're asked (see
 # feedback_bp.MCQ_QUESTIONS). Kept here so the CSV columns and the summary

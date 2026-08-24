@@ -58,6 +58,10 @@ window.Aira = (function () {
       recurringWeakAreas: r.recurring_weak_areas || [],
       quizHistory: r.quiz_history || [],
       speakingHistory: r.speaking_history || [],
+      // Assessments started and never finished — see _unfinished() in persona_bp.
+      unfinished: r.unfinished || [],
+      // Consecutive days PRACTISED (not visited) — see _streak() in persona_bp.
+      streak: r.streak || { current: 0, totalDays: 0, practisedToday: false },
       raw: r,
     };
   }

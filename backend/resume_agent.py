@@ -19,6 +19,7 @@ import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 
+from candidate_profile import resolve_profile
 from groq_client import groq_json, GroqError, GROQ_API_KEY, FAST_MODEL
 from llm_schemas import (
     PERSONA_DIMENSIONS,
@@ -268,6 +269,13 @@ def _build_prompt(resume_text, onboarding):
         f"{k}={v}" for k, v in onboarding.items() if v
     ) or "none provided"
     dims = ", ".join(ALLOWED_DIMENSIONS)
+    # The same seniority framing question_agent uses, for the same reason: without a
+    # rule acting on it, the stage sat in the context line as inert text and the model
+    # wrote manager-level scenarios for students. Resolved from the DECLARATION only —
+    # resume_data does not exist yet at this point in the flow, this call is what
+    # produces it — so an absent or unrecognised answer lands on the safe student band
+    # rather than promoting someone into scenarios they have never been in.
+    framing = resolve_profile(onboarding).rules()
     # Narrowed BEFORE truncation, so the 6000-char budget is spent on projects
     # and skills instead of being eaten by a contact block and a degree table.
     filtered = sanitize_resume_text(resume_text)[:6000]
@@ -307,11 +315,31 @@ Do two things and return them as ONE JSON object.
      probing whether they genuinely understand what they built (depth, decisions,
      trade-offs). These validate resume claims — it's fine (and expected) that these
      reference their actual work, just like a real interviewer asking about it.
-   - TWO "hr" questions: multiple-choice behavioural/HR-interview style (teamwork,
-     conflict, motivation, ownership) with exactly 4 options each.
+   - TWO "hr" questions: multiple-choice behavioural questions with exactly 4 options
+     each. A resume is a set of CLAIMS — "mentored two juniors", "led the migration",
+     "built it end to end". These two questions exist to TEST those claims: put the
+     candidate back inside the situation the claim came from and make them choose. The
+     right question is the one whose answer would separate someone who has really done
+     what the line says from someone who only wrote the line.
+     - Pick the two claims with the most behaviour behind them. If the resume makes no
+       interpersonal claim at all — no mentoring, no leading, no coordinating, nothing
+       about working alongside anyone — then do NOT fall
+       back to a stock teamwork question. The absence is itself signal: test how they
+       work alone instead — how they decide, what they cut, how they handle being stuck
+       with nobody to ask.
+     - Do not default both questions to team friction. Two questions about the same
+       kind of moment measure the same thing twice and leave the rest of the resume
+       untested.
+
+WHO YOU ARE WRITING FOR:
+{framing}
 
    Tag every question with the persona dimension it best probes. Allowed dimensions:
    {dims}.
+   ALL FOUR MUST PROBE FOUR DIFFERENT DIMENSIONS. The tag must follow what the question
+   actually asks — never relabel a question just to satisfy this rule. A tag that does
+   not match its question credits a dimension with evidence that was never about it,
+   which is worse than leaving that dimension uncovered.
 
 Return ONLY this JSON, no markdown, no commentary:
 {{

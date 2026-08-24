@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 body.board {
@@ -103,6 +104,31 @@ textarea {
 textarea::placeholder { color: rgba(244,241,228,0.3); }
 textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style: solid; background: rgba(244,241,228,0.07); }
 
+/* Speaking is offered, never required — SpeechRecognition is missing in Firefox
+   and flaky on iOS Safari, and persona is the one step that currently completes.
+   The mic hides itself when unsupported and the textarea carries on alone. */
+.speak-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.mic-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 999px; cursor: pointer;
+  border: 1.5px dashed var(--chalk-pink); background: rgba(234,172,184,0.08);
+  color: var(--chalk-pink); font-family: var(--fb); font-size: 0.86rem;
+  transition: all 0.18s ease;
+}
+.mic-btn:hover { background: rgba(234,172,184,0.16); }
+.mic-btn.listening { border-style: solid; background: rgba(234,172,184,0.2); color: var(--chalk); animation: micPulse 1.4s ease-in-out infinite; }
+@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(234,172,184,0.4); } 50% { box-shadow: 0 0 0 7px rgba(234,172,184,0); } }
+.mic-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.mic-status { font-size: 0.8rem; color: var(--chalk-yellow); font-style: italic; }
+.speak-note { font-size: 0.78rem; color: var(--muted); }
+
+/* Warm-up: the first spoken rep, before any of it counts for anything. */
+.warmup-tag { font-size: 0.8rem; color: var(--chalk-pink); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
+.warmup-q { font-family: var(--fd); font-size: 1.35rem; line-height: 1.5; color: var(--chalk); margin-bottom: 8px; }
+.warmup-sub { font-size: 0.85rem; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+.skip-link { font-size: 0.82rem; color: var(--muted); cursor: pointer; text-decoration: underline dotted; background: none; border: none; font-family: var(--fb); }
+.skip-link:hover { color: var(--chalk); }
+
 .q-footer {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   margin-top: 16px; padding-top: 12px;
@@ -152,6 +178,7 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
   <div id="questionArea"></div>
 </div>
 
+<script src="assets/dictation.js"></script>
 <script>
 const API_BASE = "";
 
@@ -160,6 +187,31 @@ const API_BASE = "";
 let questions = [];
 let responses = new Map();
 let currentIndex = 0;
+
+// 'warmup' → the unscored spoken opener; 'questions' → the persona set itself.
+// The warm-up exists to get the first spoken rep out of the way somewhere it
+// cannot be failed: nobody reached the speaking module on their own, and asking
+// a nervous person to speak for the first time into a graded session is the
+// hardest possible opening move. It is deliberately NOT a persona dimension, is
+// never submitted, never writes to speaking_sessions and never touches the
+// 2-a-day practice quota — it is a rehearsal, not a rep that counts.
+let stage = 'warmup';
+let dictation = null;
+// /session/get-questions is a Groq call and is not instant. The warm-up runs
+// while it's in flight, so the generation latency lands on a screen the user is
+// busy with instead of on a spinner.
+let questionsReady = false;
+let loadError = null;
+
+function showLoading() {
+  document.getElementById('questionArea').innerHTML =
+    '<div class="q-card board-card"><p style="color:var(--muted);">Getting your questions ready…</p></div>';
+}
+
+function showLoadError(msg) {
+  document.getElementById('questionArea').innerHTML =
+    `<div class="q-card board-card"><p style="color:var(--muted);">Could not load questions. Is the backend running?<br><small>${escHtml(msg)}</small></p></div>`;
+}
 
 // Free-text answers need real substance, not a single word, before Aira will read them.
 const MIN_TEXT_CHARS = 15;
@@ -208,10 +260,14 @@ window.addEventListener('load', async () => {
         window.location.replace('Welcome.html');
         return;
       }
+      // Refreshing an existing persona — this user has been here before and does
+      // not need the warm-up again.
+      if (d.persona && d.persona.ready) stage = 'questions';
     }
   } catch (e) {}
 
   document.body.classList.add('loaded');
+  if (stage === 'warmup') refresh(); else showLoading();
   loadQuestions();
 });
 
@@ -239,11 +295,15 @@ function renderQuestion() {
   const area = document.getElementById('questionArea');
   if (!questions.length) { area.textContent = 'No questions available.'; return; }
 
+  // Any live recogniser belongs to the question we're leaving, not this one.
+  if (dictation) { dictation.stop(); dictation = null; }
+
   const q = questions[currentIndex];
   const saved = responses.get(q.id) || {};
   const isLast = currentIndex === questions.length - 1;
 
   let inputHtml;
+  let textPlaceholder = '';
   if (isChoiceBased(q)) {
     const optionsHtml = q.options.map(opt => {
       const sel = saved.selected_label === opt.label ? ' selected' : '';
@@ -255,10 +315,20 @@ function renderQuestion() {
     inputHtml = `<div class="options-list" id="optionsList">${optionsHtml}</div>`;
   } else {
     const savedText = saved.answer || '';
-    const ph = q.type === 'reflection'
+    textPlaceholder = q.type === 'reflection'
       ? 'Write freely — this one is just for you.'
       : 'Write freely. Aira is listening, not judging.';
-    inputHtml = `<textarea id="answerInput" placeholder="${ph}">${escHtml(savedText)}</textarea>`;
+    // The free-text persona question is the "recall" one — "tell me about a time…"
+    // — which is an interview answer in all but name, so speaking it is the natural
+    // way to answer. The mic appears here and nowhere else: you cannot speak a
+    // multiple-choice answer, and every other dimension is multiple choice.
+    const speakHtml = (window.Dictation && window.Dictation.supported) ? `
+      <div class="speak-row">
+        <button class="mic-btn" id="answerMic" type="button"><span class="mic-dot"></span>Speak your answer</button>
+        <span class="mic-status" id="answerMicStatus"></span>
+        <span class="speak-note">or just type — same result either way</span>
+      </div>` : '';
+    inputHtml = speakHtml + `<textarea id="answerInput" placeholder="${textPlaceholder}">${escHtml(savedText)}</textarea>`;
   }
 
   const helperText = isChoiceBased(q)
@@ -294,6 +364,20 @@ function renderQuestion() {
     const ta = document.getElementById('answerInput');
     ta.addEventListener('input', updateNextState);
     ta.focus();
+
+    const mic = document.getElementById('answerMic');
+    if (mic) {
+      dictation = window.Dictation.attach({
+        textarea: ta,
+        micBtn: mic,
+        statusEl: document.getElementById('answerMicStatus'),
+        idlePlaceholder: textPlaceholder,
+        livePlaceholder: 'Listening — the words appear as Aira hears them.',
+        // Setting .value in script fires no 'input' event, so without this the
+        // Next button stays disabled no matter how long the user talks.
+        onChange: updateNextState,
+      });
+    }
   }
 
   updateNextState();
@@ -356,7 +440,78 @@ function captureAnswer() {
   }
 }
 
-function refresh() { renderDots(); updateProgress(); renderQuestion(); }
+function refresh() {
+  const progressArea = document.querySelector('.progress-area');
+  if (stage === 'warmup') {
+    progressArea.style.display = 'none';
+    document.getElementById('stepPill').textContent = 'Warm-up';
+    renderWarmup();
+    return;
+  }
+  progressArea.style.display = '';
+  renderDots(); updateProgress(); renderQuestion();
+}
+
+function leaveWarmup() {
+  if (dictation) { dictation.stop(); dictation = null; }
+  stage = 'questions';
+  document.querySelector('.page-title').textContent = 'Shape your AI coach.';
+  document.querySelector('.page-sub').textContent =
+    'These answers help Aira understand who you are — not just what you know. There are no right or wrong answers here. No marks cut.';
+  // The pill still reads "Warm-up" at this point; refresh() only rewrites it once
+  // there are questions to count, so clear it rather than leave a stale label on
+  // the loading and error states.
+  document.getElementById('stepPill').textContent = '';
+  // Someone can finish the warm-up faster than Groq generates the set.
+  if (loadError) { showLoadError(loadError); return; }
+  if (!questionsReady) { showLoading(); return; }
+  refresh();
+}
+
+// Deliberately skippable, and the skip is plain text rather than a buried link.
+// A warm-up that traps someone is worse than no warm-up at all — the point is to
+// lower the cost of the first sentence, not to add one more gate.
+function renderWarmup() {
+  document.querySelector('.page-title').textContent = 'First, just say hello.';
+  document.querySelector('.page-sub').textContent =
+    'One sentence to warm up your voice. Nothing here is recorded, scored, or saved — it does not count towards your daily practice.';
+
+  const canSpeak = window.Dictation && window.Dictation.supported;
+  document.getElementById('questionArea').innerHTML = `
+    <div class="q-card board-card pin-yellow">
+      <div class="warmup-tag">Warm-up · not scored</div>
+      <div class="warmup-q">Say your name, and one thing you're working on.</div>
+      <p class="warmup-sub">${canSpeak
+        ? 'Tap the mic and talk. You will see the words appear as Aira hears them — if they come out wrong, that is the mic, not you.'
+        : 'This browser does not support the mic, so type it instead. Everything after this works exactly the same.'}</p>
+      ${canSpeak ? `
+      <div class="speak-row">
+        <button class="mic-btn" id="warmupMic" type="button"><span class="mic-dot"></span>Tap to speak</button>
+        <span class="mic-status" id="warmupMicStatus"></span>
+      </div>` : ''}
+      <textarea id="warmupInput" placeholder="Hi, I'm — and I'm working on —"></textarea>
+      <div class="q-footer">
+        <button class="skip-link" id="warmupSkip" type="button">Skip the warm-up</button>
+        <div class="btn-row">
+          <button class="btn-chalk primary" id="warmupNext">I'm ready ›</button>
+        </div>
+      </div>
+    </div>`;
+
+  if (canSpeak) {
+    dictation = window.Dictation.attach({
+      textarea: document.getElementById('warmupInput'),
+      micBtn: document.getElementById('warmupMic'),
+      statusEl: document.getElementById('warmupMicStatus'),
+      maxChars: 400,
+      idlePlaceholder: "Hi, I'm — and I'm working on —",
+      livePlaceholder: 'Listening — say it how you would out loud.',
+    });
+  }
+
+  document.getElementById('warmupSkip').onclick = leaveWarmup;
+  document.getElementById('warmupNext').onclick = leaveWarmup;
+}
 
 async function loadQuestions() {
   try {
@@ -364,10 +519,12 @@ async function loadQuestions() {
     if (!res.ok) throw new Error('Failed to load');
     const data = await res.json();
     questions = data.questions || [];
-    refresh();
+    questionsReady = true;
+    // Never repaint over a warm-up in progress — the user is mid-sentence.
+    if (stage === 'questions') refresh();
   } catch (err) {
-    document.getElementById('questionArea').innerHTML =
-      `<div class="q-card board-card"><p style="color:var(--muted);">Could not load questions. Is the backend running?<br><small>${err.message}</small></p></div>`;
+    loadError = err.message;
+    if (stage === 'questions') showLoadError(err.message);
   }
 }
 
@@ -394,5 +551,6 @@ function escHtml(str) {
 }
 </script>
 <script src="assets/brand.js"></script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

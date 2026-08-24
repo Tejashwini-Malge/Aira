@@ -189,3 +189,147 @@ def test_assemble_requests_harder_questions_on_a_refresh():
     first_time_persona = _persona_with_resume()
     _assemble_questions(first_time_persona, question_generator=spy_generator)
     assert seen["harder"] is False
+
+
+# --- where the unavoidable duplicate dimension goes ---
+# 5 generated + 4 resume questions over 8 dimensions means one dimension is
+# probed twice whenever the resume covers four. The resume's behavioural
+# questions are already built around claimed collaboration, so spending the
+# duplicate on another interpersonal dimension is what pushed a real
+# experienced-switcher set to 8 of 10 questions about working with other people.
+
+_INTERPERSONAL = {"work_culture_preferences", "teamwork_style",
+                  "leadership_tendencies", "communication_style"}
+
+
+def _dims_requested(resume_dims):
+    """The dimensions _assemble_questions asks the generator for, given a resume
+    that already covers `resume_dims`."""
+    captured = {}
+
+    def fake_generator(dims, onboarding=None, harder=False, resume_data=None):
+        captured["dims"] = list(dims)
+        return [{"id": f"gen-{d}", "dimension": d, "type": "recall",
+                 "text": "q", "options": None} for d in dims]
+
+    persona = SimpleNamespace(
+        resume_data={
+            "skills": ["Python"],
+            "technical_questions": [
+                {"dimension": d, "text": "t"} for d in resume_dims[:2]],
+            "hr_questions": [
+                {"dimension": d, "text": "h",
+                 "options": [{"label": "A", "text": "x", "signal": "y"},
+                             {"label": "B", "text": "x", "signal": "y"}]}
+                for d in resume_dims[2:]],
+        },
+        dimension_questions=None,
+        summary=None,
+    )
+    _assemble_questions(persona, SimpleNamespace(onboarding={}), fake_generator)
+    return captured["dims"]
+
+
+def test_the_duplicated_dimension_is_one_answerable_alone():
+    """The resume covers four; the fifth generated slot must double up on a solo
+    dimension rather than pile onto collaboration again."""
+    requested = _dims_requested(["teamwork_style", "leadership_tendencies",
+                                 "problem_solving_behavior", "work_culture_preferences"])
+    duplicated = [d for d in requested if d in {"teamwork_style", "leadership_tendencies",
+                                                "problem_solving_behavior",
+                                                "work_culture_preferences"}]
+    assert duplicated, "expected exactly one dimension to be probed twice"
+    for d in duplicated:
+        assert d not in _INTERPERSONAL, f"duplicate spent on interpersonal {d}"
+
+
+def test_communication_style_is_still_pinned_into_the_generated_batch():
+    """It is the only free-text recall probe for communication; the resume can
+    only ever cover it with fixed options."""
+    requested = _dims_requested(["communication_style", "teamwork_style",
+                                 "leadership_tendencies", "problem_solving_behavior"])
+    assert "communication_style" in requested
+
+
+def test_uncovered_dimensions_still_win_over_covered_ones():
+    requested = _dims_requested(["teamwork_style", "leadership_tendencies",
+                                 "problem_solving_behavior", "professional_values"])
+    for uncovered in ("decision_making_approach", "career_goals"):
+        assert uncovered in requested
+
+
+# --- every dimension must get a question somewhere in the set ---
+# The resume agent's 4 dimension tags come back from an LLM and nothing outside
+# that prompt forces them to be distinct. At a fixed 5 generated questions, a
+# resume that tagged 3 of its 4 to one dimension left dimensions with no question
+# anywhere — and persona_agent scores all 8 regardless, so those got a confident
+# level invented from no evidence.
+
+def _coverage(resume_dims):
+    """Every dimension probed by the assembled set, and its total length."""
+    captured = {}
+
+    def fake_generator(dims, onboarding=None, harder=False, resume_data=None):
+        captured["dims"] = list(dims)
+        return [{"id": f"gen-{d}", "dimension": d, "type": "recall",
+                 "text": "q", "options": None} for d in dims]
+
+    persona = SimpleNamespace(
+        resume_data={
+            "skills": ["Python"],
+            "technical_questions": [{"dimension": d, "text": "t"} for d in resume_dims[:2]],
+            "hr_questions": [
+                {"dimension": d, "text": "h",
+                 "options": [{"label": "A", "text": "x", "signal": "y"},
+                             {"label": "B", "text": "x", "signal": "y"}]}
+                for d in resume_dims[2:]],
+        },
+        dimension_questions=None,
+        summary=None,
+    )
+    questions = _assemble_questions(persona, SimpleNamespace(onboarding={}), fake_generator)
+    probed = {q["dimension"] for q in questions if q.get("dimension")}
+    return probed, len(questions), captured["dims"]
+
+
+def test_all_eight_dimensions_are_probed_when_the_resume_tags_four_distinct():
+    probed, length, _ = _coverage(["problem_solving_behavior", "decision_making_approach",
+                                   "teamwork_style", "leadership_tendencies"])
+    assert probed == set(DIMENSION_ORDER)
+    assert length == 10, "the ordinary set stays the 10-question experience"
+
+
+def test_a_resume_that_tags_everything_to_one_dimension_still_covers_all_eight():
+    """The pathological case the floor exists for."""
+    probed, length, generated = _coverage(["teamwork_style"] * 4)
+    assert probed == set(DIMENSION_ORDER)
+    assert len(generated) == 7, "must expand past the floor to reach every dimension"
+    assert length > 10, "a longer quiz is the cost of not inventing a score"
+
+
+def test_partial_duplication_expands_only_as_far_as_it_must():
+    probed, _, generated = _coverage(["teamwork_style", "teamwork_style",
+                                      "leadership_tendencies", "career_goals"])
+    assert probed == set(DIMENSION_ORDER)
+    assert len(generated) == 5, "5 uncovered dimensions — the floor already covers it"
+
+
+def test_the_floor_is_never_undercut():
+    """Even a perfectly-spread resume gets the full generated batch — the extra
+    question is the deliberate second probe, not padding."""
+    _, _, generated = _coverage(["problem_solving_behavior", "decision_making_approach",
+                                 "teamwork_style", "leadership_tendencies"])
+    assert len(generated) == DIMENSION_COUNT
+
+
+def test_no_resume_still_covers_every_dimension():
+    persona = SimpleNamespace(resume_data=None, dimension_questions=None, summary=None)
+    captured = {}
+
+    def fake_generator(dims, onboarding=None, harder=False, resume_data=None):
+        captured["dims"] = list(dims)
+        return [{"id": f"gen-{d}", "dimension": d, "type": "recall",
+                 "text": "q", "options": None} for d in dims]
+
+    _assemble_questions(persona, SimpleNamespace(onboarding={}), fake_generator)
+    assert set(captured["dims"]) == set(DIMENSION_ORDER)

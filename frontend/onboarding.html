@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 body.board {
@@ -43,6 +44,12 @@ body.loaded { opacity: 1; }
 .field label { display: block; font-size: 0.86rem; color: var(--chalk); margin-bottom: 7px; }
 .field .hint { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-top: 5px; }
 .req { color: var(--chalk-yellow); }
+.optional {
+  font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--chalk-dim); border: 1px dashed var(--dash);
+  border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+}
+.field-note { margin: 8px 0 0; font-size: 0.82rem; line-height: 1.5; color: var(--muted); }
 
 input[type="text"], select, textarea {
   width: 100%; padding: 11px 13px; border-radius: 8px;
@@ -103,6 +110,19 @@ input[type="file"] { display: none; }
         <input type="text" name="study" id="study" placeholder="e.g. B.Tech Computer Science, 3rd year" required>
       </div>
 
+      <!-- Sets the world every practice scenario is written in — a student gets
+           group projects and hackathons, not budgets and direct reports. Asked
+           outright because inferring it from the resume proved unreliable. The
+           values must match onboarding_schema.CHOICE_FIELDS["experience"]. -->
+      <div class="field">
+        <label>Where are you right now? <span class="req">*</span></label>
+        <select name="experience" id="experience" required>
+          <option value="" disabled selected>Choose what fits best…</option>
+          <option value="Still studying">Still studying</option>
+          <option value="Graduated, looking for my first role">Graduated — looking for my first role</option>
+        </select>
+      </div>
+
       <div class="field">
         <label>What brings you to Aira? <span class="req">*</span></label>
         <select name="goal" id="goal" required>
@@ -143,13 +163,15 @@ input[type="file"] { display: none; }
       </div>
 
       <div class="field">
-        <label>Your resume <span class="req">*</span></label>
+        <label>Your resume <span class="optional">optional</span></label>
         <label class="file-field" id="fileField" for="resume">
           <div class="fi-icon">📄</div>
           <div class="fi-main" id="fileMain">Hand in your resume</div>
-          <div class="fi-sub" id="fileSub">PDF or DOCX — this helps me understand your real experience</div>
+          <div class="fi-sub" id="fileSub">PDF or DOCX — it makes my questions about your actual projects</div>
         </label>
-        <input type="file" name="resume" id="resume" accept=".pdf,.docx" required>
+        <input type="file" name="resume" id="resume" accept=".pdf,.docx">
+        <p class="field-note">Don't have it on this device? Skip it — you can hand it
+          in later from your profile, and I'll redo your assessment properly then.</p>
       </div>
 
       <div class="field">
@@ -205,14 +227,13 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
   const btn = document.getElementById('submitBtn');
   const notice = document.getElementById('notice');
 
-  if (!fileInput.files.length) {
-    notice.style.color = '#eaacb8';
-    notice.textContent = 'Please upload your resume to continue.';
-    return;
-  }
+  // The resume is optional — no client-side gate. Without one the server skips
+  // the parse entirely, so the wait is much shorter; say so instead of promising
+  // to read a file that was never sent.
+  const hasResume = fileInput.files.length > 0;
 
   btn.disabled = true;
-  btn.textContent = 'Reading your resume…';
+  btn.textContent = hasResume ? 'Reading your resume…' : 'Setting up…';
   notice.style.color = 'var(--chalk-yellow)';
   notice.textContent = 'Give me a moment — I\'m getting to know you.';
 
@@ -243,5 +264,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
 });
 </script>
 <script src="assets/brand.js"></script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

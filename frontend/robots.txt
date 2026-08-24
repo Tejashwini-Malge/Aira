@@ -1,0 +1,22 @@
+# Every page below /  is an app shell behind a login: a crawler fetching one gets
+# an empty skeleton, never a student's data. They're disallowed so search results
+# point at the landing page rather than at blank screens, not as a privacy control
+# — auth is enforced server-side by @login_required on the API routes.
+
+User-agent: *
+Disallow: /Welcome.html
+Disallow: /onboarding.html
+Disallow: /questions.html
+Disallow: /persona.html
+Disallow: /practice.html
+Disallow: /framework.html
+Disallow: /reflection.html
+Disallow: /analysis.html
+Disallow: /report.html
+Disallow: /profile.html
+Disallow: /ai_quiz.html
+Disallow: /soft_skills.html
+Disallow: /feedback.html
+Disallow: /reset-password.html
+Disallow: /forgot-password.html
+Allow: /

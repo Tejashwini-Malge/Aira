@@ -18,6 +18,9 @@ env/
 # Local data / generated artifacts
 backend/reports/
 backend/*.db
+# Flask's auto-created instance folder — a relative sqlite:/// URI lands here,
+# so any local script pointed at SQLite drops a stray database into the repo.
+backend/instance/
 backend/answers.json
 backend/persona.json
 *.log

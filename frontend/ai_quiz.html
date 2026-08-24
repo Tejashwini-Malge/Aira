@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 body.board { padding: 24px 16px 40px; opacity: 0; transition: opacity 0.5s; }
@@ -97,6 +98,30 @@ textarea:focus { outline: none; border-color: var(--chalk-yellow); border-style:
 .loading-state { padding: 32px; text-align: center; color: var(--muted); font-style: italic; font-size: 0.95rem; }
 
 /* Voice input */
+/* Multiple choice — the aptitude round is sat exactly as the real paper is, and
+   eliminating options is half of what that paper tests. */
+.mcq-list { display: flex; flex-direction: column; gap: 9px; margin: 4px 0 6px; }
+.mcq-card {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 14px; border-radius: 8px;
+  border: 1.5px dashed var(--dash); cursor: pointer;
+  transition: all 0.18s ease;
+}
+.mcq-card:hover { border-color: var(--chalk); background: rgba(244,241,228,0.05); }
+.mcq-card.selected { border-color: var(--chalk-yellow); border-style: solid; background: rgba(242,226,160,0.08); }
+.mcq-letter {
+  min-width: 25px; height: 25px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px dashed var(--dash); display: flex; align-items: center;
+  justify-content: center; font-size: 0.8rem; font-weight: 700;
+  color: var(--muted); font-family: var(--fb); transition: all 0.18s ease;
+}
+.mcq-card.selected .mcq-letter {
+  background: var(--chalk-yellow); border-color: var(--chalk-yellow);
+  border-style: solid; color: var(--board-dark);
+}
+.mcq-text { font-size: 0.92rem; color: var(--muted); line-height: 1.55; }
+.mcq-card.selected .mcq-text { color: var(--chalk); }
+
 .iv-answer-wrap { position: relative; }
 .iv-answer-wrap textarea { padding-right: 54px; }
 .mic-btn {
@@ -492,8 +517,14 @@ function updateTimerDisplay() {
 }
 
 function saveCurrent() {
+  const key = `Q${ivQuestions[ivIndex].id}`;
   const ta = document.getElementById("ivAnswer");
-  if (ta) ivAnswers[`Q${ivQuestions[ivIndex].id}`] = ta.value.trim();
+  if (ta) { ivAnswers[key] = ta.value.trim(); return; }
+  // Multiple choice: the server marks against the letter, so that is what we store.
+  // A question left unanswered stores nothing rather than an empty string, so the
+  // marker can tell "skipped" from "answered blank".
+  const picked = document.querySelector("#ivOptions .mcq-card.selected");
+  if (picked) ivAnswers[key] = picked.dataset.label;
 }
 
 function renderQuestion() {
@@ -501,6 +532,9 @@ function renderQuestion() {
   const q = ivQuestions[ivIndex];
   const total = ivQuestions.length;
   const saved = ivAnswers[`Q${q.id}`] || "";
+  // Aptitude comes back as multiple choice, like the real paper. Everything else
+  // stays free text, so the presence of options is the only switch needed here.
+  const hasOptions = q.options && Object.keys(q.options).length > 0;
   const isLast = ivIndex === total - 1;
   const pct = Math.round(((ivIndex) / total) * 100);
 
@@ -520,11 +554,19 @@ function renderQuestion() {
       </div>
       <div class="iv-bar-bg"><div class="iv-bar-fill" style="width:${pct}%"></div></div>
       <div class="iv-question">${escAttr(q.question)}</div>
+      ${hasOptions ? `
+      <div class="mcq-list" id="ivOptions">
+        ${Object.keys(q.options).map(L => `
+          <div class="mcq-card${saved === L ? " selected" : ""}" data-label="${escAttr(L)}">
+            <span class="mcq-letter">${escAttr(L)}</span>
+            <span class="mcq-text">${escAttr(q.options[L])}</span>
+          </div>`).join("")}
+      </div>` : `
       <div class="iv-answer-wrap">
         <textarea id="ivAnswer" placeholder="Answer out loud or in writing — explain your thinking.">${escAttr(saved)}</textarea>
         ${speechSupported ? `<button type="button" class="mic-btn" id="ivMic" title="Speak your answer">🎙</button>` : ""}
       </div>
-      ${speechSupported ? `<div class="mic-hint" id="ivMicHint">🎙 Click the mic to speak your answer instead of typing.</div>` : ""}
+      ${speechSupported ? `<div class="mic-hint" id="ivMicHint">🎙 Click the mic to speak your answer instead of typing.</div>` : ""}`}
       <div class="iv-actions">
         <button class="btn-chalk" id="ivPrev" ${ivIndex === 0 ? "disabled" : ""}>‹ Previous</button>
         <button class="btn-chalk primary" id="ivNext">${isLast ? "Finish & get feedback →" : "Next question ›"}</button>
@@ -539,8 +581,24 @@ function renderQuestion() {
     if (isLast) { finishInterview(false); }
     else { ivIndex++; renderQuestion(); }
   };
-  if (speechSupported) document.getElementById("ivMic").onclick = toggleMic;
-  document.getElementById("ivAnswer").focus();
+  // Both of these are absent on a multiple-choice question — there is no textarea
+  // and no mic to attach to, and reaching for them unguarded threw before the
+  // Previous/Next handlers above ever ran, stranding the paper on question one.
+  const micEl = document.getElementById("ivMic");
+  if (speechSupported && micEl) micEl.onclick = toggleMic;
+  const answerEl = document.getElementById("ivAnswer");
+  if (answerEl) answerEl.focus();
+
+  if (hasOptions) {
+    const cards = qc.querySelectorAll("#ivOptions .mcq-card");
+    cards.forEach(card => {
+      card.onclick = () => {
+        cards.forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+        saveCurrent();
+      };
+    });
+  }
 }
 
 // ---- Voice input (Web Speech API) ----
@@ -730,5 +788,6 @@ function renderResults(fb, topic) {
   rc.appendChild(grid);
 }
 </script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

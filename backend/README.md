@@ -9,9 +9,10 @@ snapshots (`/me/report/snapshot`).
 
 The stack: Flask + SQLAlchemy (SQLite locally, Postgres in production),
 signed-cookie sessions for auth, and the Groq chat API
-(`openai/gpt-oss-120b`, falling back to `llama-3.3-70b-versatile` then
-`llama-3.1-8b-instant` when a model's daily quota runs out) for all LLM
-calls via `groq_client.py`. The
+(a two-tier model ladder — `openai/gpt-oss-120b` → `llama-3.3-70b-versatile`
+for judgement calls, `openai/gpt-oss-20b` → `llama-3.1-8b-instant` for
+extraction, each tier falling through when a model's daily quota runs out)
+for all LLM calls via `groq_client.py`. The
 plain-HTML frontend in `../frontend/` is served by this same Flask app —
 there is no separate frontend server, in dev or in production.
 
@@ -62,13 +63,24 @@ permanent review/UGC feature — expect it to be revisited or removed once
 we've learned what we need from it. To pull it out as a CSV for review:
 
 ```bash
-$env:DB_URL = "postgresql://...production DB URL..."   # PowerShell
-python ../export_feedback.py                            # writes feedback_export_<timestamp>.csv
+python ../export_feedback.py
 ```
 
-(or double-click `export_feedback.bat`, same pattern as `run_stats.bat`).
-`check_stats.py` also prints a quick summary (average rating/NPS, latest 20
-reviews) without needing to open the CSV.
+Writes `feedback_export_<timestamp>.csv` (or double-click `export_feedback.bat`,
+same pattern as `run_stats.bat`). `check_stats.py` also prints a quick summary
+(average rating/NPS, latest 20 reviews) without needing to open the CSV.
+
+No env var to set: all three root scripts resolve the database through
+`../db_url.py`, which reads `DB_URL` (or `DATABASE_URL`) out of this `.env`.
+`$env:DB_URL = "postgresql://..."` still overrides it if you want to point at a
+different instance for one run.
+
+> Render publishes **two** hostnames for the same database — an internal
+> `dpg-xxxx-a` that resolves only from inside Render, and an external
+> `dpg-xxxx-a.<region>-postgres.render.com`. `DB_URL` in this repo's `.env`
+> holds the internal one, which fails from a laptop with `could not translate
+> host name`. `db_url.py` detects that and falls through to the external host,
+> so the scripts just work; that's what it's for.
 
 For sharing with others doing market validation, `../export_feedback_to_sheets.py`
 syncs the same data straight into a Google Sheet instead — appends only the
@@ -78,8 +90,10 @@ setup (a Google service account + sharing your sheet with it) is documented
 in that script's docstring; after that:
 
 ```bash
-$env:DB_URL = "postgresql://...production DB URL..."
 $env:GOOGLE_SHEET_ID = "...id from the sheet's URL..."
+```
+
+```bash
 python ../export_feedback_to_sheets.py
 ```
 

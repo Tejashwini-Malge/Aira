@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/chalkboard.css">
+<link rel="stylesheet" href="assets/guide.css">
 <style>
 * { margin: 0; padding: 0; }
 body.board {
@@ -87,7 +88,24 @@ textarea::placeholder { color: rgba(244,241,228,0.3); }
 #mic-btn.listening { color: var(--chalk-pink); border-color: rgba(234,172,184,0.6); border-style: solid; background: rgba(234,172,184,0.08); animation: micPulse 1.6s ease-out infinite; }
 @keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(234,172,184,0.3); } 70% { box-shadow: 0 0 0 12px rgba(234,172,184,0); } 100% { box-shadow: 0 0 0 0 rgba(234,172,184,0); } }
 
-.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+.helper-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); gap: 10px; }
+
+/* Voice controls. Mute is not optional furniture — people practise in shared
+   rooms, hostels and libraries, and a product that talks with no way to stop it
+   gets closed rather than muted. Replay matters because a spoken question you
+   half-heard is worse than one you only read. */
+.voice-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.voice-btn {
+  background: none; border: 1.5px dashed var(--dash); border-radius: 999px;
+  color: var(--muted); cursor: pointer; font-family: var(--fb);
+  font-size: 0.75rem; padding: 3px 10px; transition: all 0.18s;
+}
+.voice-btn:hover { color: var(--chalk); border-color: var(--chalk); }
+.voice-btn[disabled] { opacity: 0.35; cursor: default; }
+.voice-btn.muted { color: var(--chalk-yellow); border-color: rgba(242,226,160,0.5); }
+#micStatus.asking { color: var(--chalk-pink); font-style: italic; }
+/* While Aira is speaking the mic is deliberately unavailable — see speech.js. */
+#mic-btn.blocked { opacity: 0.3; pointer-events: none; }
 
 /* Button row */
 .btn-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
@@ -147,6 +165,10 @@ textarea::placeholder { color: rgba(244,241,228,0.3); }
 
     <div class="helper-row">
       <span id="helperCopy">Take your time. A few sentences are enough.</span>
+      <div class="voice-row" id="voiceRow" style="display:none">
+        <button class="voice-btn" id="replayBtn" type="button" title="Hear the question again">↻ Replay</button>
+        <button class="voice-btn" id="muteBtn" type="button" title="Mute Aira's voice">🔊 Voice on</button>
+      </div>
       <span id="micStatus">Mic off</span>
     </div>
 
@@ -160,6 +182,7 @@ textarea::placeholder { color: rgba(244,241,228,0.3); }
 <div id="toast">Notification</div>
 
 <script src="assets/aira.js"></script>
+<script src="assets/speech.js"></script>
 <script>
 // ---- Session state: the server holds the real history; we only send answers. ----
 const params = new URLSearchParams(window.location.search);
@@ -184,6 +207,47 @@ const diffPill = document.getElementById("diffPill");
 const reactionEl = document.getElementById("reaction");
 const continueBtn = document.getElementById("continueBtn");
 const skipBtn = document.getElementById("skipBtn");
+const voiceRow = document.getElementById("voiceRow");
+const replayBtn = document.getElementById("replayBtn");
+const muteBtn = document.getElementById("muteBtn");
+
+// True from the moment an utterance starts until it ends. While it is set, the
+// recogniser's own onstart/onend must not repaint the status line — they fire
+// asynchronously off the stop() that speech.js performs, and would otherwise
+// overwrite "Aira is asking…" a beat later with "Mic off".
+let airaSpeaking = false;
+let lastPrompt = "";
+
+function setMicStatus(txt) {
+  if (airaSpeaking) return;
+  micStatusEl.textContent = txt;
+}
+
+function micIsActive() { return isListening || wantListening; }
+
+// Aira reads the question out loud. The text is on screen the whole time, so a
+// blocked or unsupported voice costs nothing — this never gates the question.
+function askAloud(text) {
+  if (!window.Speech || !Speech.supported) return;
+  lastPrompt = text;
+  Speech.say(text, {
+    mic: { stop: stopListening, start: startListening, isActive: micIsActive },
+    onStart: function () {
+      airaSpeaking = true;
+      micStatusEl.textContent = "Aira is asking…";
+      micStatusEl.classList.add("asking");
+      micBtn.classList.add("blocked");
+      replayBtn.disabled = true;
+    },
+    onEnd: function () {
+      airaSpeaking = false;
+      micStatusEl.classList.remove("asking");
+      micBtn.classList.remove("blocked");
+      replayBtn.disabled = false;
+      setMicStatus(micIsActive() ? "Listening…" : "Your turn");
+    },
+  });
+}
 
 function countFillers(text) {
   const m = String(text).toLowerCase().match(/\b(um+|uh+|erm+|like|you know|basically|actually|literally)\b/g);
@@ -204,6 +268,7 @@ function renderBeat(beat) {
   continueBtn.textContent = (answered + 1 >= total) ? "Finish & review →" : "Continue →";
   aEl.value = "";
   aEl.focus();
+  askAloud(beat.prompt);
 }
 
 async function startSession() {
@@ -231,6 +296,9 @@ async function startSession() {
 async function sendAnswer(answerText) {
   if (busy || finished) return;
   busy = true;
+  // The student has moved on — Aira should stop mid-word if she's still asking.
+  if (window.Speech) Speech.cancel();
+  resetVoiceUi();
   stopListening();
   continueBtn.disabled = true;
   continueBtn.textContent = "Thinking…";
@@ -320,6 +388,39 @@ skipBtn.addEventListener("click", () => {
   showToast("Skipped — a blank answer counts as weak.");
 });
 
+// Clears the "Aira is asking…" state by hand. speechSynthesis does not reliably
+// fire onend when an utterance is cancelled, and a stuck flag would freeze the
+// status line for the rest of the session.
+function resetVoiceUi() {
+  airaSpeaking = false;
+  micStatusEl.classList.remove("asking");
+  micBtn.classList.remove("blocked");
+  if (window.Speech && Speech.supported) replayBtn.disabled = Speech.isMuted();
+}
+
+function syncMuteBtn() {
+  const m = Speech.isMuted();
+  muteBtn.textContent = m ? "🔇 Voice off" : "🔊 Voice on";
+  muteBtn.classList.toggle("muted", m);
+  replayBtn.disabled = m;
+}
+
+if (window.Speech && Speech.supported) {
+  voiceRow.style.display = "flex";
+  syncMuteBtn();
+  // The mute choice is remembered across sessions — someone practising in a
+  // shared room should mute once, not once per question.
+  muteBtn.addEventListener("click", () => {
+    const nowMuted = !Speech.isMuted();
+    Speech.setMuted(nowMuted);
+    syncMuteBtn();
+    resetVoiceUi();
+    if (nowMuted) setMicStatus(micIsActive() ? "Listening…" : "Mic off");
+    else if (lastPrompt) askAloud(lastPrompt);
+  });
+  replayBtn.addEventListener("click", () => { if (lastPrompt) askAloud(lastPrompt); });
+}
+
 startSession();
 
 // Speech recognition — stays on until YOU turn it off.
@@ -355,7 +456,7 @@ function appendSpeech(base, add) {
 if (SR) {
   recog = new SR();
   recog.continuous = true; recog.interimResults = true; recog.lang = "en-US";
-  recog.onstart = () => { isListening = true; micBtn.classList.add("listening"); aEl.placeholder = "You're live. Speak as you would in an interview."; micStatusEl.textContent = "Listening…"; };
+  recog.onstart = () => { isListening = true; micBtn.classList.add("listening"); aEl.placeholder = "You're live. Speak as you would in an interview."; setMicStatus("Listening…"); };
   recog.onend = () => {
     isListening = false;
     if (wantListening) {
@@ -366,7 +467,7 @@ if (SR) {
     }
     micBtn.classList.remove("listening");
     aEl.placeholder = "You can type, or click the mic and simply speak.";
-    micStatusEl.textContent = "Mic off";
+    setMicStatus("Mic off");
   };
   recog.onresult = e => {
     let fin = "", int = "";
@@ -384,12 +485,20 @@ if (SR) {
     showToast(e.error === "not-allowed" ? "Mic blocked. Type your answer instead." : "Mic error: " + e.error);
   };
   micBtn.addEventListener("click", () => {
-    if (isListening || wantListening) { stopListening(); return; }
-    wantListening = true;
-    baseText = aEl.value.trim() ? aEl.value.trim() + " " : "";
-    recog.start();
+    if (micIsActive()) { stopListening(); return; }
+    startListening();
   });
 } else { micBtn.style.display = "none"; micStatusEl.textContent = "Mic not supported"; }
+
+// Extracted from the mic click handler so speech.js can resume dictation after
+// Aira finishes a question — and ONLY when it was already running, so nobody's
+// mic switches itself on because a sentence ended.
+function startListening() {
+  if (!recog || micIsActive()) return;
+  wantListening = true;
+  baseText = aEl.value.trim() ? aEl.value.trim() + " " : "";
+  try { recog.start(); } catch (e) { wantListening = false; }
+}
 
 function stopListening() {
   wantListening = false;
@@ -403,5 +512,6 @@ function showToast(msg, success = false) {
 }
 </script>
 <script src="assets/brand.js"></script>
+<script src="assets/guide.js"></script>
 </body>
 </html>

@@ -1,0 +1,66 @@
+/* ============================================================
+   Aira Guide — floating mascot + first-visit walkthrough.
+   Auto-opens once per screen (tracked in localStorage, pure UI
+   state — never a mirror of server state), reopenable anytime.
+   ============================================================ */
+
+.aira-guide-btn {
+  position: fixed; right: 22px; bottom: 22px; z-index: 500;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--chalk) 60%, #cfc9b0 100%);
+  border: 2px solid var(--wood-highlight);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.aira-guide-btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 24px rgba(0,0,0,0.4); }
+.aira-guide-btn svg { width: 28px; height: 28px; }
+.aira-guide-btn.pulse { position: fixed; }
+.aira-guide-btn.pulse::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid var(--chalk-yellow); opacity: 0.6;
+  animation: aira-guide-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes aira-guide-pulse {
+  0%   { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.aira-guide-pop {
+  position: fixed; right: 20px; bottom: 82px; z-index: 501;
+  width: min(300px, calc(100vw - 40px));
+  background: linear-gradient(180deg, rgba(20,42,30,0.97), rgba(12,26,20,0.97));
+  border: 1px solid rgba(244,241,228,0.18);
+  border-radius: 14px;
+  box-shadow: 0 20px 44px rgba(0,0,0,0.45);
+  padding: 16px 18px 14px;
+  opacity: 0; transform: translateY(10px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.aira-guide-pop.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.aira-guide-pop::after {
+  content: ''; position: absolute; right: 22px; bottom: -8px;
+  width: 14px; height: 14px; background: rgba(12,26,20,0.97);
+  border-right: 1px solid rgba(244,241,228,0.18); border-bottom: 1px solid rgba(244,241,228,0.18);
+  transform: rotate(45deg);
+}
+.aira-guide-eyebrow {
+  font-family: var(--fb); font-size: 0.66rem; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--chalk-yellow); margin-bottom: 5px;
+}
+.aira-guide-title { font-family: var(--fd); font-size: 1.15rem; color: var(--chalk); margin-bottom: 6px; line-height: 1.2; }
+.aira-guide-body { font-family: var(--fb); font-size: 0.85rem; color: var(--chalk-dim); line-height: 1.55; margin-bottom: 12px; }
+.aira-guide-close {
+  font-family: var(--fb); font-size: 0.8rem; font-weight: 700; color: var(--board-dark);
+  background: linear-gradient(180deg, #f8efc6, var(--chalk-yellow));
+  border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+}
+.aira-guide-close:hover { filter: brightness(1.05); }
+
+@media (max-width: 480px) {
+  .aira-guide-btn { right: 14px; bottom: 14px; width: 44px; height: 44px; }
+  .aira-guide-btn svg { width: 24px; height: 24px; }
+  .aira-guide-pop { right: 14px; bottom: 66px; }
+}

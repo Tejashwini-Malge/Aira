@@ -3,7 +3,7 @@ import pytest
 
 from persona_agent import (
     format_session_evidence, _format_context, _answer_quality_hint,
-    _validate, PersonaGenerationError,
+    _build_llm_prompt, _validate, PersonaGenerationError,
 )
 from llm_schemas import PERSONA_DIMENSIONS
 
@@ -144,3 +144,41 @@ def test_validate_defaults_missing_note_to_empty_string():
     del data["dimensions"][PERSONA_DIMENSIONS[0]]["note"]
     result = _validate(data)
     assert result["dimensions"][PERSONA_DIMENSIONS[0]]["note"] == ""
+
+
+# --- how the verdict is delivered on a first build ---
+# A real user's first-ever profile opened by telling them their answers "lacked
+# detail"; they abandoned the next quiz and left. The scoring rubric is right and
+# stays — only the summary's shape changes for someone who signed up minutes ago.
+
+def test_first_build_asks_for_a_starting_point_not_a_verdict():
+    prompt = _build_llm_prompt([], first_build=True)
+    assert "STARTING POINT, not a verdict" in prompt
+    assert "Open with what they genuinely did well" in prompt
+    assert "Do not list every weakness" in prompt
+
+
+def test_refresh_keeps_the_blunt_read():
+    prompt = _build_llm_prompt([], first_build=False)
+    assert "earned the blunt read" in prompt
+    assert "STARTING POINT, not a verdict" not in prompt
+
+
+def test_the_scoring_rubric_is_identical_either_way():
+    """Softening delivery must not soften the levels — the report card depends on
+    them being honest."""
+    first = _build_llm_prompt([], first_build=True)
+    refresh = _build_llm_prompt([], first_build=False)
+    for rule in ("BE STRICT AND HONEST",
+                 "never reward effortless or generic answers",
+                 "if everything comes out Strong you are not judging hard enough",
+                 "A weak, empty, or evasive answer MUST score Developing"):
+        assert rule in first and rule in refresh
+
+
+def test_first_build_still_forbids_inventing_strengths():
+    assert "never invent a strength they did not show" in _build_llm_prompt([], first_build=True)
+
+
+def test_first_build_is_the_default_for_direct_callers():
+    assert "STARTING POINT, not a verdict" in _build_llm_prompt([])
